@@ -17,10 +17,11 @@ import json
 import os
 import socket
 import sys
-import threading
 import time
 
 from .config import VISION_SOCKET as SOCK  # noqa: E402  (shared with the CLI)
+from . import ipc  # noqa: E402
+from .config import IS_WINDOWS  # noqa: E402
 
 
 def log(*a):
@@ -69,9 +70,17 @@ class MacVision:
 
 class Vision:
     def __init__(self):
+        import threading
+        import onnxruntime
+        if sys.platform == "win32" and hasattr(onnxruntime, "preload_dlls"):
+            # Windows: CUDA and cuDNN for onnxruntime-gpu come from pip (its [cuda,cudnn]
+            # extras); load them before the first session, or OCR falls back to the CPU.
+            try:
+                onnxruntime.preload_dlls()
+            except Exception as e:
+                log("CUDA libraries for OCR:", e)
         from rapidocr import RapidOCR
         import logging
-        import onnxruntime
         logging.getLogger("RapidOCR").setLevel(logging.WARNING)
         # No text-orientation classifier: iOS text is upright (saves ~75 ms). On an
         # NVIDIA GPU (onnxruntime-gpu) a screen takes ~0.18 s, on the CPU ~1.2 s.
@@ -107,6 +116,10 @@ class Vision:
 
 
 def serve():
+    if IS_WINDOWS:  # 127.0.0.1 and the per-user token (ipc.py); one service per user by its port
+        v = Vision()
+        ipc.serve("vision", lambda conn, rfile: _client(v, conn, rfile), log=log)
+        return
     # One service at a time: two agents that both find no socket may each start one, and the
     # second would take the socket from the first, which then runs unreachable forever.
     import fcntl
@@ -131,11 +144,11 @@ def serve():
         threading.Thread(target=_client, args=(v, conn), daemon=True).start()
 
 
-def _client(v, conn):  # requests: {"op": "text" | "ping" | "quit", ...}
+def _client(v, conn, rfile=None):  # requests: {"op": "text" | "ping" | "quit", ...}
     req = {}
     with conn:
         try:
-            req = json.loads(conn.makefile().readline())
+            req = json.loads((rfile or conn.makefile("rb")).readline())
             reply = v.handle(req)
         except Exception as e:
             reply = {"error": str(e)}

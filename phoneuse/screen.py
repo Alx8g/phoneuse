@@ -1,8 +1,8 @@
-"""The mirror window on screen: Hyprland IPC, where the phone picture is,
-screenshots of it, and finding the orange pointer in them.
+"""The phone's picture: whether it is showing, screenshots of it, and finding things
+in them (switches, the orange pointer). On Linux also the mirror window on screen
+(Hyprland IPC, grim).
 
 Positions are fractions of the phone screen: (0, 0) top-left, (1, 1) bottom-right.
-Requires Hyprland (window geometry and cursor come from its IPC socket) and grim.
 """
 import glob
 import io
@@ -15,7 +15,8 @@ import sys
 import numpy as np
 from PIL import Image
 
-from .config import CFG, FRAMES_SOCKET, HUB_SOCKET, PHONE_ASPECT
+from . import ipc
+from .config import CFG, IS_WINDOWS, PHONE_ASPECT
 
 MIRROR_CLASS = "phoneuse-mirror"  # window class (Wayland app id) of the mirror window, window.py
 HUB_RTP_PORT = 5590  # UxPlay sends the phone's video here, to the hub (hub.py)
@@ -67,7 +68,8 @@ def _find_hyprland():
             return
 
 
-_find_hyprland()
+if not IS_WINDOWS:
+    _find_hyprland()
 
 
 def hypr(cmd):
@@ -93,6 +95,13 @@ def hypr_eval(lua):
 def airplay_mirroring():
     """True while a phone is mirroring to UxPlay (an open connection on its
     mirroring port)."""
+    if IS_WINDOWS:  # None: couldn't tell this time (the caller keeps what it knew)
+        import psutil
+        try:
+            return any(c.laddr and c.laddr.port == AIRPLAY_MIRROR_PORT and c.status == psutil.CONN_ESTABLISHED
+                       for c in psutil.net_connections(kind="tcp"))
+        except (OSError, psutil.Error):
+            return None
     if sys.platform == "darwin":
         # No /proc, and netstat no longer lists TCP connections on recent macOS (the phone often connects over
         # IPv6 link-local too), so ask lsof: our own UxPlay's sockets are visible without root.
@@ -117,16 +126,22 @@ def airplay_mirroring():
 def mirror_live(client=None):
     """True when the phone's screen arrives. Asks the browser mirror, which runs under both
     `phoneuse up` and `serve` on every platform; only without it (or for a given window)
-    does it read the mirror window's title, which needs Hyprland."""
+    does it read the mirror window's title, which needs Hyprland, or on Windows (no window
+    of its own) asks the frames service."""
     if client is None:
         import json
         import urllib.request
-        from .config import CFG
         try:
             with urllib.request.urlopen(f"http://127.0.0.1:{CFG['web_port']}/api/picture", timeout=2) as r:
                 return bool(json.load(r).get("live"))
         except (OSError, ValueError):
             pass
+        if IS_WINDOWS:
+            try:
+                line, _ = frames_request("status", timeout=2)
+                return "live=1" in line
+            except OSError:
+                return False
         try:
             client = mirror_client()
         except OSError:  # no Hyprland (the Flatpak, a Mac): no window to ask
@@ -134,27 +149,14 @@ def mirror_live(client=None):
     return bool(client) and client["title"] == TITLE_LIVE
 
 
-
-def _request(path, cmd, timeout):
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(timeout)
-    s.connect(path)
-    with s:
-        s.sendall(cmd.encode() + b"\n")
-        f = s.makefile("rb")
-        line = f.readline().decode().strip()
-        data = f.read(int(line.split()[1])) if cmd == "shot" and line.startswith("ok ") else b""
-        return line, data
-
-
 def hub_request(cmd, timeout=3.0):
-    """One control request to the video hub (hub.py); returns (reply line, payload)."""
-    return _request(HUB_SOCKET, cmd, timeout)
+    """One control request to the video hub (hub.py / avhub.py); returns (reply line, payload)."""
+    return ipc.request("hub", cmd, timeout)
 
 
 def frames_request(cmd, timeout=3.0):
     """One request to the frames service (frames.py): status, settle, shot."""
-    return _request(FRAMES_SOCKET, cmd, timeout)
+    return ipc.request("frames", cmd, timeout)
 
 
 def mirror_client():
@@ -191,14 +193,16 @@ def picture_rect(at, size):
 
 def grab_png():
     """PNG of the phone's screen. From the frames service when it runs (the
-    current picture, so windows on top don't matter); otherwise a capture of the
-    mirror window's area of the screen, which must not be covered."""
+    current picture, so windows on top don't matter); on Linux otherwise a capture
+    of the mirror window's area of the screen, which must not be covered."""
     try:
         line, png = frames_request("shot")
         if line.startswith("ok"):
             return png
     except OSError:
         pass
+    if IS_WINDOWS:
+        raise RuntimeError("no picture of the phone (is `phoneuse up` running, and the phone mirroring?)")
     x, y, w, h = picture_rect(*mirror_window())
     return subprocess.check_output(["grim", "-g", f"{round(x)},{round(y)} {round(w)}x{round(h)}", "-"])
 
