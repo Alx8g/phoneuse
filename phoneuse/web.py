@@ -789,16 +789,18 @@ def app(mirror):
     a.router.add_post("/api/unlock", unlocks.ask)
     a.router.add_post("/api/agent/act", agent_act)
     a.router.add_post("/api/agent/phase", agent_phase)
-    a.router.add_get("/api/picture", lambda _r: web.json_response(
-        {"live": mirror.live(), "stale": mirror.stale, "lag": mirror.lag, "paused": mirror.taken_over, "frame_age": round(time.time() - mirror.last_frame_at, 1)
-         if mirror.last_frame_at else None}))
+    def picture_state():
+        return {"live": mirror.live(), "stale": mirror.stale, "lag": mirror.lag, "paused": mirror.taken_over,
+                "frame_age": round(time.time() - mirror.last_frame_at, 1) if mirror.last_frame_at else None}
+    a.router.add_get("/api/picture", lambda _r: web.json_response(picture_state()))
     a.router.add_post("/api/agent/takeover", agent_takeover)
     a.router.add_post("/api/agent/cursor", agent_cursor)
     a.router.add_post("/api/agent/done", agent_done)
     a.router.add_post("/api/keyboard", keyboard)
     a.router.add_route("*", "/api/awake", awake)
     from .bridge_web import BridgeRoutes
-    BridgeRoutes(same_origin).add(a)
+    bridges = BridgeRoutes(same_origin)
+    bridges.add(a)
     a.router.add_post("/api/unlock/answer", unlocks.answer)
     a.router.add_post("/api/session/answer", sessions.answer)
     a.router.add_route("*", "/api/session/ask", sessions.setting)
@@ -810,6 +812,38 @@ def app(mirror):
         from . import companion
         return web.json_response({"link": await asyncio.get_running_loop().run_in_executor(None, companion.new_pairing)})
     a.router.add_post("/api/companion/pair", companion_pair)
+
+    async def app_state(req):
+        # Everything a control window shows, in one call: the next step (overview.hero) and
+        # the settings. Read-only; each setting still changes through its own route.
+        if req.headers.get("Origin") and not same_origin(req):
+            return web.Response(status=403)
+        from . import claude_setup, companion, netcheck, overview
+
+        async def get(handler):
+            try:
+                return json.loads((await handler(req)).text)
+            except Exception:  # noqa: BLE001 - one part failing leaves the rest
+                return None
+
+        def host():
+            try:
+                paired = len(companion.load().get("devices") or {})
+            except Exception:  # noqa: BLE001
+                paired = 0
+            return {"claude": claude_setup.state(), "firewall": netcheck.detect(),
+                    "confirmed": netcheck.confirmed(), "paired": paired}
+        out = {"running": True, "picture": picture_state(), "name": NAME}
+        out["bridge"], out["session"], out["awake"], out["passcode"], h = await asyncio.gather(
+            get(bridges.state), get(sessions.setting), get(awake), get(passcode),
+            asyncio.get_running_loop().run_in_executor(None, host))
+        out.update(h)
+        if out["picture"]["live"]:
+            netcheck.remember(mirrored=True)  # the iPhone reached this PC: the ports are open
+            out["confirmed"] = True
+        out["hero"] = overview.hero(out, NAME)
+        return web.json_response(out)
+    a.router.add_get("/api/app", app_state)
     return a
 
 

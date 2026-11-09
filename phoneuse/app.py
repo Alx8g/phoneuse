@@ -27,7 +27,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
-from . import claude_setup, netcheck, screen  # noqa: E402
+from . import claude_setup, overview, netcheck, screen  # noqa: E402
 from .config import CFG, config_path  # noqa: E402
 
 APP_ID = os.environ.get("FLATPAK_ID") or "co.lxe.PhoneUse"
@@ -272,20 +272,15 @@ class Window(Adw.ApplicationWindow):
         self.busy = True
 
         def work():
-            out = {"running": services_running(), "claude": claude_setup.state(), "firewall": netcheck.detect(),
-                   "confirmed": netcheck.confirmed(), "paired": paired_iphones()}
-            if out["running"]:
-                for key, path in (("picture", "/api/picture"), ("bridge", "/api/bridge"),
-                                  ("session", "/api/session/ask"), ("awake", "/api/awake"),
-                                  ("passcode", "/api/passcode")):
-                    try:
-                        out[key] = api(path)
-                    except (OSError, ValueError):
-                        out[key] = None
-            if (out.get("picture") or {}).get("live"):
-                netcheck.remember(mirrored=True)  # the iPhone reached this PC: the ports are open
-                out["confirmed"] = True
-            return out
+            if services_running():
+                try:
+                    return api("/api/app")
+                except (OSError, ValueError):
+                    pass  # starting up: the page doesn't answer yet
+                return {"running": True, "picture": None, "claude": claude_setup.state(),
+                        "firewall": netcheck.detect(), "confirmed": netcheck.confirmed(), "paired": paired_iphones()}
+            return {"running": False, "claude": claude_setup.state(), "firewall": netcheck.detect(),
+                    "confirmed": netcheck.confirmed(), "paired": paired_iphones()}
         in_thread(work, self._show)
 
     def _show(self, s, err):
@@ -333,44 +328,24 @@ class Window(Adw.ApplicationWindow):
         self.fw_row.set_subtitle(f"If {CFG['name']} is missing from Screen Mirroring on the iPhone, {fw} is "
                                  "blocking it. Open Ports lets the iPhone reach Phone Use on this network.")
 
+    HERO_ICONS = {"phone": "phone-symbolic", "keyboard": "input-keyboard-symbolic",
+                  "offline": "network-offline-symbolic", "bluetooth": "bluetooth-symbolic"}
+    HERO_BUTTONS = {"start": "Start Phone Use", "setup_bridge": "Set Up Bridge", "open_ports": "Open Ports…",
+                    "retry": "Try Again", "open_phone": "Open iPhone"}
+
     def _show_hero(self, s):
-        """The first thing left to do, with the button that does it; or the iPhone."""
-        pic, b = s.get("picture"), s.get("bridge") or {}
-        st, saved = b.get("status") or {}, b.get("saved")
-        name = GLib.markup_escape_text(CFG["name"])
-        if not s["running"]:
-            return self._hero("Phone Use is stopped", "Start it to see and use your iPhone here.",
-                              "Start Phone Use", self.app.start_services)
-        if not pic:
-            return self._hero("Starting…", "", None, None)
-        if not saved:
-            return self._hero("Set up the bridge", "A small board next to the iPhone that it pairs with as its "
-                              "keyboard and mouse. Phone Use reaches it over Wi-Fi.",
-                              "Set Up Bridge", lambda: BridgeSetup(self).present(self), icon="input-keyboard-symbolic")
-        if not pic.get("live"):
-            fw = s.get("firewall") and not s.get("confirmed")
-            return self._hero("Start Screen Mirroring",
-                              f"On the iPhone, open Control Center, tap Screen Mirroring and choose <b>{name}</b>."
-                              + (f" If {name} isn't listed, open the ports." if fw else ""),
-                              "Open Ports…" if fw else None, self._allow_network if fw else None, quiet=True)
-        if st.get("error"):
-            return self._hero("The bridge is offline", "Check that it has power and is on the same Wi-Fi as this "
-                              "PC.", "Try Again", self.refresh, icon="network-offline-symbolic")
-        if not st.get("connected"):
-            return self._hero("Connect the bridge to the iPhone", "On the iPhone, open Settings › Bluetooth and tap "
-                              "PhoneUse Bridge. If it's listed as connected, keep the bridge closer to the iPhone.",
-                              None, None, icon="bluetooth-symbolic")
-        if pic.get("paused"):
-            return self._hero("You're in control", "You took over from the agent.", "Open iPhone",
-                              self.app.open_phone, good=True)
-        if pic.get("stale"):
-            return self._hero("The picture is old", "The iPhone's screen is off, or mirroring stalled.",
-                              "Open iPhone", self.app.open_phone)
-        if pic.get("lag"):
-            return self._hero(f"The picture is {pic['lag']} s behind", "A screen recording on the iPhone slows "
-                              "mirroring.", "Open iPhone", self.app.open_phone, good=True)
-        return self._hero(st.get("phone") or "iPhone", "Mirroring to this PC", "Open iPhone",
-                          self.app.open_phone, good=True)
+        """The first thing left to do, with the button that does it; or the iPhone (overview.hero)."""
+        h = (s.get("hero") if s["running"] else overview.stopped()) or overview.hero(s, CFG["name"])
+        detail = GLib.markup_escape_text(h["detail"])
+        if h.get("bold"):
+            bold = GLib.markup_escape_text(h["bold"])
+            detail = detail.replace(bold, f"<b>{bold}</b>", 1)
+        actions = {"start": self.app.start_services, "setup_bridge": lambda: BridgeSetup(self).present(self),
+                   "open_ports": self._allow_network, "retry": self.refresh, "open_phone": self.app.open_phone}
+        act = h.get("action")
+        return self._hero(h["title"], detail, self.HERO_BUTTONS.get(act), actions.get(act),
+                          icon=self.HERO_ICONS.get(h.get("icon"), "phone-symbolic"), good=h.get("good"),
+                          quiet=h.get("quiet"))
 
     def _hero(self, title, sub, label, action, icon="phone-symbolic", good=False, quiet=False):
         self.hero_title.set_label(title)
