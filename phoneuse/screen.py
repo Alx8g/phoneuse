@@ -109,9 +109,22 @@ def airplay_mirroring():
 
 
 def mirror_live(client=None):
-    """True when the mirror window shows the phone's screen."""
-    client = client or mirror_client()
+    """True when the mirror window shows the phone's screen. Without Hyprland (`phoneuse serve`: the Mac,
+    the Flatpak) there is no mirror window: ask the browser mirror whether the picture is live instead."""
+    try:
+        client = client or mirror_client()
+    except OSError:
+        return _picture_live()
     return bool(client) and client["title"] == TITLE_LIVE
+
+
+def _picture_live():
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{CFG['web_port']}/api/picture", timeout=3) as r:
+            return bool(json.loads(r.read()).get("live"))
+    except (OSError, ValueError):
+        return False
 
 
 def _request(path, cmd, timeout):

@@ -15,6 +15,24 @@ struct AppState: Decodable {
     var confirmed: Bool?
     var paired: Int?
     var hero: Hero?
+    var requests: Requests?
+}
+
+/// What waits for the owner: an agent asking for the phone, or asking to type the passcode.
+struct Requests: Decodable {
+    var session: SessionRequest?
+    var unlock: UnlockRequest?
+}
+
+struct SessionRequest: Decodable, Equatable {
+    var id: String
+    var action: String?
+    var mode: String?
+    var deadline: Double?
+}
+
+struct UnlockRequest: Decodable, Equatable {
+    var id: String
 }
 
 struct Picture: Decodable {

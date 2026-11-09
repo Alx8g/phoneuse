@@ -35,6 +35,7 @@ struct PhoneUseApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Notifier.shared.setUp()
         Task { @MainActor in
             let core = Core.shared
             await core.refresh()

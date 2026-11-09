@@ -77,6 +77,7 @@ final class Core: ObservableObject {
             state = try JSONDecoder().decode(AppState.self, from: data)
             reachable = true
             if state?.hero != nil { starting = false }
+            Notifier.shared.show(state?.requests)
         } catch {
             reachable = false
             if !weStarted { starting = false }

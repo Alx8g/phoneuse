@@ -848,6 +848,12 @@ def app(mirror):
             netcheck.remember(mirrored=True)  # the iPhone reached this PC: the ports are open
             out["confirmed"] = True
         out["hero"] = overview.hero(out, NAME)
+        # What waits for the owner, for shells that notify natively (the Mac app); each is answered through
+        # /api/session/answer or /api/unlock/answer with its id
+        sp, up = mirror.sessions.pending, mirror.unlocks.pending
+        out["requests"] = {
+            "session": {k: sp.get(k) for k in ("id", "action", "mode", "deadline")} if sp else None,
+            "unlock": {"id": up["id"]} if up else None}
         return web.json_response(out)
     a.router.add_get("/api/app", app_state)
     return a
