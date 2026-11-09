@@ -686,10 +686,13 @@ class Companion:
         if MACOS:
             return await self._advertise_dns_sd()
         group = [None]
+        conn = [None]  # held for as long as we publish: Avahi frees a group when its connection closes
 
         def publish():
             from gi.repository import Gio, GLib
-            bus = Gio.bus_get_sync(Gio.BusType.SYSTEM)
+            if conn[0] is None or conn[0].is_closed():
+                conn[0] = Gio.bus_get_sync(Gio.BusType.SYSTEM)
+            bus = conn[0]
 
             def call(path, iface, method, args=None, rtype=None):
                 r = bus.call_sync("org.freedesktop.Avahi", path, iface, method, args,
