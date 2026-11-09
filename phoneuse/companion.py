@@ -683,10 +683,17 @@ class Companion:
                 r = bus.call_sync("org.freedesktop.Avahi", path, iface, method, args,
                                   GLib.VariantType(rtype) if rtype else None, Gio.DBusCallFlags.NONE, 5000, None)
                 return r.unpack() if rtype else None
+            why = "first time"
             if group[0]:
                 try:
-                    if call(group[0], "org.freedesktop.Avahi.EntryGroup", "GetState", None, "(i)")[0] == 2:
-                        return False  # still published (2: established)
+                    st = call(group[0], "org.freedesktop.Avahi.EntryGroup", "GetState", None, "(i)")[0]
+                    if st in (1, 2):
+                        return None  # still published (1: registering, 2: established)
+                    why = f"Avahi state {st}"
+                except GLib.Error as e:
+                    why = Gio.DBusError.get_remote_error(e) or e.message
+                try:
+                    call(group[0], "org.freedesktop.Avahi.EntryGroup", "Free")
                 except GLib.Error:
                     pass
             group[0] = call("/", "org.freedesktop.Avahi.Server", "EntryGroupNew", None, "(o)")[0]
@@ -695,11 +702,12 @@ class Companion:
                  GLib.Variant("(iiussssqaay)", (-1, -1, 0, f"PhoneUse on {pc_name()}", "_phoneuse._tcp", "", "",
                                                  PORT, txt)))
             call(group[0], "org.freedesktop.Avahi.EntryGroup", "Commit")
-            return True
+            return why
         while True:
             try:
-                if await self.run(publish):
-                    log("published over Bonjour as", f"PhoneUse on {pc_name()}")
+                why = await self.run(publish)
+                if why:
+                    log("published over Bonjour as", f"PhoneUse on {pc_name()} ({why})")
             except Exception as e:
                 group[0] = None
                 log("can't publish over Bonjour:", e)

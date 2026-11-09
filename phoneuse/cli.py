@@ -1156,6 +1156,21 @@ def up(headless=False):
                     except subprocess.TimeoutExpired:
                         p.kill()
             time.sleep(1.2)
+        stop_vision()
+
+
+def stop_vision():
+    """Ask the OCR service to exit (it runs detached, so agents' commands can share it)."""
+    import socket
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(2)
+        s.connect(VISION_SOCK)
+        s.sendall(b'{"op": "quit"}\n')
+        s.makefile().readline()
+        s.close()
+    except OSError:
+        pass  # not running
 
 
 def status():
