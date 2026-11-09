@@ -19,6 +19,7 @@ import asyncio
 import json
 import os
 import secrets
+import shutil
 import sys
 import threading
 import time
@@ -490,6 +491,9 @@ class UnlockRequests:
 
     async def _notify(self, p):
         # A desktop notification with Unlock / Deny, where the notification daemon supports actions.
+        # (Where there's no notify-send, as on macOS, the app shows its own from the API.)
+        if not shutil.which("notify-send"):
+            return
         try:
             p["notice"] = await asyncio.create_subprocess_exec(
                 "notify-send", "-a", "phoneuse", "-u", "critical", "--wait", "-A", "unlock=Unlock", "-A", "deny=Deny",
@@ -652,6 +656,8 @@ class SessionRequests:
         return web.json_response({"on": st["mode"] != "auto", **st})
 
     async def _notify(self, p):
+        if not shutil.which("notify-send"):  # macOS: the app shows its own notification from the API
+            return
         try:
             self.notices[p["id"]] = notice = await asyncio.create_subprocess_exec(
                 *(["notify-send", "-a", "phoneuse", "-u", "critical", "--wait", "-A", "deny=Cancel",

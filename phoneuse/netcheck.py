@@ -16,11 +16,18 @@ import socket
 import subprocess
 
 from .companion import PORT as COMPANION_PORT
-from .config import config_path
+from .config import CFG, MACOS, config_path
 
 # UxPlay's fixed ports (`uxplay -p`) and the companion API.
 PORTS = [(7000, "tcp"), (7001, "tcp"), (7100, "tcp"), (6000, "udp"), (6001, "udp"), (7011, "udp"),
          (COMPANION_PORT, "tcp")]
+if CFG.get("airplay_port"):  # `uxplay -p N`: TCP and UDP N, N+1, N+2
+    _n = CFG["airplay_port"]
+    PORTS = [(p, proto) for proto in ("tcp", "udp") for p in (_n, _n + 1, _n + 2)] + [(COMPANION_PORT, "tcp")]
+
+# macOS's Application Firewall filters by program, not by port: macOS asks once, for each program
+# that listens, whether to accept incoming connections. Reading its state needs no rights.
+SOCKETFILTERFW = "/usr/libexec/ApplicationFirewall/socketfilterfw"
 
 FIREWALLD = "org.fedoraproject.FirewallD1"
 # What this PC has shown about its firewall: the ports were opened here, or the iPhone's
@@ -79,7 +86,14 @@ def _ufw_enabled():
 
 
 def detect():
-    """"firewalld", "ufw" or None: which firewall may block the iPhone. Needs no rights."""
+    """"firewalld", "ufw", "macos" or None: which firewall may block the iPhone. Needs no rights."""
+    if MACOS:
+        try:
+            out = subprocess.run([SOCKETFILTERFW, "--getglobalstate"], capture_output=True, text=True,
+                                 timeout=5).stdout
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return "macos" if "enabled" in out.lower() else None
     if _firewalld_running():
         return "firewalld"
     if _ufw_enabled():
@@ -114,6 +128,9 @@ def allow():
     """Open PORTS in the active firewall, asking for the administrator password once.
     Returns a sentence for the user. Raises RuntimeError when it couldn't."""
     fw = detect()
+    if fw == "macos":  # no ports to open: macOS asks about each program the first time it listens
+        return ("macOS asks whether Phone Use may accept incoming connections the first time it listens. "
+                "Choose Allow, or turn it on in System Settings › Network › Firewall › Options.")
     if fw == "firewalld":
         return _allow_firewalld()
     if fw == "ufw":

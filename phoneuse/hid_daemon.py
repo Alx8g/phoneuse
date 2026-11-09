@@ -25,6 +25,7 @@ import fcntl
 import os
 import socket
 import struct
+import sys
 import termios
 import threading
 import time
@@ -953,13 +954,23 @@ INPUT_COMMANDS = {"a", "tap", "m", "md", "k", "consumer", "eject", "move", "corn
 gate_until = [0.0]  # agents may send input while time.time() < this; closed until the browser mirror opens it
 
 
+def _peer_args(conn):
+    """The connected process's command line, as a list of bytes."""
+    if sys.platform == "darwin":  # no /proc: the peer's pid from LOCAL_PEERPID, its arguments from ps
+        import subprocess
+        pid = struct.unpack("i", conn.getsockopt(0, 2, 4))[0]  # SOL_LOCAL, LOCAL_PEERPID
+        out = subprocess.run(["ps", "-ww", "-o", "command=", "-p", str(pid)], capture_output=True, timeout=2).stdout
+        return out.split()
+    pid = struct.unpack("3i", conn.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i")))[0]
+    with open(f"/proc/{pid}/cmdline", "rb") as f:
+        return f.read().split(b"\0")
+
+
 def peer_is_owner(conn):
     try:
-        pid = struct.unpack("3i", conn.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i")))[0]
-        with open(f"/proc/{pid}/cmdline", "rb") as f:
-            args = f.read().split(b"\0")
+        args = _peer_args(conn)
         return any(args[i:i + 2] == [b"-m", m.encode()] for m in OWNER_MODULES for i in range(len(args)))
-    except OSError:
+    except (OSError, ValueError, struct.error):
         return False
 
 

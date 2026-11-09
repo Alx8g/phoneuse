@@ -22,7 +22,7 @@ import urllib.parse
 from aiohttp import web
 
 from . import apns, bridge, phones, unlock
-from .config import RUNTIME_DIR, config_path
+from .config import MACOS, RUNTIME_DIR, config_path
 
 PORT = 8778
 STORE = os.path.join(os.path.dirname(config_path()), "companion.json")
@@ -77,6 +77,15 @@ def lan_ip():
 
 
 def pc_name():
+    if MACOS:  # the name the user gave the Mac (System Settings › General › About), not "name.local"
+        try:
+            name = subprocess.run(["scutil", "--get", "ComputerName"], capture_output=True, text=True,
+                                  timeout=2).stdout.strip()
+            if name:
+                return name
+        except (OSError, subprocess.SubprocessError):
+            pass
+        return socket.gethostname().removesuffix(".local")
     return socket.gethostname()
 
 
@@ -672,7 +681,10 @@ class Companion:
     # ---- Bonjour ----
     async def advertise(self):
         """Keep `_phoneuse._tcp` published through Avahi's D-Bus API (works inside the Flatpak,
-        which has no avahi-utils). Checks every 30 s and publishes again if Avahi restarted."""
+        which has no avahi-utils). Checks every 30 s and publishes again if Avahi restarted.
+        On macOS, mDNSResponder publishes it for as long as `dns-sd -R` runs."""
+        if MACOS:
+            return await self._advertise_dns_sd()
         group = [None]
 
         def publish():
@@ -710,6 +722,19 @@ class Companion:
                     log("published over Bonjour as", f"PhoneUse on {pc_name()} ({why})")
             except Exception as e:
                 group[0] = None
+                log("can't publish over Bonjour:", e)
+            await asyncio.sleep(30)
+
+    async def _advertise_dns_sd(self):
+        while True:
+            try:
+                p = await asyncio.create_subprocess_exec(
+                    "dns-sd", "-R", f"PhoneUse on {pc_name()}", "_phoneuse._tcp", "local", str(PORT),
+                    f"id={load()['pc_id']}", f"name={pc_name()}",
+                    stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                log("published over Bonjour as", f"PhoneUse on {pc_name()}")
+                await p.wait()
+            except OSError as e:
                 log("can't publish over Bonjour:", e)
             await asyncio.sleep(30)
 
