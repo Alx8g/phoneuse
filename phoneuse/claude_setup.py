@@ -61,11 +61,15 @@ def state():
     cmd_ok = False
     try:
         with open(BIN) as f:
-            cmd_ok = f.read() == _cli_script()
+            text = f.read()
+        # ours (any version of the script we write), running this copy of Phone Use
+        cmd_ok = MARK in text and _cli_script().splitlines()[-1].split(' "$@"')[0] in text
     except OSError:
         cmd_ok = os.path.realpath(BIN) == os.path.join(os.path.dirname(PKG), "bin", "phoneuse")
+    # A skill linked to a checkout counts too: inside the Flatpak the link's target isn't visible.
+    skill_ok = os.path.exists(os.path.join(SKILL_DIR, "SKILL.md")) or os.path.islink(SKILL_DIR)
     return {"claude": os.path.isdir(os.path.join(HOME, ".claude")),
-            "skill": os.path.exists(os.path.join(SKILL_DIR, "SKILL.md")),
+            "skill": skill_ok,
             "mcp": mcp.get("command") == want["command"] and mcp.get("args", []) == want["args"],
             "command": cmd_ok}
 
