@@ -726,17 +726,50 @@ class Companion:
             await asyncio.sleep(30)
 
     async def _advertise_dns_sd(self):
-        while True:
-            try:
-                p = await asyncio.create_subprocess_exec(
-                    "dns-sd", "-R", f"PhoneUse on {pc_name()}", "_phoneuse._tcp", "local", str(PORT),
-                    f"id={load()['pc_id']}", f"name={pc_name()}",
-                    stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
-                log("published over Bonjour as", f"PhoneUse on {pc_name()}")
-                await p.wait()
-            except OSError as e:
-                log("can't publish over Bonjour:", e)
-            await asyncio.sleep(30)
+        """macOS: register with mDNSResponder through the system's dns_sd library. The registration belongs
+        to this process's connection to the daemon, so it ends with the process, however it ends."""
+        import ctypes
+        lib = ctypes.CDLL("/usr/lib/libSystem.B.dylib")  # dns_sd is part of libSystem
+        lib.DNSServiceRegister.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_uint32, ctypes.c_uint32,
+                                           ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p,
+                                           ctypes.c_uint16, ctypes.c_uint16, ctypes.c_char_p, ctypes.c_void_p,
+                                           ctypes.c_void_p]
+        reply = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int32, ctypes.c_char_p,
+                                 ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p)
+        lib.DNSServiceRegister.argtypes[10] = reply
+        lib.DNSServiceProcessResult.argtypes = [ctypes.c_void_p]
+
+        loop = asyncio.get_running_loop()
+
+        def registered(_ref, _flags, err, name, _type, _domain, _ctx):
+            if err == -65570:  # PolicyDenied: no Local Network permission (Python run from a terminal)
+                asyncio.run_coroutine_threadsafe(self._advertise_dns_sd_tool(), loop)
+            elif err:
+                log("can't publish over Bonjour: dns_sd error", err)
+            else:
+                log("published over Bonjour as", name.decode())
+        self._dns_sd_reply = reply(registered)  # both kept for the life of the process
+        self._dns_sd = ctypes.c_void_p()
+        txt = b"".join(bytes([len(t)]) + t for t in (f"id={load()['pc_id']}".encode(), f"name={pc_name()}".encode()))
+        err = lib.DNSServiceRegister(ctypes.byref(self._dns_sd), 0, 0, f"PhoneUse on {pc_name()}".encode(),
+                                     b"_phoneuse._tcp", None, None, socket.htons(PORT), len(txt), txt,
+                                     self._dns_sd_reply, None)
+        if err:
+            return log("can't publish over Bonjour: dns_sd error", err)
+        # the daemon's answers arrive on this connection; reading them completes the registration
+        import threading
+        threading.Thread(target=lambda: [lib.DNSServiceProcessResult(self._dns_sd) for _ in iter(int, 1)],
+                         daemon=True).start()
+
+    async def _advertise_dns_sd_tool(self):
+        """The `dns-sd` tool registers under its own permission. A shell loop ends it once this process is gone,
+        so no registration outlives the companion."""
+        name, txt = f"PhoneUse on {pc_name()}", [f"id={load()['pc_id']}", f"name={pc_name()}"]
+        script = ('dns-sd -R "$1" _phoneuse._tcp local "$2" "$3" "$4" >/dev/null & child=$!; '
+                  f'while kill -0 {os.getpid()} 2>/dev/null; do sleep 2; done; kill $child')
+        await asyncio.create_subprocess_exec("/bin/sh", "-c", script, "sh", name, str(PORT), *txt,
+                                             stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+        log("published over Bonjour (dns-sd) as", name)
 
     def app(self):
         a = web.Application(middlewares=[self.auth], client_max_size=64 * 1024)

@@ -8,6 +8,7 @@ struct CoreLocation {
     var root: URL        // holds phoneuse/ and bin/
     var python: URL
     var uxplay: URL?
+    var bundled = false
 
     static func find() -> CoreLocation? {
         let fm = FileManager.default
@@ -15,7 +16,7 @@ struct CoreLocation {
            fm.fileExists(atPath: res.appendingPathComponent("phoneuse").path) {
             let ux = res.appendingPathComponent("bin/uxplay")
             return CoreLocation(root: res, python: res.appendingPathComponent("python/bin/python3"),
-                                uxplay: fm.fileExists(atPath: ux.path) ? ux : nil)
+                                uxplay: fm.fileExists(atPath: ux.path) ? ux : nil, bundled: true)
         }
         // Development: the checkout this app was built from, with its .venv (see mac/README.md).
         let repoPath = ProcessInfo.processInfo.environment["PHONEUSE_REPO"]
@@ -141,6 +142,18 @@ final class Core: ObservableObject {
         p.currentDirectoryURL = loc.root
         var env = ProcessInfo.processInfo.environment
         if let ux = loc.uxplay { env["PHONEUSE_UXPLAY"] = ux.path }
+        if loc.bundled {  // the bundle's own GStreamer and typelibs, never the system's or Homebrew's
+            let lib = loc.root.appendingPathComponent("lib").path
+            env["GST_PLUGIN_SYSTEM_PATH_1_0"] = lib + "/gstreamer-1.0"
+            env["GST_PLUGIN_PATH_1_0"] = ""
+            env["GST_PLUGIN_SCANNER_1_0"] = loc.root.appendingPathComponent("libexec/gst-plugin-scanner").path
+            env["GI_TYPELIB_PATH"] = lib + "/girepository-1.0"
+            let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("Phone Use")
+            try? FileManager.default.createDirectory(at: caches, withIntermediateDirectories: true)
+            env["GST_REGISTRY_1_0"] = caches.appendingPathComponent("gst-registry.bin").path
+            env["PATH"] = loc.root.appendingPathComponent("bin").path + ":/usr/bin:/bin:/usr/sbin:/sbin"
+        }
         env["PYTHONUNBUFFERED"] = "1"
         p.environment = env
         let log = Core.logURL
