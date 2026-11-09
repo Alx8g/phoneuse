@@ -747,6 +747,8 @@ def restore_state():
         mirror_name[0] = d["mirror"]
     if d.get("bridge"):
         for _ in range(10):  # the network may still be coming up
+            if bridge_link[0]:  # the supervisor set the bridge first: keep its link
+                return
             try:
                 log("restoring bridge:", set_bridge(d["bridge"]))
                 return
@@ -774,8 +776,12 @@ def _set_bridge(args):
         return "bridge off"
     from .bridge import Link
     link = Link({"ip": args[0], "key": args[1]})
-    link.hello()  # raises if it doesn't answer or the key is wrong
-    st = link.status()
+    try:
+        link.hello()  # raises if it doesn't answer or the key is wrong
+        st = link.status()
+    except Exception:
+        link.close()  # or every retry leaves a socket and its reader thread behind
+        raise
     if bridge_link[0]:
         bridge_link[0].close()
     bridge_link[0] = link
@@ -792,15 +798,25 @@ def _set_bridge(args):
 def watch_bridge(link):
     """Keep the bridge's phone state current, and while a phone is screen
     mirroring but not connected to the bridge, ask the bridge to page it."""
-    while bridge_link[0] is link:
+    failing = None  # the last error, logged once until the bridge answers again
+    while True:
         time.sleep(2)
+        if bridge_link[0] is not link:  # replaced or turned off while this slept: its socket is closed
+            return
         try:
             bridge_phone[0] = link.phone = bool(link.status().get("connected"))
+            if failing:
+                log("bridge: answering again")
+                failing = None
             if not link.phone and mirror_name[0]:
                 link.connect_phone()
         except Exception as e:
+            if bridge_link[0] is not link:
+                return
             bridge_phone[0] = False
-            log("bridge: no answer:", e)
+            if failing is None:
+                log("bridge: no answer:", e)
+            failing = str(e)
 
 
 def run_command(line):
