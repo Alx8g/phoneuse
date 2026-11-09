@@ -122,7 +122,7 @@ enforces it: agents' input is refused there until the session is allowed.
 
 UxPlay plays the phone's audio on the PC. The PC can't change that while the phone mirrors, so
 `POST /v1/mirror/audio` restarts UxPlay with audio on or off (UxPlay's `-as 0`), which ends the mirroring. The
-answer has `"needs_remirror": true`, and the app then asks the owner to start Screen Mirroring to PhoneUse again
+answer has `"needs_remirror": true`, and the app then asks the owner to start Screen Mirroring to the PC's receiver (`pc.receiver`) again
 from Control Center. iOS doesn't let apps start Screen Mirroring.
 
 ## Push

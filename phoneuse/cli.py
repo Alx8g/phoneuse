@@ -1179,6 +1179,7 @@ def status():
         svc = "active" if os.path.exists(HID_SOCKET) else "not running (start Phone Use, or `phoneuse serve`)"
     else:
         svc = subprocess.run(["systemctl", "is-active", "phoneuse-hid"], capture_output=True, text=True).stdout.strip()
+    print("AirPlay receiver:", NAME)
     print("HID service:", svc)
     if svc == "active":
         print("Bluetooth:", Hid().cmd("status").replace("ok ", ""))

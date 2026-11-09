@@ -22,7 +22,7 @@ import urllib.parse
 from aiohttp import web
 
 from . import apns, bridge, phones, unlock
-from .config import RUNTIME_DIR, config_path
+from .config import NAME, RUNTIME_DIR, config_path
 
 PORT = 8778
 STORE = os.path.join(os.path.dirname(config_path()), "companion.json")
@@ -77,7 +77,8 @@ def lan_ip():
 
 
 def pc_name():
-    return socket.gethostname()
+    from .config import computer_name
+    return computer_name()
 
 
 def new_pairing():
@@ -237,7 +238,7 @@ class Companion:
         p = self.unlocks.pending
         d = load()
         return web.json_response({
-            "pc": {"id": d["pc_id"], "name": pc_name(), "version": _version()},
+            "pc": {"id": d["pc_id"], "name": pc_name(), "receiver": NAME, "version": _version()},
             "mirroring": m.live(),
             "phone": phones.current(),
             "bluetooth": {"connected": "connected=True" in st, "via": "bridge" if "bridge=" in st else "pc"},
