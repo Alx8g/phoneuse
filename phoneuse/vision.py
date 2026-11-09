@@ -59,7 +59,7 @@ class Vision:
         with self.lock:
             if req["op"] == "text":
                 return self.text(req["image"])
-            if req["op"] == "ping":
+            if req["op"] in ("ping", "quit"):
                 return {"ok": True}
             return {"error": "unknown op"}
 
@@ -79,7 +79,8 @@ def serve():
         threading.Thread(target=_client, args=(v, conn), daemon=True).start()
 
 
-def _client(v, conn):  # requests: {"op": "text" | "ping", ...}
+def _client(v, conn):  # requests: {"op": "text" | "ping" | "quit", ...}
+    req = {}
     with conn:
         try:
             req = json.loads(conn.makefile().readline())
@@ -91,6 +92,12 @@ def _client(v, conn):  # requests: {"op": "text" | "ping", ...}
         except TypeError as e:
             data = json.dumps({"error": f"bad reply: {e}"})
         conn.sendall((data + "\n").encode())
+    if req.get("op") == "quit":  # the supervisor stopped: the models shouldn't stay in memory
+        try:
+            os.unlink(SOCK)
+        except OSError:
+            pass
+        os._exit(0)
 
 
 if __name__ == "__main__":
