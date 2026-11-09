@@ -36,7 +36,8 @@ MODULES = ["aiohttp", "numpy", "pillow", "bleak", "cryptography", "qrcode"]
 PLUGINS = ["coreelements", "app", "udp", "rtp", "rtpmanager", "videoparsersbad", "libav", "x264", "applemedia",
            "videoconvertscale", "videorate", "osxaudio", "audioconvert", "audioresample", "autodetect", "typefindfunctions",
            "playback", "audioparsers", "volume", "isomp4", "opus", "aac", "voaacenc", "fdkaac", "dtls", "srtp",
-           "pbtypes", "rawparse", "videotestsrc", "audiotestsrc", "jpeg", "png", "debugutilsbad"]
+           "pbtypes", "rawparse", "videotestsrc", "audiotestsrc", "jpeg", "png", "debugutilsbad",
+           "level", "imagefreeze", "videofilter", "pango"]  # the last four: UxPlay's audio and cover-art pipelines
 TYPELIBS = ["GLib-2.0", "GObject-2.0", "Gio-2.0", "GModule-2.0", "GioUnix-2.0", "GLibUnix-2.0", "Gst-1.0",
             "GstBase-1.0", "GstApp-1.0", "GstVideo-1.0", "GstAudio-1.0", "GstRtp-1.0", "GstPbutils-1.0",
             "GstTag-1.0", "GstNet-1.0"]
