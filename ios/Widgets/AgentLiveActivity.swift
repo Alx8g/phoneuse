@@ -137,11 +137,17 @@ struct StateIcon: View {
                     .padding(size * 0.06)
                     .rotationEffect(.degrees(Double(frame) * 45))
                     .animation(.linear(duration: 1), value: frame)
+                    .transition(.identity)
+                    .transaction { $0.animation = nil }  // no system update animation; the ring's own turn still runs
             }
             if look == .driving {
                 // The robot: an 8-step loop per phase on frame % 8, each step eased over 0.9 s (Shared/Robot.swift).
                 RobotView(pose: .pose(phase: state.phase, frame: frame), size: size * 0.58, color: look.color(state))
                     .animation(RobotPose.animation, value: frame)
+                    // Only the pose eases between frames: no system update animation and no insertion transition,
+                    // so iOS can't slide the robot in on each 1 s update.
+                    .transition(.identity)
+                    .transaction { $0.animation = nil }
             } else {
             Image(systemName: look.symbol)
                 .font(.system(size: size <= 24 ? 17 : 28, weight: .semibold))
