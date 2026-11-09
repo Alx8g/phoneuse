@@ -1,0 +1,46 @@
+name: PhoneUseMac
+options:
+  bundleIdPrefix: co.lxe
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: ""
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  PhoneUse:
+    type: application
+    platform: macOS
+    sources:
+      - path: PhoneUse
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: co.lxe.phoneuse.mac
+        PRODUCT_NAME: Phone Use
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+        ENABLE_HARDENED_RUNTIME: YES
+        # The repository's root, for running the core from a checkout during development.
+        PHONEUSE_REPO: "$(SRCROOT)/.."
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        GENERATE_INFOPLIST_FILE: YES
+    info:
+      path: PhoneUse/Info.plist
+      properties:
+        CFBundleDisplayName: Phone Use
+        LSUIElement: true
+        PhoneUseRepo: "$(PHONEUSE_REPO)"
+        NSLocalNetworkUsageDescription: Phone Use finds your bridge and your iPhone on this network.
+        NSBonjourServices:
+          - _airplay._tcp
+          - _raop._tcp
+          - _phoneuse._tcp
+        NSBluetoothAlwaysUsageDescription: Phone Use finds a new bridge over Bluetooth to set it up.
+    entitlements:
+      path: PhoneUse/PhoneUse.entitlements
+      properties:
+        com.apple.security.cs.allow-unsigned-executable-memory: true
+        com.apple.security.cs.disable-library-validation: true
