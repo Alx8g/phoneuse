@@ -1,12 +1,14 @@
 #!/bin/bash
 # Builds "Phone Use.app" with the core inside it, signs it, and makes a DMG.
 #   mac/scripts/package.sh [--fresh]      --fresh: rebuild the core bundle (bundle_core.py) too
-# SIGN_IDENTITY picks the certificate ("Developer ID Application: …" for a release; "-" signs ad hoc, the
-# default, which runs on this Mac only). Notarizing needs a Developer ID build; see docs/MAC.md.
+# Signs with the keychain's Developer ID Application certificate and notarizes the DMG when there is one
+# (SIGN_IDENTITY overrides; "-" signs ad hoc, which runs on this Mac only).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MAC=$PWD
-IDENTITY=${SIGN_IDENTITY:--}
+# a Developer ID Application certificate in the keychain signs a release; without one, ad hoc
+DEVID=$(security find-identity -v -p codesigning | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)
+IDENTITY=${SIGN_IDENTITY:-${DEVID:--}}
 ENT=$MAC/PhoneUse/PhoneUse.entitlements
 OUT=$MAC/build/release
 
@@ -26,7 +28,9 @@ find "$APP/Contents/Resources/core" -name __pycache__ -prune -exec rm -rf {} +
 
 # Sign from the inside out: every library and program in the core, then the app. Python and UxPlay load
 # libraries this team didn't sign, so they get the app's entitlements (library validation off).
-sign() { codesign --force --timestamp=none --options runtime --sign "$IDENTITY" "$@"; }
+TIMESTAMP=--timestamp=none
+[[ "$IDENTITY" == Developer\ ID* ]] && TIMESTAMP=--timestamp  # notarization needs a secure timestamp
+sign() { codesign --force $TIMESTAMP --options runtime --sign "$IDENTITY" "$@"; }
 while IFS= read -r -d '' f; do
   if file -b "$f" | grep -q "Mach-O"; then
     if [[ -x "$f" && "$f" != *.dylib && "$f" != *.so ]]; then sign --entitlements "$ENT" "$f"; else sign "$f"; fi
@@ -36,5 +40,14 @@ sign --entitlements "$ENT" "$APP"
 codesign --verify --deep --strict "$APP" && echo "signed: $(codesign -dv "$APP" 2>&1 | grep Authority= | head -1)"
 
 hdiutil create -quiet -fs HFS+ -volname "Phone Use" -srcfolder "$APP" -ov -format UDZO "$OUT/PhoneUse.dmg"
+if [[ "$IDENTITY" == Developer\ ID* ]]; then
+  # Notary credentials: `xcrun notarytool store-credentials phoneuse-notary` with the App Store Connect key
+  codesign --force --timestamp --sign "$IDENTITY" "$OUT/PhoneUse.dmg"
+  xcrun notarytool submit "$OUT/PhoneUse.dmg" --keychain-profile "${NOTARY_PROFILE:-phoneuse-notary}" --wait
+  xcrun stapler staple "$OUT/PhoneUse.dmg"
+  spctl --assess --type open --context context:primary-signature -v "$OUT/PhoneUse.dmg"
+else
+  echo "not notarized: signed ad hoc, so it runs on this Mac only (no Developer ID Application certificate)"
+fi
 echo "$APP"
 echo "$OUT/PhoneUse.dmg ($(du -h "$OUT/PhoneUse.dmg" | cut -f1))"
