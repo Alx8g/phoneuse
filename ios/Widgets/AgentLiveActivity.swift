@@ -27,7 +27,7 @@ struct AgentLiveActivity: Widget {
                     StateCard(state: s).padding(.horizontal, 4).padding(.bottom, 4)
                 }
             } compactLeading: {
-                StateIcon(state: s, size: 22)
+                StateIcon(state: s, size: 22).steadyInIsland()
             } compactTrailing: {
                 switch look {
                 case .asking:
@@ -49,7 +49,7 @@ struct AgentLiveActivity: Widget {
                     EmptyView()
                 }
             } minimal: {
-                StateIcon(state: s, size: 22)
+                StateIcon(state: s, size: 22).steadyInIsland()
             }
         }
     }
@@ -162,6 +162,19 @@ struct StateIcon: View {
         .frame(width: size, height: size)
     }
 
+}
+
+extension View {
+    /// Keeps a compact or minimal island view in place on every update: a fixed frame, and no system update
+    /// animation, insertion transition or content transition on the container. Animations set inside (the ring's
+    /// turn, the robot's pose) still run, since they're applied below this transaction.
+    func steadyInIsland() -> some View {
+        frame(width: 22, height: 22, alignment: .center)
+            .fixedSize()
+            .contentTransition(.identity)
+            .transition(.identity)
+            .transaction { $0.animation = nil }
+    }
 }
 
 /// Every state's expanded and lock-screen layout.
