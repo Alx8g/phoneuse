@@ -18,7 +18,8 @@ the full list.
 2. No mirror window: check whether `phoneuse up` is running. If it isn't, start it
    somewhere the user can see it (a terminal or tmux window they use), not hidden in
    the background. "not mirroring" (or no window): ask the user to start Screen
-   Mirroring to "PhoneUse" from the iPhone's Control Center. You can't start
+   Mirroring to this PC's receiver ("PhoneUse on <computer>"; `phoneuse status`
+   names it) from the iPhone's Control Center. You can't start
    mirroring from the PC, and every input command refuses until it runs.
 3. **Show the user the phone** before your first action, so they can watch what
    you do: open http://localhost:8777 (`phoneuse view --print` prints the address).

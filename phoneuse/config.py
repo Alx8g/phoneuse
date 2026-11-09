@@ -2,7 +2,7 @@
 
 Example config.toml:
 
-    name = "PhoneUse"                 # Bluetooth device and AirPlay receiver name
+    name = "PhoneUse"                 # AirPlay receiver name (default: "PhoneUse on <this computer>")
     screen_points = [402, 874]       # your iPhone's screen in points (iPhone 17 Pro)
     decoder = "auto"                 # GStreamer H.264 decoder; auto picks NVDEC if present
     mirror_width = 498               # mirror window width in logical pixels
@@ -12,6 +12,7 @@ Example config.toml:
 """
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -19,8 +20,34 @@ import tomllib
 
 MACOS = sys.platform == "darwin"
 
+
+def computer_name():
+    """This computer's name as people see it: macOS's Computer Name, the pretty hostname
+    (hostnamectl) on Linux, else the short hostname."""
+    if sys.platform == "darwin":
+        try:
+            n = subprocess.run(["scutil", "--get", "ComputerName"], capture_output=True, text=True,
+                               timeout=2).stdout.strip()
+            if n:
+                return n
+        except (OSError, subprocess.SubprocessError):
+            pass
+    try:
+        with open("/etc/machine-info") as f:
+            for line in f:
+                if line.startswith("PRETTY_HOSTNAME="):
+                    n = line.split("=", 1)[1].strip().strip('"')
+                    if n:
+                        return n
+    except OSError:
+        pass
+    return socket.gethostname().split(".")[0]
+
+
 DEFAULTS = {
-    "name": "PhoneUse",
+    # Each computer's receiver gets its own name, so two on one network don't show up in
+    # Screen Mirroring as "PhoneUse" and "PhoneUse (2)".
+    "name": f"PhoneUse on {computer_name()}",
     "screen_points": [402, 874],
     "decoder": "auto",
     "mirror_width": 498,
