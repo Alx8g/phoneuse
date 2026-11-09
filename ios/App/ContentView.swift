@@ -19,7 +19,7 @@ struct ContentView: View {
         .alert("Mirror again", isPresented: $model.askRemirror) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Open Control Center, tap Screen Mirroring, and choose PhoneUse.")
+            Text("Open Control Center, tap Screen Mirroring, and choose \(model.state?.pc.receiverName ?? "PhoneUse").")
         }
     }
 }
@@ -94,7 +94,7 @@ struct SettingsView: View {
                     }
                     .accessibilityIdentifier("audio")
                     if s.audio.needsRemirror == true {
-                        Label("Start Screen Mirroring to PhoneUse again.", systemImage: "airplayvideo")
+                        Label("Start Screen Mirroring to \(s.pc.receiverName) again.", systemImage: "airplayvideo")
                             .foregroundStyle(.orange)
                     }
                 } header: { Text("Mirror") } footer: {
