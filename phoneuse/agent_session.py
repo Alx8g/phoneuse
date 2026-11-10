@@ -41,6 +41,8 @@ ASK_WAIT = 120.0  # s a request in "ask" access waits for an answer
 #   ask        Ask every time: the agent waits for the owner's Allow (up to ASK_WAIT)
 START_FILE = os.path.join(os.path.dirname(config_path()), "agent-start.json")
 START_MODES = ("auto", "countdown", "ask")
+# Until the owner chooses: an agent waits a few seconds before it takes the phone, and the owner can stop it.
+DEFAULT_MODE = "countdown"
 _OLD_FLAG = os.path.join(os.path.dirname(config_path()), "ask-before-session")  # before agent-start.json
 
 
@@ -53,12 +55,12 @@ def start_setting():
         d = {"mode": "ask"} if os.path.exists(_OLD_FLAG) else {}
         if d:
             set_start_setting("ask")  # moved into agent-start.json, once
-    mode = d.get("mode") if d.get("mode") in START_MODES else "auto"
+    mode = d.get("mode") if d.get("mode") in START_MODES else DEFAULT_MODE
     return {"mode": mode, "seconds": int(min(30, max(5, d.get("seconds", 10))))}
 
 
 def set_start_setting(mode=None, seconds=None):
-    cur = {"mode": "auto", "seconds": 10}
+    cur = {"mode": DEFAULT_MODE, "seconds": 10}
     try:
         with open(START_FILE) as f:
             cur.update(json.load(f))
