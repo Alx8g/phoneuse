@@ -27,15 +27,13 @@
   #gear { position: fixed; z-index: 10; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%;
           display: grid; place-items: center; color: rgba(255, 255, 255, .62); }
   #gear:hover, #gear[aria-expanded="true"] { color: #fff; }
-  #kbd { position: fixed; z-index: 10; top: 14px; left: 14px; height: 34px; padding: 0 14px 0 12px; border-radius: 99px;
-         display: flex; align-items: center; gap: 9px; font-size: 14px; color: rgba(255, 255, 255, .85); }
-  #awake .sw, #kbd .sw, #bUse .sw, #askSession .sw { width: 34px; height: 20px; border-radius: 99px; background: rgba(120, 120, 128, .4); position: relative;
+  #awake .sw, #bUse .sw, #askSession .sw { width: 34px; height: 20px; border-radius: 99px; background: rgba(120, 120, 128, .4); position: relative;
              transition: background .2s; }
-  #awake .sw::after, #kbd .sw::after, #bUse .sw::after, #askSession .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  #awake .sw::after::after, #bUse .sw::after, #askSession .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
                     background: #fff; transition: transform .2s; }
   #awake .sw, #bUse .sw, #askSession .sw { flex: none; }
-  #awake[aria-checked="true"] .sw, #kbd[aria-checked="true"] .sw, #bUse[aria-checked="true"] .sw, #askSession[aria-checked="true"] .sw { background: #30d158; }
-  #awake[aria-checked="true"] .sw::after, #kbd[aria-checked="true"] .sw::after, #bUse[aria-checked="true"] .sw::after, #askSession[aria-checked="true"] .sw::after { transform: translateX(14px); }
+  #awake[aria-checked="true"] .sw, #bUse[aria-checked="true"] .sw, #askSession[aria-checked="true"] .sw { background: #30d158; }
+  #awake[aria-checked="true"] .sw::after, #bUse[aria-checked="true"] .sw::after, #askSession[aria-checked="true"] .sw::after { transform: translateX(14px); }
   /* who controls the phone: the agent (glow + pill with Take over) or the owner */
   #takeover { position: fixed; z-index: 10; top: 14px; right: 58px; height: 34px; padding: 0 5px 0 14px; border-radius: 99px;
               font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 230px);
@@ -154,10 +152,6 @@
 </style>
 </head>
 <body>
-<button id="kbd" class="glass" title="Show or hide the iPhone's on-screen keyboard (iOS hides it while a Bluetooth keyboard is connected)">
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.75"><rect x="2" y="6" width="20" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
-  <span>Show or hide keyboard</span>
-</button>
 <div id="btDown" class="glass" hidden><span class="dot"></span>Bluetooth not connected</div>
 <button id="takeover" class="glass idle" hidden aria-live="polite"><span class="dot"></span><span id="takeoverLabel">You're in control</span><span class="what" id="agentWhat"></span><span class="act" id="takeoverAct"></span></button>
 <button id="gear" class="glass" title="Settings" aria-label="Settings" aria-expanded="false">
@@ -656,16 +650,6 @@ async function answer(approve) {
 document.getElementById("approve").onclick = () => answer(true);
 document.getElementById("deny").onclick = () => answer(false);
 
-// The iPhone's own keyboard hides while phoneuse's Bluetooth keyboard is
-// connected; the button shows or hides it (Eject).
-const kbd = document.getElementById("kbd");
-// iOS doesn't report whether its keyboard shows, so this is a button (Eject), not a
-// switch that could claim the wrong state.
-kbd.onclick = async () => {
-  kbd.disabled = true;
-  await fetch("/api/keyboard", { method: "POST" }).catch(() => {});
-  kbd.disabled = false;
-};
 
 // Keep screen awake: the server nudges the pointer about once a second while
 // nobody else uses the phone, so Auto-Lock never fires.

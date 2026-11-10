@@ -769,17 +769,6 @@ def app(mirror):
         mirror.session.set_phase(phase)
         return web.json_response({"ok": True})
 
-    async def keyboard(req):
-        # The page's keyboard button: Eject shows or hides the on-screen keyboard.
-        if not same_origin(req):
-            return web.Response(status=403)
-        try:
-            await asyncio.get_running_loop().run_in_executor(None, mirror.get_hid().cmd, "eject")
-            return web.json_response({"ok": True})
-        except Exception as e:
-            mirror.hid = None
-            return web.json_response({"ok": False, "error": str(e)}, status=503)
-
     async def agent_cursor(req):
         # Where the agent points or touches, for the page's glowing dot.
         b = await req.json()
@@ -813,7 +802,6 @@ def app(mirror):
     a.router.add_post("/api/agent/takeover", agent_takeover)
     a.router.add_post("/api/agent/cursor", agent_cursor)
     a.router.add_post("/api/agent/done", agent_done)
-    a.router.add_post("/api/keyboard", keyboard)
     a.router.add_route("*", "/api/awake", awake)
     from .bridge_web import BridgeRoutes
     bridges = BridgeRoutes(same_origin)
