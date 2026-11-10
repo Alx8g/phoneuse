@@ -84,7 +84,8 @@ remove them.
 **Push notifications need a relay.** The PC sends Live Activity updates and notifications with an APNs key
 (`.p8`), which belongs to the developer account and can't ship inside an app. A small relay service on our side
 holds the key; each PC authenticates with its pairing to a phone and asks the relay to send. The companion app
-works without pushes (it reads the PC's state while open), so the relay can follow the first builds.
+works without pushes (it reads the PC's state while open), so the relay can follow the first builds. The
+proposed design is in [PUSH-RELAY.md](PUSH-RELAY.md).
 
 **The agent gate trusts a process's command line.** The HID daemon treats any process started as
 `python -m phoneuse.web` as the owner. On a single-user desktop any program the user runs can claim that. The
