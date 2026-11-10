@@ -649,9 +649,7 @@ class BridgeSetup(Adw.Dialog):
         if err or (j or {}).get("error"):
             return self._error("Find the Bridge", str(err or j["error"]), self.find)
         if not j["bridges"]:
-            return self._error("Find the Bridge", "No bridge is ready to set up. Check that the bridge has power and is "
-                               "near this PC. A new bridge is ready by itself. One that was set up before needs its "
-                               "lower button held for 3 seconds first.",
+            return self._error("Find the Bridge", "No bridge found. Hold the bridge's lower button for 3 seconds, then try again.",
                                self.find)
         g = Adw.PreferencesGroup(description="Choose the bridge to set up.")
         for b in j["bridges"]:

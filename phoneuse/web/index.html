@@ -554,7 +554,7 @@ async function bridgeFind() {
   if (!j.bridges.length) {
     bview(`<button class="item" id="bAgain"><span class="grow link">Look Again</span></button>
            <button class="item" id="bBack"><span class="grow link">Cancel</span></button>`,
-          "No bridge is ready to set up. Check that the bridge has power and is near this PC. A new bridge is ready by itself. One that was set up before needs its lower button held for 3 seconds first.");
+          "No bridge found. Hold the bridge's lower button for 3 seconds, then try again.");
     on("#bAgain", bridgeFind); on("#bBack", bridgeShow);
     return;
   }
