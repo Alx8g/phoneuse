@@ -462,10 +462,10 @@ class Window(Adw.ApplicationWindow):
         self.forget_group.set_visible(bool(saved))
         self.forget_group.set_sensitive(running)
         self._pcbt_show(running)
-        firmware = nav_row("Install Firmware", "Over USB, for a new bridge or an update",
+        firmware = nav_row("Flash LilyGO T-Display", "Install the bridge firmware over USB",
                            lambda: FirmwareDialog(self).present(self))
         if not saved:
-            add(nav_row("Set Up Bridge", None, lambda: BridgeSetup(self).present(self)))
+            add(nav_row("Set Up Existing Bridge", None, lambda: BridgeSetup(self).present(self)))
             add(firmware)
             return
         st = b.get("status") or {}
@@ -666,12 +666,12 @@ class PairDialog(Adw.Dialog):
 
 
 class FirmwareDialog(Adw.Dialog):
-    """Install the bridge's firmware over USB: wait for a bridge to be plugged in, then write
-    the firmware this copy of Phone Use ships (bridge.install_firmware), with progress. The
-    bridge keeps its settings."""
+    """Flash a LilyGO T-Display over USB with the bridge firmware this copy of Phone Use ships:
+    wait for the board, confirm (flashing erases it: Wi-Fi, key, iPhone pairing), write it
+    (bridge.install_firmware) with progress, forget the old bridge here, then set it up."""
 
     def __init__(self, win):
-        super().__init__(title="Install Firmware", content_width=380, content_height=320)
+        super().__init__(title="Flash LilyGO T-Display", content_width=380, content_height=340)
         self.win, self.poll = win, None
         tv = Adw.ToolbarView()
         tv.add_top_bar(Adw.HeaderBar())
@@ -700,10 +700,11 @@ class FirmwareDialog(Adw.Dialog):
         for label, style, fn in actions:
             b = button(label, style, fn)
             b.set_halign(Gtk.Align.CENTER)
+            b.set_size_request(220, -1)  # equal buttons
             self.box.append(b)
 
     def wait_for_usb(self):
-        self._show("Plug the bridge into this PC with a USB cable.", spinner=True)
+        self._show("Plug the T-Display into this PC with a USB cable.", spinner=True)
 
         def look():
             from . import bridge
@@ -713,16 +714,23 @@ class FirmwareDialog(Adw.Dialog):
                 port = None
             if port:
                 self.poll = None
-                self.install(port)
+                self.confirm(port)
                 return False
             return True
         self.poll = GLib.timeout_add(1000, look)
+
+    def confirm(self, port):
+        version = self.firmware[1]
+        self._show(f"Found a board on {port}. Flashing installs bridge firmware {version} and erases the "
+                   "board: the bridge it was loses its Wi-Fi and its iPhone pairing, and you set it up again.",
+                   actions=[("Erase and Flash", "pill destructive-action", lambda: self.install(port)),
+                            ("Cancel", "pill", self.close)])
 
     def install(self, port):
         from . import bridge
         bar = Gtk.ProgressBar(margin_start=12, margin_end=12)
         version = self.firmware[1]
-        self._show(f"Installing firmware {version}…" if version else "Installing firmware…", bar=bar)
+        self._show(f"Flashing bridge firmware {version}…" if version else "Flashing…", bar=bar)
 
         def progress(frac):
             GLib.idle_add(lambda: (bar.set_fraction(frac), False)[1])
@@ -731,11 +739,12 @@ class FirmwareDialog(Adw.Dialog):
             if err:
                 return self._show(f"Couldn't install the firmware: {err}",
                                   actions=[("Try Again", "pill", self.wait_for_usb)])
-            saved = bridge.saved()
-            self._show("Firmware installed. The bridge restarts with its settings." if saved else
-                       "Firmware installed. You can unplug the bridge.",
-                       actions=[("Done", "pill suggested-action", self.close)] if saved else
-                       [("Set Up Bridge", "pill suggested-action", self._setup)])
+            if bridge.saved():  # its key is gone with the erase
+                api_quiet = lambda: api("/api/bridge", method="DELETE")
+                in_thread(api_quiet)
+            self._show("Flashed. Set the bridge up to use it. On the iPhone, forget PhoneUse Bridge in "
+                       "Bluetooth settings first if it's listed.",
+                       actions=[("Set Up Bridge", "pill suggested-action", self._setup)])
         in_thread(lambda: bridge.install_firmware(port, progress), done)
 
     def _setup(self):
@@ -816,7 +825,7 @@ class BridgeSetup(Adw.Dialog):
             return self._page("Find the Bridge", self._text("No bridge found. Hold the bridge's lower button for 3 "
                                                             "seconds, then try again."),
                               actions=[("Try Again", "pill", self.find),
-                                       ("Install Firmware", "pill", self._firmware)])
+                                       ("Flash LilyGO T-Display", "pill", self._firmware)])
         g = Adw.PreferencesGroup(description="Choose your bridge.")
         for b in j["bridges"]:
             g.add(nav_row(b.get("name") or "PhoneUse Bridge", b["address"], lambda a=b["address"]: self.pair(a)))

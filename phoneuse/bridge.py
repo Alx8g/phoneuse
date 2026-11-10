@@ -142,11 +142,12 @@ def release_firmware():
     return None
 
 
-def install_firmware(port, progress=None):
-    """Write the released firmware to the bridge on `port` with esptool. Only the bootloader,
-    the partition table and the app are written (from the merged image), so the bridge keeps
-    its settings: its Wi-Fi, its key, and whether it was forgotten. progress(fraction) is
-    called as it writes. Raises RuntimeError with esptool's reason."""
+def install_firmware(port, progress=None, keep_settings=False):
+    """Write the released firmware to the board on `port` with esptool. By default the whole
+    image goes on, which also erases the bridge's settings (its Wi-Fi, its key, its iPhone
+    pairing): a fresh bridge. keep_settings writes only the bootloader, the partition table
+    and the app, leaving nvs alone. progress(fraction) is called as it writes. Raises
+    RuntimeError with esptool's reason."""
     import re
     import tempfile
     found = release_firmware()
@@ -154,7 +155,8 @@ def install_firmware(port, progress=None):
         raise RuntimeError("this copy of Phone Use has no bridge firmware")
     with open(found[0], "rb") as f:
         image = f.read()
-    regions = [(0x1000, image[0x1000:0x9000]), (0x10000, image[0x10000:])]  # not 0x9000-0x10000: nvs, phy
+    regions = ([(0x1000, image[0x1000:0x9000]), (0x10000, image[0x10000:])] if keep_settings  # not nvs, phy
+               else [(0x0, image)])  # the merged image's gaps are 0xFF: nvs is erased too
     with tempfile.TemporaryDirectory() as d:
         args = []
         for i, (at, data) in enumerate(regions):
