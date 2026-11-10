@@ -303,15 +303,6 @@ class Window(Adw.ApplicationWindow):
         self.bridge_page.add(self.net_group)
 
 
-        # Forget, at the bottom of the tab, once a bridge is set up
-        self.forget_group = Adw.PreferencesGroup(visible=False)
-        forget = button("Forget Bridge…", "pill destructive-action", lambda: confirm(
-            self, "Forget the bridge?", "The bridge resets and disconnects from your iPhone. To use it again, hold "
-            "its lower button for 3 seconds and set it up.", "Forget",
-            lambda: in_thread(lambda: api("/api/bridge", method="DELETE"), self._bridge_forgotten)))
-        forget.set_halign(Gtk.Align.CENTER)
-        self.forget_group.add(forget)
-        self.bridge_page.add(self.forget_group)
 
     # ---- refresh ----
     def refresh(self):
@@ -461,8 +452,6 @@ class Window(Adw.ApplicationWindow):
             self.bridge_rows.append(r)
         saved = (b or {}).get("saved")
         self.bridge_group.set_sensitive(running)
-        self.forget_group.set_visible(bool(saved))
-        self.forget_group.set_sensitive(running)
         self._pcbt_show(running)
         firmware = nav_row("Flash LilyGO T-Display", "Install the bridge firmware over USB",
                            lambda: FirmwareDialog(self).present(self))
@@ -496,6 +485,10 @@ class Window(Adw.ApplicationWindow):
         net.connect("activated", lambda *_: BridgeSetup(self, change=True).present(self))
         add(net)
         add(firmware)
+        # Forget: the last row, like Unpair (the Mac and iPhone apps do the same)
+        forget = Adw.ActionRow(title="Forget Bridge", subtitle="Resets the bridge and disconnects it from your iPhone")
+        forget.add_suffix(button("Forget…", None, self._confirm_forget_bridge))
+        add(forget)
 
     # ---- this PC's Bluetooth ----
     def _pcbt_show(self, running):
@@ -581,6 +574,11 @@ class Window(Adw.ApplicationWindow):
             in_thread(claude_setup.connect, lambda _r, e: (
                 self.toast(f"Couldn't connect: {e}" if e else "Connected. New Claude Code sessions can use the "
                            "phone."), self.refresh()))
+
+    def _confirm_forget_bridge(self):
+        confirm(self, "Forget the bridge?", "The bridge resets and disconnects from your iPhone. To use it again, "
+                "hold its lower button for 3 seconds and set it up.", "Forget",
+                lambda: in_thread(lambda: api("/api/bridge", method="DELETE"), self._bridge_forgotten))
 
     def _bridge_forgotten(self, j, err):
         if err:
