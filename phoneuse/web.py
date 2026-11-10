@@ -819,7 +819,7 @@ def app(mirror):
     a.router.add_route("*", "/api/awake", awake)
 
     async def input_state(req):
-        # This PC's Bluetooth as a second way in (bluetooth_setup.py); the app's Puck tab.
+        # This PC's Bluetooth as a second way in (bluetooth_setup.py); the app's Bridge tab.
         from . import bluetooth_setup
         loop = asyncio.get_running_loop()
         if req.method == "POST":
