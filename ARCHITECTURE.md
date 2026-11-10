@@ -158,7 +158,7 @@ makes the phone bond first. Windows refuses to publish a connectable service tha
 isn't discoverable (measured: aborted), so the battery service is advertised too.
 The service speaks the Linux daemon's command protocol. Differences: the phone
 connects, never the PC (`connect` waits for the phone to come back), and reports
-go out once per connection interval. phoneuse asks Windows for throughput-
+go out once per connection interval. Phone Use asks Windows for throughput-
 optimized connection parameters and spaces reports at least one interval apart,
 since two reports in one connection event reach iOS a fraction of a millisecond
 apart and iOS drops pointer motion faster than ~8 ms. Each phone's drag table is
@@ -184,7 +184,7 @@ needed. It logs with `printf` and never flushes, which over a pipe would hold ba
 the "connection request from" line that tells the HID service which phone is
 mirroring; a forced-include header turns stdout buffering off (a compiler flag,
 no source change). UxPlay would take its AirPlay device ID from the first network
-adapter's MAC, often a Hyper-V adapter whose address changes, so phoneuse passes a
+adapter's MAC, often a Hyper-V adapter whose address changes, so Phone Use passes a
 fixed random one (`airplay-id` in the config directory).
 
 **Local services** (`ipc.py`) use TCP on 127.0.0.1 instead of unix sockets. Each

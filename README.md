@@ -74,7 +74,7 @@ The rest of this page covers running Phone Use from a checkout on Linux, with th
 
 | | Tested with |
 |---|---|
-| iPhone | iPhone 17 Pro, iOS 26 (phoneuse takes the screen size from the model) |
+| iPhone | iPhone 17 Pro, iOS 26 (Phone Use takes the screen size from the model) |
 | Linux with BlueZ | Arch Linux, BlueZ 5.87 |
 | Hyprland | 0.56 |
 | UxPlay | 1.73.7 |
@@ -152,7 +152,7 @@ describes the protocol.
 
 ## On Windows
 
-Windows can't act as a Bluetooth Classic keyboard, so on Windows phoneuse is a
+Windows can't act as a Bluetooth Classic keyboard, so on Windows Phone Use is a
 Bluetooth LE keyboard and mouse instead (HID over GATT, through the Windows
 Runtime). It uses the PC's own Bluetooth adapter, needs no driver and no admin
 rights, and Windows keeps using the adapter for everything else. The mirror window is
@@ -176,12 +176,12 @@ the browser mirror in a window of its own.
    allows the local network only), puts `bin` on your PATH and downloads the models
    that read the screen (`-NoVision` skips them). It ends with `phoneuse doctor`,
    which checks each part and says how to fix what is missing.
-2. **Start phoneuse:** run `phoneuse up`. The mirror window opens. Then, on the
-   iPhone, open Control Center, tap Screen Mirroring and choose **PhoneUse**.
+2. **Start Phone Use:** run `phoneuse up`. The mirror window opens. Then, on the
+   iPhone, open Control Center, tap Screen Mirroring and choose **Phone Use on <your computer>**.
 3. **Pair**, once: on the iPhone, open Settings › Bluetooth and tap this PC's Windows
-   name, such as `DESKTOP-…` (Windows doesn't let phoneuse choose its Bluetooth LE
+   name, such as `DESKTOP-…` (Windows doesn't let Phone Use choose its Bluetooth LE
    name). Confirm on the phone, and on Windows if it asks.
-4. **Turn on the pointer** as on Linux. The first time, phoneuse measures the phone's
+4. **Turn on the pointer** as on Linux. The first time, Phone Use measures the phone's
    pointer: over Bluetooth LE every phone needs that measurement.
 
 How it differs from Linux:
@@ -191,8 +191,8 @@ How it differs from Linux:
   when `phoneuse up` stops, and the next `phoneuse up` uses it again. Each time the
   service starts, the iPhone sees its Bluetooth services disappear and come back, and
   one iPhone stopped using them until it was paired again. `phoneuse down` stops it.
-- Pair only the phone that phoneuse should control. Over Bluetooth LE, iOS may give
-  its name as just "iPhone", so when two paired phones are connected phoneuse can't
+- Pair only the phone that Phone Use should control. Over Bluetooth LE, iOS may give
+  its name as just "iPhone", so when two paired phones are connected Phone Use can't
   tell which one is mirroring, and it sends nothing.
 - A motherboard's Wi-Fi and Bluetooth card needs its antennas, even if the PC uses
   Ethernet. Without them the phone was heard at about -90 dBm next to the PC, the
