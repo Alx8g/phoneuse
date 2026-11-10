@@ -1,7 +1,7 @@
 # Phone Use privacy policy
 
 Phone Use lets your own computer see and use your iPhone, so that you, and AI agents you choose, can operate it. This
-page covers the Phone Use iPhone app and the Phone Use apps for Mac and Linux. Last updated November 10, 2026.
+page covers the Phone Use iPhone app and the Phone Use apps for Mac and Linux. Last updated November 9, 2026.
 
 ## The short version
 
