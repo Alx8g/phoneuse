@@ -16,13 +16,14 @@ import os
 import secrets
 import socket
 import subprocess
+import threading
 import time
 import urllib.parse
 
 from aiohttp import web
 
-from . import apns, bluetooth_setup, bridge, phones, unlock
-from .config import MACOS, NAME, RUNTIME_DIR, config_path
+from . import apns, bluetooth_setup, bridge, phones, relay, unlock
+from .config import CFG, MACOS, NAME, RUNTIME_DIR, config_path
 
 PORT = 8778
 STORE = os.path.join(os.path.dirname(config_path()), "companion.json")
@@ -67,7 +68,9 @@ def forget(dev_id=None):
     d = load()
     gone = list(d["devices"]) if dev_id is None else [dev_id] if dev_id in d["devices"] else []
     for k in gone:
-        del d["devices"][k]
+        dev = d["devices"].pop(k)
+        if dev.get("relay"):  # the relay forgets this pairing's tokens too (best effort: they expire anyway)
+            threading.Thread(target=relay.unregister, args=(bytes.fromhex(dev["key"]),), daemon=True).start()
     if gone:
         save(d)
         log("unpaired", "every app" if dev_id is None else f"an app: {dev_id}")
@@ -435,6 +438,8 @@ class Companion:
         dev = d["devices"][req["device"]]
         if b.get("env") and b["env"] != dev.get("env"):
             dev.pop("token_env", None)  # another build: every token's environment is the app's again
+        if "relay" in b and bool(b["relay"]) != bool(dev.get("relay")):  # the app registered with the push relay
+            dev["relay"] = 1 if b["relay"] else 0
         for k in ("bundle_id", "env", "device", "push_to_start", "activity"):
             if b.get(k) and b[k] != dev.get(k):
                 dev[k] = b[k]
@@ -447,13 +452,26 @@ class Companion:
         return web.json_response({"ok": True})
 
     # ---- pushes ----
+    @staticmethod
+    def push_mode(dev):
+        """How to push to one paired app: "direct" (this PC's APNs key), "relay", or None."""
+        want = CFG.get("push", "auto")
+        if want in ("auto", "direct") and apns.configured():
+            return "direct"
+        if want in ("auto", "relay") and dev.get("relay"):
+            return "relay"
+        return None
+
     def _devices(self):
-        return [dev for dev in load()["devices"].values() if dev.get("bundle_id")]
+        return [dev for dev in load()["devices"].values() if dev.get("bundle_id") and self.push_mode(dev)]
 
     def _send(self, dev, field, token, payload, topic, push_type, priority=10):
         """Send to one of a device's tokens. A token from another build can belong to the
         other APNs environment (a TestFlight token on a development build): on
         BadDeviceToken, try the other one and remember it for that token."""
+        if self.push_mode(dev) == "relay":  # the relay picks the token and its environment itself
+            act = (dev.get("activity") or {}).get("id") if field == "activity" else None
+            return relay.send(bytes.fromhex(dev["key"]), payload, push_type, field, priority, act)
         envs = dev.get("token_env", {})
         env = envs.get(field) or dev.get("env", "production")
         r = apns.send(token, payload, topic, push_type, env, priority)
@@ -471,8 +489,6 @@ class Companion:
 
     def push_request_over(self, kind, rid):
         """Tell the app a session or unlock request is over, so it removes its notification."""
-        if not apns.configured():
-            return
         for dev in self._devices():
             if dev.get("device"):
                 r = self._send(dev, "device", dev["device"],
@@ -483,8 +499,6 @@ class Companion:
     def push_session(self, rid, action):
         """The notification is the fallback: a phone with a live activity gets the
         request there (state "asking"), not twice."""
-        if not apns.configured():
-            return
         for dev in self._devices():
             if dev.get("device") and not (dev.get("activity") or {}).get("token"):
                 p = self.mirror.sessions.pending or {}
@@ -499,8 +513,6 @@ class Companion:
                 log("session request push:", r)
 
     def push_unlock(self, rid):
-        if not apns.configured():
-            return
         for dev in self._devices():
             if dev.get("device"):
                 r = self._send(dev, "device", dev["device"], {"aps": {"alert": {"title": "Unlock the iPhone?",
@@ -518,7 +530,7 @@ class Companion:
         stops. An activity the app or iOS ended is started again by push."""
         while True:
             await asyncio.sleep(0.5)
-            if not apns.configured():
+            if not self._devices():
                 continue
             want = self._activity_state()
             urgent = bool(want and self.sent and want[0] != self.sent[0])  # a new state goes out at once
@@ -624,7 +636,7 @@ class Companion:
                    for i, dev in self._devices_by_id().items() if dev.get("push_to_start"))
 
     def _devices_by_id(self):
-        return {i: dev for i, dev in load()["devices"].items() if dev.get("bundle_id")}
+        return {i: dev for i, dev in load()["devices"].items() if dev.get("bundle_id") and self.push_mode(dev)}
 
     def _send_activity(self, want):
         m, before = self.mirror, self.sent

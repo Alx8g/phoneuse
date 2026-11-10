@@ -6,6 +6,8 @@ The iOS app and Live Activity described in [docs/COMPANION.md](../docs/COMPANION
 
 - `App/`: the app (pairing, the settings screen, push tokens, notification actions).
 - `Widgets/`: the Live Activity and Dynamic Island views.
+- `NotificationService/`: opens the sealed text of request notifications sent through the push relay
+  ([docs/PUSH-RELAY.md](../docs/PUSH-RELAY.md)).
 - `Shared/`: code both targets use: request signing and sealing (`CompanionCrypto`), the client, the pairing
   (Keychain), the activity's attributes and intents, and the driving robot (`Robot.swift`).
 - `mock/`: a Python mock of the PC's API for tests, with fixed crypto vectors.
@@ -32,7 +34,8 @@ A Debug build uses the sandbox APNs environment and registers with the PC as `"e
   update the development profiles itself; without it, xcodebuild uses the Apple ID signed in to Xcode.
 - Release signs manually with the "PhoneUse AppStore" and "PhoneUse Widgets AppStore" profiles (Apple
   Distribution, team 9592R2Q8PP), for TestFlight. Those profiles predate the time-sensitive notification
-  entitlement; regenerate them before the next upload.
+  entitlement; regenerate them before the next upload, and add "PhoneUse Notifications AppStore" for
+  `co.lxe.phoneuse.notifications`.
 - A TestFlight (production) install and a development install get different push tokens, and iOS can keep
   handing a reinstalled build the old push-to-start token. Deleting the app and installing again fixes that;
   the pairing survives, because it's also kept in the Keychain.

@@ -1,49 +1,40 @@
-# Push relay (design proposal)
+# Push relay
 
-Status: proposal, nothing built. It answers the "Push notifications need a relay" item in
-[PACKAGING.md](PACKAGING.md).
+Released copies of Phone Use (the Mac DMG, the Flatpak) send Apple push notifications to the companion app
+through a relay that holds the APNs key, because the key can't ship inside them. The relay is a Cloudflare
+Worker at `https://phoneuse-push.lxe.workers.dev`; its code is in [`relay/`](../relay). The PC's side is
+`phoneuse/relay.py`, and the app's side is `ios/Shared/PushRelay.swift`.
 
-## The problem
+## Why
 
-The PC signs its own APNs requests (`phoneuse/apns.py`) with `~/.config/phoneuse/apns.json` and an
-`AuthKey_*.p8` from lxe's Apple developer team. Only lxe's PC has that key, and it can't ship inside the Mac DMG
-or the Flatpak: anyone who unpacked it could push anything to every Phone Use install. So on released copies
-`apns.configured()` is false and every push in `companion.py` is skipped:
+The PC used to sign every APNs request itself (`phoneuse/apns.py`) with `~/.config/phoneuse/apns.json` and an
+`AuthKey_*.p8` from lxe's Apple developer team. APNs accepts pushes for `co.lxe.phoneuse` only when they're
+signed with a key from that team, and anyone who unpacked a download containing the key could push anything to
+every Phone Use install. So without the relay, released copies send no pushes at all:
 
-| Push | Sent by | APNs topic and type | What the owner loses without it |
-|---|---|---|---|
-| Live Activity start | `_send_activity` | `co.lxe.phoneuse.push-type.liveactivity`, `liveactivity` | The robot doesn't appear unless the app is opened while mirroring |
-| Live Activity update and end | `_send_activity`, every 1 s while driving | same | The activity freezes; Take over still works, the state it shows is stale |
-| Session request | `push_session` | `co.lxe.phoneuse`, `alert` | No Allow/Deny prompt while the app is closed |
-| Unlock request | `push_unlock` | same, `alert` | No Unlock/Deny prompt |
-| Request over | `push_request_over` | same, `background` | Stale request notifications stay on the lock screen |
+| Push | Sent by | What the owner loses without it |
+|---|---|---|
+| Live Activity start | `_send_activity` | The robot doesn't appear unless the app is opened while mirroring |
+| Live Activity update and end | `_send_activity`, every 1 s while driving | The activity freezes on stale state |
+| Session request | `push_session` | No Allow/Deny prompt; with "After a delay", the agent takes the phone unseen |
+| Unlock request | `push_unlock` | No Unlock/Deny prompt |
+| Request over | `push_request_over` | Answered request notifications stay on the lock screen |
 
-The app still works when it's open, because it reads `GET /v1/state` over the LAN. Everything that has to
-reach a phone in a pocket goes through APNs, and APNs only accepts pushes for `co.lxe.phoneuse` signed with a
-key from team `9592R2Q8PP`.
+The app still works while it's open, because it reads `GET /v1/state` over the LAN. Anything that has to reach
+a phone in a pocket goes through APNs, since iOS suspends the app soon after it leaves the screen.
 
-## Recommendation
+## How a PC picks a path
 
-Run a small relay on **Cloudflare Workers** (with Workers KV) that holds the APNs key as a Worker secret.
+`push` in `config.toml`:
 
-- **Authorization.** The app registers its push tokens with the relay itself, under an id and a secret that
-  both sides derive from the pairing key. The PC signs each push request with that secret, and names a token
-  *slot* (device, push-to-start, or the current activity) instead of a token. The relay therefore pushes only to
-  tokens the app registered, and only for a PC that holds that pairing's key.
-- **Privacy.** The PC seals every payload's content with a key derived from the pairing key. The relay builds
-  the APNs payload from fixed templates and never sees agent actions, step counts, request ids, or the PC's
-  name. The widget decrypts the Live Activity state when it renders, and a new Notification Service Extension
-  decrypts alerts.
-- **Cost.** lxe's own use fits Cloudflare's free plan (100,000 requests a day). Opening it to the public moves
-  to Workers Paid at **$5 a month**, which covers roughly 40 heavy users before overage, then about **$0.07 per
-  heavy user per month** (estimate below). APNs itself is free.
-- **Migration.** Direct pushes stay for any PC that has `apns.json` (lxe's machine, people who build the app
-  under their own team). Released PCs use the relay once the paired app reports that it registered there.
+- **`auto`** (the default): this PC's own key when `apns.json` exists, as before. Otherwise the relay, for each
+  paired app that told the PC it registered there. Otherwise no pushes.
+- **`direct`**, **`relay`** or **`off`** force one path.
 
-One thing needs a spike before committing: APNs requires HTTP/2, and whether a Worker's `fetch()` to
-`api.push.apple.com` negotiates it has to be tested. The existence of a Workers-targeted APNs client
-([@fivesheepco/cloudflare-apns2](https://npmjs.com/package/@fivesheepco/cloudflare-apns2)) suggests it does.
-If it doesn't, option B below (a small VM) is the fallback, and the protocol in this doc doesn't change.
+The app tells the PC with `"relay": 1` in `POST /v1/push` (docs/COMPANION.md, "Push"), sent only after the
+relay accepted its tokens. An app too old to register never sends it, so the PC never uses the relay for a phone
+the relay doesn't know. Direct pushes stay for anyone who builds the app under their own team and bundle id:
+the relay serves `co.lxe.phoneuse` only.
 
 ## Keys and ids
 
@@ -56,135 +47,120 @@ Everything comes from the 32-byte pairing key `K` the app and PC already share, 
 | Relay id `rid` | first 16 bytes of SHA-256(R), hex | app, PC, relay |
 | Push seal key `S` | HKDF(K, info `"phoneuse push seal"`) | app (and its extensions), PC |
 
-The relay learns `R` but can't get `K` or `S` from it, so it can authenticate pushes without being able to
-read them. Because `rid` is a hash of `R`, the relay can check at first registration that the id and the key
-belong together, and nobody can claim an id without the key. No new step is added to pairing: both sides
-compute these values from the key they already have, and a new pairing gives a new `rid`.
+The relay learns `R`, but it can't get `K` or `S` from it, so it can check who's pushing without being able
+to read what's sealed. Because `rid` is a hash of `R`, the relay checks at the first registration that the id
+and the key belong together, so nobody can claim an id without the key. Pairing itself is unchanged: both sides
+compute these values from the key they already have, and a new pairing gives a new `rid`. A PC with two paired
+phones has two `rid`s.
 
-Each pairing is one PC and one phone, so a PC with two paired phones has two `rid`s and sends each push twice,
-as it loops over `devices` today.
+`ios/Tests/CompanionCryptoTests.swift` checks the Swift derivation and sealing against values from
+`relay.py`.
 
 ## Relay API
 
-Base URL: `https://push.lxe.co` (or a `workers.dev` name, see open questions). Requests carry the same
-`X-PU-Time`, `X-PU-Nonce` and `X-PU-Sig` headers as the companion API ([COMPANION.md](COMPANION.md), "Signing
-requests"), keyed with `R` instead of `K`. The relay refuses a request more than 60 s off.
+Requests carry the companion API's `X-PU-Time`, `X-PU-Nonce` and `X-PU-Sig` headers (docs/COMPANION.md,
+"Signing requests"), keyed with `R`. The relay refuses a request whose time is more than 60 s off.
 
 ### `PUT /v1/phones/{rid}` (the app)
 
 ```json
-{"key": "<R, base64url; only on the first registration>",
+{"key": "<R, base64url; only when the relay answered 404>",
  "bundle_id": "co.lxe.phoneuse", "env": "sandbox | production",
  "device": "<hex>", "push_to_start": "<hex>", "activity": {"id": "…", "token": "<hex>"}}
 ```
 
-The fields mirror the app's `POST /v1/push` to the PC. If the relay doesn't know `rid`, it requires `key`,
-checks `SHA-256(key)[:16] == rid` and the signature, and stores the key. Later registrations must not carry
-`key`; they are only checked against the stored one. The relay accepts only bundle id `co.lxe.phoneuse` and
-skips the KV write when nothing changed, because the app re-sends all its tokens every time it becomes active.
-A registration that isn't refreshed for 30 days expires.
+The app sends the same fields as its `POST /v1/push` to the PC, every time it sends those. The first
+registration of a pairing gets 404, and the app sends it again with `key`. The relay checks
+`SHA-256(key)[:16] == rid` and the signature before it stores the key; later registrations are checked against
+the stored key. The relay writes to KV only when something changed, or once a week, and a registration that
+isn't refreshed for 30 days expires.
 
 ### `DELETE /v1/phones/{rid}` (the app or the PC)
 
-Forgets the registration. The app calls it when it unpairs, next to `DELETE /v1/pairing`, and the PC calls it on
-`phoneuse app unpair`.
+Forgets the registration. The app calls it when it unpairs, after `DELETE /v1/pairing`. The PC calls it when it
+forgets an app that had registered (`phoneuse app unpair`, or the app unpairing itself).
 
 ### `POST /v1/push/{rid}` (the PC)
 
 ```json
 {"kind": "activity-start | activity-update | activity-end | session | unlock | request-over",
- "activity_id": "…",
- "timestamp": 1762700000, "dismissal_date": 1762700010, "priority": 10,
- "frame": 41, "updated_at": 1762700000.25,
+ "activity_id": "…", "timestamp": 1762700000, "dismissal_date": 1762700010,
+ "state": {"state": "driving", "phase": "acting", "steps": 12, "requestId": "", "deadline": null,
+           "startedAt": 1762699000, "updatedAt": 1762700000.25, "frame": 41},
+ "attributes": "<sealed {pcName}>", "alert": "ask | warning",
+ "id": "<session or unlock request id>", "over": "session | unlock",
  "sealed": "<base64 of nonce(12) | ciphertext | tag(16)>"}
 ```
 
-`kind` picks the APNs topic, push type, token slot and payload template. The PC never sends a token, so it can
-only reach the slots the app registered. For activity updates, `activity_id` must match the registered activity,
-so a PC that missed a new activity can't push to an old token. The relay answers with APNs's result,
-`{"status": 200}` or `{"status": 410, "reason": "Unregistered"}`, and drops a token that APNs reports gone, so
-the PC keeps its current logic for forgetting an ended activity.
+Each kind uses only its own fields. `kind` picks the APNs topic, push type, token slot and payload template. The
+PC never sends a token, so it can only reach the tokens the app registered; for activity updates and ends,
+`activity_id` must name the registered activity. The relay answers `{"status", "reason"}` with APNs's result,
+or with 410 `NoActivity` or `NoToken` when it has no such token. It drops a token APNs reports gone, and the
+activity's token after an end, so the PC's existing handling of ended activities works unchanged. Like the
+PC's direct path, it retries a `BadDeviceToken` in the other APNs environment and remembers which one worked.
 
-The relay also handles the `BadDeviceToken` retry against the other APNs environment that `_send` does today,
-and remembers the environment per slot.
+`phoneuse/relay.py` builds this body from the same APNs payload `companion.py` builds for the direct path, so
+the push logic in `companion.py` is shared by both.
 
-### Payload templates
+### What the relay sends to APNs
 
-The relay fills in only fixed text and the few plain fields above:
-
-| `kind` | APNs payload the relay sends |
+| `kind` | Payload |
 |---|---|
-| `activity-start` | `event: "start"`, `attributes-type: "AgentActivityAttributes"`, `attributes: {"pcName": "", "sealed": …}`, `content-state: {"sealed": …, "frame", "updatedAt"}`, `alert: {"title": "Phone Use", "body": "Mirroring to your computer"}` |
-| `activity-update` | `event: "update"`, the same `content-state`; with an `alert` ("Phone Use", "An agent asks to use your iPhone") when the PC flags `"alert": true` |
-| `activity-end` | `event: "end"`, the same `content-state`, `dismissal-date` |
-| `session` | `alert: {"title": "Phone Use", "body": "An agent asks to use your iPhone"}`, `category: "SESSION"`, `interruption-level: "time-sensitive"`, `mutable-content: 1`, `sealed` |
-| `unlock` | `alert: {"title": "Unlock the iPhone?", "body": "An agent asks to enter your saved passcode."}`, `category: "UNLOCK"`, `mutable-content: 1`, `sealed` |
-| `request-over` | `content-available: 1`, priority 5, `sealed` |
+| `activity-start` | `event: "start"`, `attributes: {"pcName": "", "sealed"}`, the content state, and the alert "Phone Use" / "Mirroring to your computer" |
+| `activity-update` | `event: "update"`, the content state; with `alert: "ask"` or `"warning"`, a fixed alert ("An agent asks to use your iPhone", "Phone Use needs your attention") |
+| `activity-end` | `event: "end"`, the content state, `dismissal-date` |
+| `session` | the alert "Phone Use" / "An agent asks to use your iPhone", category `SESSION`, time-sensitive, `mutable-content: 1`, `session_id`, `sealed` |
+| `unlock` | the alert "Unlock the iPhone?" / "An agent asks to enter your saved passcode.", category `UNLOCK`, `mutable-content: 1`, `unlock_id`, `sealed` |
+| `request-over` | `content-available: 1`, priority 5, `request_over: {kind, id}` |
 
-Templates keep lxe's key from carrying arbitrary text: a modified PC can push to its own phone only, and only
-these notifications.
+The content state is the plain `state` fields, type-checked, plus `sealed`. Because the relay fills in fixed
+text, a modified PC can use lxe's key only to send these notifications, and only to its own phone.
 
 ## Payload privacy
 
-The relay sees the `rid`, the kind of push, when it's sent, the `frame` counter and its size. That tells it
-when an agent is working on someone's phone and for how long, but nothing about what the agent does. The
-relay keeps no log of request bodies; its logs hold `rid`, kind, APNs status and time.
+The relay never sees what an agent does. The agent's action, a bridge warning's text, the PC's own alert text
+("Agent taking control in 10 s") and the PC's name are sealed with `S` (AES-256-GCM, a fresh 12-byte nonce,
+associated data `activity`, `attributes` or `alert`).
 
-Everything else goes in `sealed`: AES-256-GCM with key `S`, the `kind` as associated data, a fresh 12-byte
-nonce, the same format as the companion API's sealed secrets.
+These fields stay plain, because the app needs them even when it can't decrypt: the activity's `state`,
+`phase`, step count, `requestId`, `deadline`, `startedAt`, `updatedAt` and `frame`, and the session and unlock
+request ids. With them, the robot moves and Allow, Deny, Unlock and Take over work in every case. They tell the
+relay when an agent works on someone's phone, for how long and in how many steps, which the push timing shows
+anyway. Request ids are random and mean nothing outside the PC.
 
-- **Live Activity.** iOS decodes `content-state` into `AgentActivityAttributes.ContentState` without running any
-  app code, so it can't be decrypted on arrival. The widget's views do run app code, though, and the widget
-  extension already has the pairing key (`Pairing.swift` and `CompanionCrypto.swift` are in its sources, and the
-  key is in the shared Keychain). `ContentState` gains an optional `sealed` field. When it's present, the
-  widget decrypts it into the existing fields (`state`, `phase`, `action`, `steps`, `requestId`, `deadline`,
-  `detail`, `startedAt`) at render time. `frame` and `updatedAt` stay plain because they're what make each 1 s
-  refresh new content, and they reveal nothing. The `pcName` attribute is sealed the same way. Decrypting a
-  few hundred bytes per render is cheap, but the spike should measure it on a real Dynamic Island.
-- **Alerts.** A new Notification Service Extension target receives `session` and `unlock` pushes (they have
-  `mutable-content: 1`), decrypts `sealed`, and replaces the generic title and body with the PC's text ("Agent
-  taking control in 10 s", the action), and puts `session_id` or `unlock_id` into `userInfo`. The existing
-  Allow, Deny and Unlock actions then work unchanged. If decryption fails, the owner sees the generic text,
-  and tapping it opens the app, which shows the request from `GET /v1/state`.
-- **Request over.** The app's `didReceiveRemoteNotification` decrypts `sealed` to get `{kind, id}`.
-- **System-drawn alerts** (the Live Activity start and the `asking` update) can't be decrypted, so they use
-  the fixed text above.
+On the phone:
 
-A relay could replay an old sealed state to the activity. That costs the owner a wrong picture for at most a
-second, since the PC's next refresh overwrites it, and the sealed content carries `updatedAt`, so the widget
-can ignore a state older than the one it shows.
+- **Live Activity.** `AgentActivityAttributes.ContentState` and the attributes decrypt `sealed` while they
+  decode, which runs in the widget extension and the app.
+- **Alerts.** A Notification Service Extension (`ios/NotificationService/`) replaces the fixed title and body
+  with the sealed ones.
+- **Without the key.** Both read the pairing key from the Keychain. An extension can only do that through the
+  app group's keychain access group, which isn't enabled yet (`project.yml`). Until it is, the widget shows the
+  state without the action text, and alerts show the fixed text. Everything else works.
 
-## Rate limits and abuse
+The relay logs the first 8 characters of the `rid`, the kind and the APNs status of each push (Workers logs),
+and no payloads.
 
-Apple sets its own limits (a Live Activity update budget, raised by `NSSupportsLiveActivitiesFrequentUpdates`,
-and a `TooManyProviderTokenUpdates` error if the signing JWT changes more often than every 20 minutes). The
-relay adds its own so one broken or hostile PC can't get lxe's key throttled or revoked:
+## Limits and abuse
 
-| What | Limit per `rid` |
+| What | Limit |
 |---|---|
-| `activity-update` | 2 a second burst, 1 a second sustained (the PC's own cap) |
-| `activity-start` | 6 an hour (the PC tries at most once every 10 minutes) |
-| `session`, `unlock` | 60 an hour |
-| `request-over` | 120 an hour |
-| everything | 20,000 a day |
+| Live Activity pushes per `rid` | 120 a minute (the PC sends at most 1 a second) |
+| Session, unlock and request-over pushes per `rid` | 20 a minute |
+| Registrations per IP address | 30 a minute |
+| Request body | 8 KB; `sealed` 2 KB |
 
 Other guards:
 
-- **Unknown `rid` or bad signature:** 401 before any KV read beyond the key lookup and before any APNs call.
-- **Registrations:** at most 20 an hour per IP address; `rid` must match `key`.
-- **Body size:** 2 KB for `sealed`, so the payload stays under APNs's 4 KB limit.
-- **Replays:** the 60 s clock window bounds them. Workers KV is eventually consistent, so a strict nonce check
-  would need a Durable Object; a replay within the window only re-sends the same push to the same phone, and
-  the rate limits above cap that, so the window is enough to start.
-- **Kill switches:** a Worker variable that stops all pushes, and a KV block list of `rid`s.
-- **Possible later:** App Attest on registration, so only the genuine app can register (see open questions).
-
-The counters use the Workers rate limiting binding, whose counts are per Cloudflare location and approximate.
-That's enough here, because one PC talks to one location.
-
-The JWT that authenticates the relay to APNs is cached in each isolate for 50 minutes, like `apns._token`. So
-that many isolates don't each mint their own and trip `TooManyProviderTokenUpdates`, the relay keeps one
-current JWT in KV and mints a new one only when that one is older than 40 minutes.
+- An unknown `rid` or a bad signature is refused before any APNs call.
+- Replays are bounded by the 60 s clock window. A replay can only re-send the same push to the same phone, and
+  the rate limits cap that, so the relay keeps no nonce list (KV is eventually consistent, so a strict one would
+  need a Durable Object).
+- `PAUSED` (a Worker variable) stops every push; a KV key `block:<rid>` stops one pairing.
+- The rate limiting binding counts per Cloudflare location, approximately. One PC talks to one location, so
+  that's enough.
+- One APNs JWT is shared by every isolate through KV and replaced every 40 minutes, because Apple refuses a key
+  whose token changes more often than every 20 minutes (`TooManyProviderTokenUpdates`).
 
 ## Sequence
 
@@ -197,118 +173,63 @@ sequenceDiagram
     participant R as Relay (Worker)
     participant A as APNs
 
-    Note over App,PC: Pairing (unchanged): QR gives the app K. Both derive R, rid and S from K.
-    App->>R: PUT /v1/phones/{rid} {key: R, env, device, push_to_start} signed with R
+    Note over App,PC: Pairing (unchanged): the QR code gives the app K. Both derive R, rid and S from K.
+    App->>R: PUT /v1/phones/{rid} {env, device, push_to_start}, signed with R
+    R-->>App: 404 (new pairing)
+    App->>R: PUT /v1/phones/{rid} {key: R, ...}
     R->>R: check SHA-256(R)[:16] == rid, store key and tokens
-    App->>PC: POST /v1/push {..., "relay": 1} signed with K
-    Note over PC: no apns.json, app registered with the relay: use the relay
+    App->>PC: POST /v1/push {..., "relay": 1}, signed with K
+    Note over PC: no apns.json and the app registered: push through the relay
 
-    Note over PC: phone starts mirroring
-    PC->>R: POST /v1/push/{rid} {kind: activity-start, sealed: Seal_S(state, pcName)}
-    R->>R: check signature, rate limit, look up push_to_start token
-    R->>A: liveactivity push (template + sealed), JWT from lxe's key
-    A->>App: start AgentActivity
+    Note over PC: the phone starts mirroring
+    PC->>R: POST /v1/push/{rid} {kind: activity-start, state, attributes: Seal_S(pcName), sealed: Seal_S(action)}
+    R->>R: check signature and rate limit, look up the push-to-start token
+    R->>A: liveactivity push (template), JWT from lxe's key
+    A->>App: starts the activity
     App->>R: PUT /v1/phones/{rid} {activity: {id, token}}
-    App->>PC: POST /v1/push {activity: {id, token}}
+    App->>PC: POST /v1/push {activity: {id, token}, "relay": 1}
 
     loop every 1 s while an agent drives
-        PC->>R: POST /v1/push/{rid} {kind: activity-update, activity_id, frame, sealed}
+        PC->>R: POST /v1/push/{rid} {kind: activity-update, activity_id, state, sealed}
         R->>A: liveactivity update to the registered activity token
-        A->>W: content-state
-        W->>W: decrypt sealed with S, draw the robot
+        A->>W: content state
+        W->>W: decrypt the action with S, draw the robot
     end
 
-    PC->>R: POST /v1/push/{rid} {kind: session, sealed: Seal_S(title, action, session_id)}
+    PC->>R: POST /v1/push/{rid} {kind: session, id, sealed: Seal_S(title, body)}
     R->>A: alert, category SESSION, mutable-content
-    A->>W: Notification Service Extension decrypts, shows "Agent taking control in 10 s"
-    App->>PC: POST /v1/session/answer (Allow, over the LAN as today)
+    A->>W: the extension decrypts and shows "Agent taking control in 10 s"
+    App->>PC: POST /v1/session/answer (Allow, over the LAN as before)
 
-    PC->>R: POST /v1/push/{rid} {kind: activity-end, sealed}
+    PC->>R: POST /v1/push/{rid} {kind: activity-end, state, sealed}
     R->>A: liveactivity end
     R-->>PC: {status: 200}
 ```
 
-## Where it runs and what it costs
+## Cost
 
-### Volume
+The relay runs on Cloudflare's free plan: 100,000 Worker requests a day, 100,000 KV reads and 1,000 KV writes.
+Every push is one Worker request and one KV read, and KV writes happen only when tokens change and every 40
+minutes for the JWT. The 1 s Live Activity refresh dominates, at about 3,600 requests per hour of agent work,
+so the free plan covers about 25 hours of agent work a day across all users. Past that, Workers Paid costs $5
+a month for 10 million requests, then $0.30 per million. APNs is free. (Cloudflare's prices as of November
+2026.)
 
-The 1 s Live Activity refresh dominates: one push per second per phone while an agent drives, so an hour of
-agent work is about 3,600 relay requests. Everything else (starts, requests, ends) adds a few dozen a day.
+The 1 s refresh is what keeps the robot moving: iOS doesn't animate timer views in the compact Dynamic Island,
+so each push draws one animation frame. If the request count ever matters, relay mode can refresh every 2 s.
 
-| User | Agent time | Relay requests per month |
-|---|---|---|
-| lxe | ~3 h a day | ~330,000 (~11,000 a day) |
-| A heavy user | ~2 h a day | ~220,000 |
-| A typical user | ~2 h a week | ~30,000 |
+## Deploying the relay
 
-### Options
-
-| Option | Cost | Notes |
-|---|---|---|
-| **A. Cloudflare Workers + KV (recommended)** | Free plan: $0 up to 100,000 requests a day and 1,000 KV writes a day, which covers lxe and a handful of testers. Workers Paid: $5 a month including 10 M requests, then $0.30 per million, so ~$0.07 per heavy user a month beyond ~40 of them. | No server to patch; the key is a Worker secret only lxe sets with `wrangler secret put`. CPU per request is an HMAC check and filling in a template, well under the free plan's 10 ms. HTTP/2 to APNs needs the spike. R2 isn't needed: there are no files to store. |
-| B. A small VM (Fly.io, Hetzner) running a Python relay | ~$4–6 a month flat | Reuses `apns.py` and keeps one HTTP/2 connection open, as Apple recommends. lxe has to patch it and keep it up. The fallback if A's spike fails. |
-| C. AWS Lambda + API Gateway | ~$1–3 a month at this volume | Same shape as A with more setup and no advantage for lxe. |
-| D. A push service such as Firebase Cloud Messaging | Free | Firebase still needs the APNs key uploaded, and each PC would need Firebase server credentials, which leaves the same shipping problem. |
-| E. Bring your own key only | $0 | Today's behaviour. Kept for developers, but released copies would never get pushes. |
-
-Prices are Cloudflare's published Workers and KV prices as of 2026; check them before deciding. If the relay's
-volume ever matters, the PC can stretch the driving heartbeat from 1 s to 2–3 s in relay mode, which halves or
-thirds the request count at the cost of a choppier animation.
-
-### Key custody
-
-Create a **new APNs key** for the relay instead of reusing the one on lxe's PC, so either can be revoked on its
-own. If Apple's key settings allow restricting a key to one topic or environment, restrict it to
-`co.lxe.phoneuse`. Only lxe enters the key, with `wrangler secret put APNS_KEY` from their own machine; it never
-goes into the repo, CI or a chat.
-
-## Migration
-
-The PC gets one setting, `push` in `config.yaml`: `auto` (the default), `direct`, `relay` or `off`.
-
-- **`auto`:** direct pushes if `apns.json` exists, as today. Otherwise the relay, for each phone whose app said
-  it registered there. Otherwise no pushes, as released copies behave now.
-- **The app tells the PC.** `POST /v1/push` gains `"relay": 1`, meaning "I registered with the relay and I can
-  read sealed payloads". That flag guards both changes at once, so the PC never sends sealed content to an app
-  that can't open it, and never uses the relay for a phone the relay doesn't know.
-
-Order of work:
-
-1. **Spike.** A Worker that signs a JWT and sends one sandbox push to a development build, to confirm HTTP/2,
-   and a widget build that decrypts a sealed `content-state` on a real Dynamic Island.
-2. **Relay.** The Worker with the three endpoints, templates, rate limits and KV, deployed to a sandbox-only
-   name first.
-3. **App.** Relay registration in `PushRegistrar` (same triggers as `resendAll`), `sealed` in `ContentState`
-   and `AgentActivityAttributes`, the Notification Service Extension (a new target in `project.yml`, sharing
-   the Keychain access group with the app and widget), `DELETE` on unpair, and `"relay": 1`. Ships as a new
-   TestFlight build.
-4. **PC.** A `relay.py` next to `apns.py` with the same `send()` shape, so `_send` picks one or the other and
-   the push logic in `companion.py` stays as it is. Sealing happens in the callers, which build the
-   `content-state` and alert text today.
-5. **Dogfood.** lxe switches their own PC to `push: relay` for a week, with the direct path as the fallback.
-6. **Release.** A Mac DMG and Flatpak with `auto`. Old apps paired to a new PC get no pushes, as now; a new app
-   paired to an old PC registers with the relay harmlessly.
-
-Direct pushes stay permanently: someone who builds the app under their own team and bundle id can't use lxe's
-relay, which accepts only `co.lxe.phoneuse`, and needs their own key as today.
+See [relay/README.md](../relay/README.md).
 
 ## Open questions
 
-1. **HTTP/2 from Workers.** Does `fetch()` to `api.push.apple.com` work from a Worker? The spike decides between
-   options A and B.
-2. **Hostname.** Is lxe.co's DNS on Cloudflare, so the relay can live at `push.lxe.co`? If not, a `workers.dev`
-   name works, but it's baked into released apps and PCs, so it should be chosen once.
-3. **Widget decryption.** Does reading the Keychain and decrypting in the widget's render path work reliably on
-   the lock screen while the phone is locked? The Keychain item's accessibility class may need to be
-   `afterFirstUnlock`.
-4. **App group.** `project.yml` still has the app group commented out. The Notification Service Extension needs
-   the same Keychain access group as the app; does the current provisioning already allow that?
-5. **App Attest.** Should registration require App Attest, so only the real app can register? It adds an
-   Apple-verification step to the Worker; the `rid`/key binding may be enough at this scale.
-6. **Free or Paid.** Start on the free plan and move to Paid when the app is public, or start on Paid for the
-   higher limits and the absence of daily caps?
-7. **What the relay may log.** The proposal keeps `rid`, kind, status and time for 7 days. Is that the right
-   amount, and should the app's privacy text mention it?
-8. **Plain fields.** Should the activity's `state` stay plain, so iOS's default rendering (and the
-   `asking` alert's timing) works even when decryption fails, at the cost of the relay seeing when the owner is
-   asked and when they take over?
+1. **The app group.** Enabling `group.co.lxe.phoneuse` (commented out in `project.yml`) lets the widget and the
+   Notification Service Extension read the pairing key, so the action text and the PC's alert text show.
+2. **A key of its own.** The relay uses the same APNs key (`7CV9JYHX47`) as lxe's PC. A separate key would let
+   either be revoked without the other.
+3. **A hostname.** `phoneuse-push.lxe.workers.dev` is built into released apps and PCs. lxe.co isn't a zone
+   in this Cloudflare account; if it moves there, `push.lxe.co` could be added as a second name, but the
+   workers.dev name has to keep working for the builds that have it.
+4. **App Attest.** Registration could require App Attest, so that only the genuine app can register. The
+   `rid`/key binding seems enough at this scale.

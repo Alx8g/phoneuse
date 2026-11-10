@@ -19,6 +19,7 @@ targets:
     sources: [App, Shared]
     dependencies:
       - target: PhoneUseWidgets
+      - target: PhoneUseNotifications
     entitlements:
       path: App/PhoneUse.entitlements
       properties:
@@ -61,7 +62,7 @@ targets:
   PhoneUseWidgets:
     type: app-extension
     platform: iOS
-    sources: [Widgets, Shared/Robot.swift, Shared/AgentActivity.swift, Shared/CompanionClient.swift, Shared/CompanionCrypto.swift, Shared/Pairing.swift]
+    sources: [Widgets, Shared/Robot.swift, Shared/AgentActivity.swift, Shared/CompanionClient.swift, Shared/CompanionCrypto.swift, Shared/Pairing.swift, Shared/PushRelay.swift]
     entitlements:
       path: Widgets/PhoneUseWidgets.entitlements
       properties: {}
@@ -83,6 +84,30 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: Apple Distribution
           PROVISIONING_PROFILE_SPECIFIER: PhoneUse Widgets AppStore
+  # Opens the sealed text of request notifications sent through the push relay (docs/PUSH-RELAY.md).
+  PhoneUseNotifications:
+    type: app-extension
+    platform: iOS
+    sources: [NotificationService, Shared/CompanionCrypto.swift, Shared/Pairing.swift, Shared/PushRelay.swift]
+    info:
+      path: NotificationService/Info.plist
+      properties:
+        CFBundleDisplayName: "Phone Use"
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: co.lxe.phoneuse.notifications
+        PRODUCT_NAME: PhoneUseNotifications
+        SKIP_INSTALL: YES
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER: PhoneUse Notifications AppStore
   PhoneUseTests:
     type: bundle.unit-test
     platform: iOS
