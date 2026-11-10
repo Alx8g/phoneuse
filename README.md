@@ -32,7 +32,7 @@ with Xcode onto your phone.
 
 ```sh
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install --user ./PhoneUse-0.1.1-x86_64.flatpak
+flatpak install --user ./PhoneUse-0.1.2-x86_64.flatpak
 flatpak run co.lxe.PhoneUse
 ```
 
@@ -57,7 +57,7 @@ Bridge › Flash LilyGO T-Display. Flashing erases the board. You can also flash
 
 ```sh
 pip install esptool
-esptool --chip esp32 write-flash 0x0 phoneuse-bridge-0.2.5.bin
+esptool --chip esp32 write-flash 0x0 phoneuse-bridge-0.2.6.bin
 ```
 
 Then click Set Up Bridge in Phone Use, check that the bridge's screen shows the same
