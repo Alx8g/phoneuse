@@ -41,6 +41,7 @@ struct MainView: View {
 struct PhoneTab: View {
     @EnvironmentObject var core: Core
     @State private var pairing = false
+    @State private var confirmUnpair = false
     @State private var login = SMAppService.mainApp.status == .enabled
 
     var body: some View {
@@ -61,7 +62,12 @@ struct PhoneTab: View {
             Section("iPhone App") {
                 let paired = core.state?.paired ?? 0
                 if paired > 0 {
-                    LabeledContent("Paired", value: "\(paired) iPhone" + (paired == 1 ? "" : "s"))
+                    LabeledContent("Paired") {
+                        HStack {
+                            Text("\(paired) iPhone" + (paired == 1 ? "" : "s"))
+                            Button("Unpair") { confirmUnpair = true }
+                        }
+                    }
                 }
                 Button { pairing = true } label: {
                     NavRow(title: paired > 0 ? "Pair Another iPhone" : "Pair iPhone App",
@@ -73,6 +79,17 @@ struct PhoneTab: View {
         }
         .formStyle(.grouped)
         .sheet(isPresented: $pairing) { PairSheet(before: core.state?.paired ?? 0) }
+        .alert(unpairTitle, isPresented: $confirmUnpair) {
+            Button("Unpair", role: .destructive) { core.unpairApps() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Agents can't use the iPhone until you pair the app again.")
+        }
+    }
+
+    private var unpairTitle: String {
+        let n = core.state?.paired ?? 0
+        return n <= 1 ? "Unpair the iPhone app?" : "Unpair \(n) iPhone apps?"
     }
 
     private func setLogin(_ on: Bool) {
@@ -91,6 +108,7 @@ struct HeroView: View {
     @EnvironmentObject var core: Core
     @State private var settingUp = false
     @State private var firewallHelp = false
+    @State private var pairing = false
 
     var body: some View {
         let h = core.hero
@@ -117,6 +135,7 @@ struct HeroView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
         .sheet(isPresented: $settingUp) { BridgeSetupSheet(change: false) }
+        .sheet(isPresented: $pairing) { PairSheet(before: core.state?.paired ?? 0) }
         .alert("Let the iPhone reach Phone Use", isPresented: $firewallHelp) {
             Button("Open Firewall Settings") { openFirewallSettings() }
             Button("OK", role: .cancel) {}
@@ -125,13 +144,15 @@ struct HeroView: View {
         }
     }
 
-    static let buttons = ["start": "Start Phone Use", "setup_bridge": "Set Up Bridge", "open_ports": "Open Ports…",
+    static let buttons = ["start": "Start Phone Use", "setup_bridge": "Set Up Bridge",
+                          "pair_app": "Pair iPhone App", "open_ports": "Open Ports…",
                           "retry": "Try Again", "open_phone": "Open iPhone"]
 
     private func perform(_ action: String) {
         switch action {
         case "start": core.start()
         case "setup_bridge": settingUp = true
+        case "pair_app": pairing = true
         case "open_ports": firewallHelp = true
         case "retry": Task { await core.refresh() }
         case "open_phone": core.openPhone()

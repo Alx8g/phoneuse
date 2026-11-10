@@ -199,12 +199,23 @@ final class Core: ObservableObject {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/Phone Use/core.log")
     }
 
-    // MARK: Claude Code (phoneuse/claude_setup.py, run with the core's Python)
+    // MARK: Python helpers run with the core's Python (phoneuse/claude_setup.py, phoneuse/companion.py)
 
     func claude(connect: Bool) {
+        runCore("from phoneuse import claude_setup as c; " + (connect ? "c.connect()" : "c.disconnect()"),
+                done: connect ? "Connected. New Claude Code sessions can use the phone." : "Disconnected from Claude Code",
+                failed: connect ? "Couldn't connect" : "Couldn't disconnect")
+    }
+
+    /// Forgets every paired iPhone app, as Unpair in the Linux window does. Agents stop until one pairs again.
+    func unpairApps() {
+        runCore("from phoneuse import companion; companion.forget()", done: "iPhone app unpaired",
+                failed: "Couldn't unpair")
+    }
+
+    private func runCore(_ statement: String, done: String, failed: String) {
         guard let loc = location else { return }
-        let code = "import sys; sys.path.insert(0, sys.argv[1]); from phoneuse import claude_setup as c; "
-            + (connect ? "c.connect()" : "c.disconnect()")
+        let code = "import sys; sys.path.insert(0, sys.argv[1]); " + statement
         Task.detached {
             let p = Process()
             p.executableURL = loc.python
@@ -221,14 +232,8 @@ final class Core: ObservableObject {
                     failure = text.split(separator: "\n").last.map(String.init) ?? "exit \(p.terminationStatus)"
                 }
             } catch { failure = error.localizedDescription }
-            await MainActor.run {
-                if let failure {
-                    Core.shared.message = connect ? "Couldn't connect: \(failure)" : "Couldn't disconnect: \(failure)"
-                } else {
-                    Core.shared.message = connect ? "Connected. New Claude Code sessions can use the phone."
-                        : "Disconnected from Claude Code"
-                }
-            }
+            let result = failure
+            await MainActor.run { Core.shared.message = result.map { "\(failed): \($0)" } ?? done }
             await Core.shared.refresh()
         }
     }
