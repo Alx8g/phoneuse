@@ -87,6 +87,7 @@ struct Hero: Decodable, Equatable {
     var good: Bool?
     var quiet: Bool?
     var bold: String?
+    var qr: String?       // "pair": show the pairing QR code under the title, in place of the icon
     var steps: [String]?  // a numbered list under the title; "{mirroring}" stands for the Screen Mirroring glyph
 
     /// overview.stopped(): the API can't say this itself.

@@ -113,12 +113,17 @@ struct HeroView: View {
     var body: some View {
         let h = core.hero
         VStack(spacing: 8) {
-            Image(systemName: symbol(h.icon))
-                .font(.system(size: 52, weight: .regular))
-                .foregroundStyle(h.good == true ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
-                .frame(height: 64)
-                .symbolEffect(.pulse, isActive: h.step == "starting")
+            if h.qr != "pair" {
+                Image(systemName: symbol(h.icon))
+                    .font(.system(size: 52, weight: .regular))
+                    .foregroundStyle(h.good == true ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
+                    .frame(height: 64)
+                    .symbolEffect(.pulse, isActive: h.step == "starting")
+            }
             Text(h.title).font(.title2.weight(.semibold)).multilineTextAlignment(.center)
+            if h.qr == "pair" {
+                PairingCode(size: 220).padding(.vertical, 6)  // stops renewing once the step changes
+            }
             if let steps = h.steps, !steps.isEmpty {
                 HeroSteps(steps: steps, bold: h.bold)
             }
@@ -402,8 +407,8 @@ struct BridgeTab: View {
             do {
                 let j = try await core.send("/api/bridge", nil, method: "DELETE")
                 core.message = j["reset"] as? Bool == true
-                    ? "Bridge reset. On the iPhone, also forget PhoneUse Bridge in Bluetooth settings"
-                    : "Forgotten here. The bridge didn't answer: remove PhoneUse Bridge in the iPhone's Bluetooth settings"
+                    ? "Bridge reset. Also forget PhoneUse Bridge in the iPhone's Bluetooth settings"
+                    : "Bridge removed, but it didn't respond to the reset"
             } catch {
                 core.message = "Couldn't forget the bridge: \(error.localizedDescription)"
             }

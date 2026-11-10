@@ -62,32 +62,17 @@ struct PairSheet: View {
     var before: Int
     @EnvironmentObject var core: Core
     @Environment(\.dismiss) private var dismiss
-    @State private var image: NSImage?
-    @State private var error: String?
-    @State private var made = Date()
 
     var body: some View {
         VStack(spacing: 16) {
             Text("Pair iPhone App").font(.headline)
-            Group {
-                if let image {
-                    Image(nsImage: image).interpolation(.none).resizable().scaledToFit()
-                        .frame(width: 240, height: 240)
-                        .padding(12).background(.white, in: RoundedRectangle(cornerRadius: 12))
-                } else if let error {
-                    Text("Couldn't make a pairing code: \(error)").multilineTextAlignment(.center)
-                    Button("Try Again") { Task { await newCode() } }
-                } else {
-                    ProgressView().frame(width: 264, height: 264)
-                }
-            }
+            PairingCode(size: 264)
             Text("Point the iPhone's camera at the code and open the link in Phone Use.")
                 .foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 280)
             HStack { Spacer(); Button("Done") { dismiss() }.keyboardShortcut(.defaultAction) }
         }
         .padding(24)
         .frame(width: 360)
-        .task { await newCode() }
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(2))
@@ -97,15 +82,46 @@ struct PairSheet: View {
                     dismiss()
                     return
                 }
-                if Date().timeIntervalSince(made) > 590 { await newCode() }
+            }
+        }
+    }
+}
+
+/// The pairing QR code (POST /api/companion/pair), drawn here. A link works once, for 10 minutes, so a new one
+/// replaces it every 8 minutes for as long as the code is on screen.
+struct PairingCode: View {
+    var size: CGFloat
+    @EnvironmentObject var core: Core
+    @State private var image: NSImage?
+    @State private var error: String?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(nsImage: image).interpolation(.none).resizable().scaledToFit()
+                    .padding(size * 0.05)
+                    .frame(width: size, height: size)
+                    .background(.white, in: RoundedRectangle(cornerRadius: size * 0.08, style: .continuous))
+            } else if let error {
+                VStack(spacing: 8) {
+                    Text("Couldn't make a pairing code: \(error)").multilineTextAlignment(.center)
+                    Button("Try Again") { Task { await newCode() } }
+                }
+                .frame(width: size, height: size)
+            } else {
+                ProgressView().frame(width: size, height: size)
+            }
+        }
+        .task {
+            while !Task.isCancelled {
+                await newCode()
+                try? await Task.sleep(for: .seconds(8 * 60))
             }
         }
     }
 
     private func newCode() async {
-        image = nil
         error = nil
-        made = Date()
         do {
             let j = try await core.send("/api/companion/pair", [:], timeout: 10)
             guard let link = j["link"] as? String else { throw CoreError("no link") }
