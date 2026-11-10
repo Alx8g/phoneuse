@@ -81,11 +81,6 @@ remove them.
 
 ## Open problems
 
-**Push notifications need a relay.** The PC sends Live Activity updates and notifications with an APNs key
-(`.p8`), which belongs to the developer account and can't ship inside an app. A small relay service on our side
-holds the key; each PC authenticates with its pairing to a phone and asks the relay to send. The companion app
-works without pushes (it reads the PC's state while open), so the relay can follow the first builds.
-
 **The agent gate trusts a process's command line.** The HID daemon treats any process started as
 `python -m phoneuse.web` as the owner. On a single-user desktop any program the user runs can claim that. The
 packaged daemon should accept owner commands only from processes the app itself started.
@@ -100,4 +95,4 @@ packaged daemon should accept owner commands only from processes the app itself 
 2. The network check and the **Allow on this network** button, tested on this PC's firewalld.
 3. The Flatpak manifest: UxPlay and its libraries, the Python modules, OCR, permissions. Builds and runs here.
 4. The GTK app: first-run setup, status, settings, Claude Code connection, with a design pass before it ships.
-5. The push relay, then Flathub.
+5. The push relay ([PUSH-RELAY.md](PUSH-RELAY.md)), then Flathub.

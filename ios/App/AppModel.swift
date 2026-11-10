@@ -51,7 +51,10 @@ final class AppModel: ObservableObject {
     /// signed request still goes out after the local pairing is gone.
     func unpair() {
         if let client {
-            Task { _ = try? await client.send("DELETE", "/v1/pairing", json: nil, timeout: 4) }
+            Task {
+                _ = try? await client.send("DELETE", "/v1/pairing", json: nil, timeout: 4)
+                await PushRelay.unregister(pairingKey: client.pairing.key)
+            }
         }
         forgetPairing()
     }

@@ -52,6 +52,9 @@ DEFAULTS = {
     "decoder": "auto",
     "mirror_width": 498,
     "web_port": 8777,
+    # How the PC pushes to the companion app (docs/PUSH-RELAY.md): "auto" uses this PC's own APNs key
+    # (~/.config/phoneuse/apns.json) when it has one and the push relay otherwise; "direct", "relay" or "off".
+    "push": "auto",
     # the app (a Flatpak) can only use the bridge; a checkout uses this PC's Bluetooth too
     # (a Mac has only the bridge: macOS can't make the Mac a Bluetooth keyboard and mouse)
     "bluetooth": "bridge" if os.path.exists("/.flatpak-info") or MACOS else "pc",

@@ -118,6 +118,13 @@ actor PushRegistrar {
         body.merge(fields) { $1 }
         let task = await BackgroundTask.begin("push tokens")
         defer { Task { await BackgroundTask.end(task) } }
+        // The push relay gets the same tokens, so a PC without its own APNs key can push through it; "relay"
+        // tells the PC it may (docs/PUSH-RELAY.md). A failed registration leaves the PC's flag as it was.
+        if await PushRelay.register(body, pairingKey: client.pairing.key) {
+            body["relay"] = 1
+        } else {
+            AppLog.write("relay registration of \(what) failed")
+        }
         do {
             _ = try await client.send("POST", "/v1/push", json: body, timeout: 10)
             AppLog.write("sent \(what) (env \(Self.env)): \(summary(fields))")

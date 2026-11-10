@@ -151,10 +151,12 @@ development build `sandbox`):
  "activity": {"id": "<Activity id>", "token": "<that activity's push token, hex>"}}
 ```
 
-Each field is optional, so the app can send one token at a time. The PC keeps the latest of each.
+Each field is optional, so the app can send one token at a time. The PC keeps the latest of each. The app
+registers the same tokens with the push relay first, and adds `"relay": 1` when the relay accepted them.
 
-The PC sends APNs pushes with a token-based key (`~/.config/phoneuse/apns.json`: `key_id`, `team_id`, and the
-`.p8` key's path):
+The PC sends APNs pushes with its own token-based key when it has one (`~/.config/phoneuse/apns.json`:
+`key_id`, `team_id`, and the `.p8` key's path), and through the push relay otherwise
+([PUSH-RELAY.md](PUSH-RELAY.md)), which sends the same pushes with fixed text and the PC's own text sealed:
 
 - **Start** (topic `<bundle id>.push-type.liveactivity`, push type `liveactivity`), when an agent session starts, to
   the push-to-start token: `event: "start"`, `attributes-type: "AgentActivityAttributes"`,

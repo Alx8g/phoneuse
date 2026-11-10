@@ -48,6 +48,13 @@ struct AgentActivityAttributes: ActivityAttributes {
             frame = try? c.decodeIfPresent(Int.self, forKey: .frame)
             deadline = try? c.decodeIfPresent(Double.self, forKey: .deadline)
             detail = try? c.decodeIfPresent(String.self, forKey: .detail)
+            // Through the push relay, the agent's action and a warning's text arrive sealed (docs/PUSH-RELAY.md).
+            if let sealed = try? decoder.container(keyedBy: SealedKey.self).decodeIfPresent(String.self, forKey: .sealed) {
+                let open = PushRelay.open(sealed, ad: "activity")
+                action = open?["action"] as? String ?? action
+                detail = open?["detail"] as? String ?? detail
+                if open == nil, phase == "warning", action.isEmpty { action = "Phone Use needs your attention" }
+            }
         }
 
         /// "1 step", "12 steps", or nil before the first step.
@@ -64,7 +71,22 @@ struct AgentActivityAttributes: ActivityAttributes {
     }
 
     var pcName: String
+
+    init(pcName: String) { self.pcName = pcName }
+
+    /// Through the push relay, the PC's name arrives sealed.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        pcName = (try? c.decodeIfPresent(String.self, forKey: .pcName)) ?? ""
+        if let sealed = try? decoder.container(keyedBy: SealedKey.self).decodeIfPresent(String.self, forKey: .sealed),
+           let name = PushRelay.open(sealed, ad: "attributes")?["pcName"] as? String {
+            pcName = name
+        }
+    }
 }
+
+/// The relay's sealed field, next to the plain ones.
+private enum SealedKey: String, CodingKey { case sealed }
 
 /// Updates the activities on the phone right away; the PC's next push carries the same state.
 func setActivitiesState(_ state: String) async {

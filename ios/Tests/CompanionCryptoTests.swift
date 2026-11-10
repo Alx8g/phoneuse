@@ -90,4 +90,16 @@ final class CompanionCryptoTests: XCTestCase {
         XCTAssertEqual(s.bridge?.ssid, "giraffe-iot")
         XCTAssertTrue(s.unlock.passcodeSaved)
     }
+
+    // Push relay (docs/PUSH-RELAY.md): the values come from phoneuse/relay.py with the same key.
+    func testRelayKeyAndId() {
+        XCTAssertEqual(PushRelay.relayKey(key), CompanionCrypto.base64urlDecode("cWvxZ4uGeojQOOFxTA-SzTT0ME1slplplkbPrF7MxAc"))
+        XCTAssertEqual(PushRelay.relayId(key), "011f2b583bffb5b60885982481703b60")
+    }
+
+    func testRelayOpen() {
+        let sealed = "AAECAwQFBgcICQoL6suehODyykQnUqurCIYOGQtSL8NmdyGbbJrirB7TAX836+xDEF37doGmCfXrEId0IWPIocPj+D4="
+        XCTAssertEqual(PushRelay.open(sealed, ad: "activity", key: key)?["action"] as? String, "Opening Gmail")
+        XCTAssertNil(PushRelay.open(sealed, ad: "alert", key: key))
+    }
 }

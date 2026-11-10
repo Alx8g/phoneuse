@@ -1082,7 +1082,7 @@ def up(headless=False):
         # The browser mirror (web.py), on localhost only. Restarts when its code
         # changes: it rejoins the hub, so the phone keeps mirroring.
         supervise("web", "browser mirror", ["web.py", "pointer.py", "touch.py", "phones.py", "unlock.py", "screen.py",
-                                            "companion.py", "apns.py", "bridge.py", "bridge_web.py"])
+                                            "companion.py", "apns.py", "relay.py", "bridge.py", "bridge_web.py"])
     threading.Thread(target=keep_web, daemon=True).start()
 
     def keep_mirror():
