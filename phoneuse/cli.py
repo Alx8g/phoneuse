@@ -1085,8 +1085,17 @@ def up(headless=False):
         # If UxPlay dies, start it again so the phone can reconnect without
         # restarting `phoneuse up`. The companion app turns the audio off or on by
         # changing the audio-off file and stopping UxPlay (companion.py).
-        from .companion import AUDIO_OFF, UXPLAY_PID
+        # The receiver is advertised only while an iPhone app is paired: before that, the
+        # window asks to pair first, and agents can't use the phone anyway.
+        from .companion import AUDIO_OFF, UXPLAY_PID, paired
         while not stop.is_set():
+            if not paired():
+                print(time.strftime("%H:%M:%S"), "AirPlay receiver off until an iPhone is paired", flush=True)
+                while not stop.is_set() and not paired():
+                    time.sleep(2)
+                if stop.is_set():
+                    break
+                print(time.strftime("%H:%M:%S"), f"iPhone paired: AirPlay receiver '{NAME}' on", flush=True)
             args = MIRROR_ARGS
             if os.path.exists(AUDIO_OFF):
                 i = MIRROR_ARGS.index("-as")
@@ -1104,9 +1113,20 @@ def up(headless=False):
                 procs["mirror"] = subprocess.Popen(args, stdout=out, stderr=out, env=env)
             with open(UXPLAY_PID, "w") as f:
                 f.write(str(procs["mirror"].pid))
+            mine = procs["mirror"]
+
+            def unpaired_stops_it():
+                while mine.poll() is None and not stop.is_set():
+                    time.sleep(2)
+                    if not paired():
+                        mine.terminate()
+                        return
+            threading.Thread(target=unpaired_stops_it, daemon=True).start()
             rc = procs["mirror"].wait()
             if stop.is_set():
                 break
+            if not paired():
+                continue  # unpaired: wait above, quietly
             print(time.strftime("%H:%M:%S"), f"mirror exited ({rc}); restarting it. Reconnect Screen Mirroring on the iPhone.", flush=True)
             time.sleep(1)
     threading.Thread(target=keep_mirror, daemon=True).start()

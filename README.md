@@ -93,8 +93,9 @@ port 47700 for the bridge. The iPhone app needs TCP port 8778.
    ```sh
    phoneuse up
    ```
-   Then, on the iPhone, open Control Center, tap Screen Mirroring and choose
-   **PhoneUse on <your computer>** (`phoneuse status` shows the name).
+   Then pair the iPhone app (step 4): the AirPlay receiver appears only once an
+   iPhone is paired. On the iPhone, open Control Center, tap Screen Mirroring and
+   choose **PhoneUse on <your computer>** (`phoneuse status` shows the name).
 
 3. **Connect the mouse and keyboard**, in one of two ways:
    - **With this PC's Bluetooth:** on the iPhone, open Settings › Bluetooth and tap
