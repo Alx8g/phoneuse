@@ -212,7 +212,7 @@ struct PhoneTab: View {
                 }
                 .disabled(offline)
             }
-            Section("Computer") {
+            Section {
                 if let p = model.pairing {
                     LabeledContent("Paired with", value: p.name)
                     LabeledContent("Address", value: "\(p.host):\(p.port)")
@@ -484,25 +484,22 @@ struct AgentsTab: View {
                     if model.busy.contains("unlock") { Spacer(); ProgressView() }
                 }
             }
-            LabeledContent("Passcode", value: s.unlock.passcodeSaved ? "Saved" : "Not saved")
-                .accessibilityIdentifier("passcodeStatus")
+            LabeledContent("Passcode") {
+                HStack(spacing: 12) {
+                    Text(s.unlock.passcodeSaved ? "Saved" : "Not saved")
+                    if s.unlock.passcodeSaved {  // rare and destructive: a quiet button, not a row of its own
+                        Button("Forget…", role: .destructive) { confirmForget = true }
+                            .buttonStyle(.borderless)
+                            .foregroundStyle(.red)
+                            .accessibilityIdentifier("forgetPasscode")
+                    }
+                }
+            }
+            .accessibilityIdentifier("passcodeStatus")
             Button { passcodeSheet = true } label: {
                 BusyRow(title: s.unlock.passcodeSaved ? "Replace Passcode" : "Save Passcode", key: "passcode")
             }
             .accessibilityIdentifier("savePasscode")
-        } header: {
-            HStack {
-                Text("Unlock")
-                Spacer()
-                // rare and destructive: a quiet button in the header, as in the Linux window
-                if s.unlock.passcodeSaved {
-                    Button("Forget…", role: .destructive) { confirmForget = true }
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.red)
-                        .textCase(nil)
-                        .accessibilityIdentifier("forgetPasscode")
-                }
-            }
         } footer: {
             Text("Phone Use types the passcode only after you allow each Unlock.")
         }
@@ -538,8 +535,6 @@ struct BridgeTab: View {
                                 RowTitle("Use This PC's Bluetooth", "Works with or without the bridge")
                             }
                             .accessibilityIdentifier("pcBluetooth")
-                        } header: {
-                            Text("This PC's Bluetooth")
                         } footer: {
                             Text("Turn it on or off in Phone Use on the PC.")
                         }
@@ -840,7 +835,7 @@ struct StartModeRow: View {
             Text("After a delay").tag("countdown")
             Text("Ask every time").tag("ask")
         } label: {
-            RowTitle("Agent control", "What happens when an agent wants the phone")
+            Text("Agent control")
         }
         .pickerStyle(.menu)
         .accessibilityIdentifier("sessionMode")
@@ -852,7 +847,7 @@ struct StartModeRow: View {
             )) {
                 ForEach(Array(Set([5, 10, 15, 30, current])).sorted(), id: \.self) { Text("\($0) seconds").tag($0) }
             } label: {
-                RowTitle("Delay", "You can stop the agent until then")
+                Text("Delay")
             }
             .pickerStyle(.menu)
             .accessibilityIdentifier("sessionSeconds")
