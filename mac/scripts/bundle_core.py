@@ -7,6 +7,7 @@ OUT_DIR gets:
   python/                  a relocatable CPython (python-build-standalone) with the core's modules and PyGObject
   phoneuse/ bin/ skill/    the core itself, as in the repository
   bin/uxplay               the AirPlay receiver (GPL-3.0, a separate program)
+  bin/phoneuse-ocr         text recognition with Apple's Vision framework (mac/ocr/main.swift)
   lib/                     every Homebrew library these need, rewired to load from here (@rpath)
   lib/gstreamer-1.0/       the GStreamer plugins the hub, frames service and UxPlay use
   lib/girepository-1.0/    typelibs that load their libraries from lib/
@@ -206,6 +207,10 @@ def main():
     ux = os.environ.get("PHONEUSE_UXPLAY") or os.path.expanduser("~/code/UxPlay/build/uxplay")
     shutil.copy2(ux, os.path.join(out, "bin", "uxplay"))
     b.relink(os.path.join(out, "bin", "uxplay"), ux, rpath="@loader_path/../lib")
+
+    # Text recognition with Apple's Vision framework (phoneuse/vision.py runs it): no OCR model to ship
+    run("swiftc", "-O", "-target", "arm64-apple-macos15", os.path.join(REPO, "mac", "ocr", "main.swift"),
+        "-o", os.path.join(out, "bin", "phoneuse-ocr"))
 
     # The core
     for d in ("phoneuse", "skill"):

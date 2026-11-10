@@ -811,9 +811,13 @@ VISION_SOCK = VISION_SOCKET
 
 
 def vision_python():
-    """The Python that runs the OCR service: the checkout's .venv-vision (scripts/setup-vision.sh),
-    or this one when RapidOCR is installed alongside phoneuse (the app). None: not installed."""
+    """The Python that runs the OCR service: this one on macOS with phoneuse-ocr (Apple's Vision), the checkout's
+    .venv-vision (scripts/setup-vision.sh), or this one when RapidOCR is installed alongside phoneuse (the app).
+    None: not installed."""
     import importlib.util
+    from .vision import mac_ocr
+    if mac_ocr():  # macOS: Apple's Vision through phoneuse-ocr, in this Python
+        return sys.executable
     py = os.path.join(ROOT, ".venv-vision", "bin", "python")
     if os.path.exists(py):
         return py

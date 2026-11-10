@@ -8,6 +8,8 @@ Models (chosen 2026-11-06 on real iPhone screenshots):
   OCR: RapidOCR with PP-OCRv6 small (ONNX; GPU with onnxruntime-gpu, else CPU).
        Exact on iOS UI text incl. arrows, ~0.18 s per screen on an RTX 5090
        (~1.2 s on the CPU); Tesseract garbled symbols.
+  On macOS: Apple's Vision framework through phoneuse-ocr (mac/ocr/main.swift; ~0.2 s a screen on Apple
+       silicon), so the Mac app ships no model and the service runs in the core's own Python.
   (A GUI grounding model, GoClick-Large, used to find elements from descriptions;
   removed 2026-11-08: agents tap text by OCR and everything else by position.)
 """
@@ -23,6 +25,46 @@ from .config import VISION_SOCKET as SOCK  # noqa: E402  (shared with the CLI)
 
 def log(*a):
     print(time.strftime("%H:%M:%S"), *a, file=sys.stderr, flush=True)
+
+
+def mac_ocr():
+    """The macOS text recognizer (mac/ocr/main.swift): PHONEUSE_OCR, the app's core/bin, or a development build in
+    mac/build (`swiftc -O mac/ocr/main.swift -o mac/build/phoneuse-ocr`). None elsewhere or when it isn't built."""
+    if sys.platform != "darwin":
+        return None
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for path in (os.environ.get("PHONEUSE_OCR"), os.path.join(root, "bin", "phoneuse-ocr"),
+                 os.path.join(root, "mac", "build", "phoneuse-ocr")):
+        if path and os.access(path, os.X_OK):
+            return path
+    return None
+
+
+class MacVision:
+    """OCR with Apple's Vision framework: one phoneuse-ocr process, an image path in, a JSON line out."""
+
+    def __init__(self, helper):
+        import subprocess
+        self.proc = subprocess.Popen([helper], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
+        self.ocr_device = "vision"
+        log("OCR with Apple Vision:", helper)
+        self.lock = threading.Lock()
+
+    def text(self, image):
+        self.proc.stdin.write(os.path.abspath(image) + "\n")
+        self.proc.stdin.flush()
+        reply = json.loads(self.proc.stdout.readline())
+        if "error" in reply:
+            raise RuntimeError(reply["error"])
+        return reply
+
+    def handle(self, req):
+        with self.lock:
+            if req["op"] == "text":
+                return self.text(req["image"])
+            if req["op"] in ("ping", "quit"):
+                return {"ok": True}
+            return {"error": "unknown op"}
 
 
 class Vision:
@@ -74,7 +116,8 @@ def serve():
     except OSError:
         log("another vision service runs; exiting")
         return
-    v = Vision()
+    helper = mac_ocr()
+    v = MacVision(helper) if helper else Vision()
     try:
         os.unlink(SOCK)
     except FileNotFoundError:
