@@ -20,6 +20,9 @@
 #include "freertos/task.h"
 
 #define BUTTON_SETUP 35  // the button away from the USB port: hold 3 s to set up again
+#define BUTTON_BOOT 0    // the one by the USB port
+// While a PC asks to use the bridge (ADOPT), a press of either button allows it: which
+// one is "lower" depends on how the board sits. Not pressing declines (it times out).
 #define ADC_ENABLE 14    // powers the battery voltage divider (GPIO 34)
 
 bridge_t bridge;
@@ -35,7 +38,7 @@ static void bt_start(void) {
 }
 
 static void housekeeping(void *arg) {
-    gpio_config_t in = {.pin_bit_mask = 1ULL << BUTTON_SETUP, .mode = GPIO_MODE_INPUT};
+    gpio_config_t in = {.pin_bit_mask = 1ULL << BUTTON_SETUP | 1ULL << BUTTON_BOOT, .mode = GPIO_MODE_INPUT};
     gpio_config(&in);
     gpio_config_t en = {.pin_bit_mask = 1ULL << ADC_ENABLE, .mode = GPIO_MODE_OUTPUT};
     gpio_config(&en);
@@ -52,9 +55,13 @@ static void housekeeping(void *arg) {
     int held = 0, tick = 0;
     for (;;) {
         vTaskDelay(pdMS_TO_TICKS(100));
-        held = gpio_get_level(BUTTON_SETUP) == 0 ? held + 1 : 0;
+        bool down = gpio_get_level(BUTTON_SETUP) == 0;
+        // A short press (let go before the 3 s hold) answers a PC that asks; link.c acts on it.
+        if (!down && held > 0 && held < 30 && bridge.asking) bridge.answer = 1;
+        held = down ? held + 1 : 0;
         if (held == 1) screen_wake();
         if (held == 30) setup_ble_open(true);
+        if (bridge.asking && gpio_get_level(BUTTON_BOOT) == 0) bridge.answer = 1;
         if (++tick % 10) continue;
         // Keep the phone connected: page it every 5 s while it's away (locked,
         // out of range, Bluetooth toggled). iOS accepts a bonded keyboard's page.

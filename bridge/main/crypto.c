@@ -5,23 +5,21 @@
 #include "esp_random.h"
 #include "psa/crypto.h"
 
-static psa_key_id_t priv;
-
 void crypto_init(void) { psa_crypto_init(); }
 
 void crypto_random(void *buf, size_t n) { esp_fill_random(buf, n); }
 
-int crypto_keypair(uint8_t pub[32]) {
-    if (priv) psa_destroy_key(priv);
-    priv = 0;
+int crypto_keypair(uint32_t *priv, uint8_t pub[32]) {
+    if (*priv) psa_destroy_key(*priv);
+    *priv = 0;
     psa_key_attributes_t a = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_type(&a, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_MONTGOMERY));
     psa_set_key_bits(&a, 255);
     psa_set_key_usage_flags(&a, PSA_KEY_USAGE_DERIVE);
     psa_set_key_algorithm(&a, PSA_ALG_ECDH);
-    if (psa_generate_key(&a, &priv) != PSA_SUCCESS) return -1;
+    if (psa_generate_key(&a, (psa_key_id_t *)priv) != PSA_SUCCESS) return -1;
     size_t n;
-    return psa_export_public_key(priv, pub, 32, &n) == PSA_SUCCESS && n == 32 ? 0 : -1;
+    return psa_export_public_key(*priv, pub, 32, &n) == PSA_SUCCESS && n == 32 ? 0 : -1;
 }
 
 static int hkdf(const uint8_t *secret, size_t sn, const uint8_t *salt, size_t saltn, const char *info,
@@ -37,7 +35,7 @@ static int hkdf(const uint8_t *secret, size_t sn, const uint8_t *salt, size_t sa
     return ok ? 0 : -1;
 }
 
-int crypto_agree(const uint8_t peer[32], const uint8_t ours[32], uint32_t *code, uint8_t wifi_key[32],
+int crypto_agree(uint32_t priv, const uint8_t peer[32], const uint8_t ours[32], uint32_t *code, uint8_t wifi_key[32],
                  uint8_t ctrl_key[32]) {
     uint8_t shared[32], salt[64], c[4];
     size_t n;

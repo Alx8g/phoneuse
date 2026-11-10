@@ -72,6 +72,16 @@ static const font_t *icon_for(int kind) {
 static void draw(void) {
     char a[48], b[48], c[48];
     int y = 6;
+    if (bridge.asking) {  // another PC asks to use the bridge (link.c ADOPT)
+        row(0, 8, 4, &font16, "Allow this computer?", DIM);
+        snprintf(a, sizeof a, "%.20s", bridge.asking_name);
+        row(1, 8, 25, &font22, a, FG);
+        snprintf(a, sizeof a, "%03lu %03lu", (unsigned long)(bridge.asking_code / 1000),
+                 (unsigned long)(bridge.asking_code % 1000));
+        row(2, -1, 56, &font36, a, FG);
+        row(3, 8, 108, &font16, "Same code? Press a button", DIM);
+        return;
+    }
     switch (bridge.state) {
     case ST_SETUP:
         row(0, 8, y, &font22, "Phone Use Bridge", FG);
@@ -166,7 +176,7 @@ static void screen_task(void *arg) {
         // a change, every 200 ms while the icon may need hiding, or once a second for the counters
         bool icon_up = now_ms() - bridge.activity_ms < ACT_SHOW_MS + 200;
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(icon_up ? 200 : 1000));
-        int layout = bridge.state * 2 + bridge.phone_connected;  // rows differ between these
+        int layout = bridge.asking ? 100 : bridge.state * 2 + bridge.phone_connected;  // rows differ between these
         if (layout != shown) {
             display_clear(BG);
             forget_rows();

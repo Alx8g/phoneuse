@@ -34,6 +34,7 @@ static uint16_t conn = 0xFFFF;
 
 static uint8_t our_pub[32], wifi_key[32], ctrl_key[32];
 static bool keyed;
+static uint32_t our_priv;
 
 static const uint16_t PRIMARY = ESP_GATT_UUID_PRI_SERVICE, CHAR_DECL = ESP_GATT_UUID_CHAR_DECLARE,
                       CCC = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
@@ -84,7 +85,7 @@ void setup_ble_notify_info(void) {
 
 static void new_keys(void) {
     keyed = false;
-    crypto_keypair(our_pub);
+    crypto_keypair(&our_priv, our_pub);
     if (handle[A_KEX_V]) esp_ble_gatts_set_attr_value(handle[A_KEX_V], 32, our_pub);
 }
 
@@ -118,7 +119,7 @@ static void on_write(esp_ble_gatts_cb_param_t *p) {
     if (h == handle[A_KEX_V] && p->write.len == 32) {
         uint8_t peer[32];
         memcpy(peer, p->write.value, 32);
-        if (crypto_agree(peer, our_pub, &bridge.code, wifi_key, ctrl_key) == 0) {
+        if (crypto_agree(our_priv, peer, our_pub, &bridge.code, wifi_key, ctrl_key) == 0) {
             keyed = true;
             bridge.state = ST_CODE;
             ESP_LOGI(TAG, "keys agreed; code %06lu", (unsigned long)bridge.code);

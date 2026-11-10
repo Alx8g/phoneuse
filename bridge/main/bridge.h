@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BRIDGE_FW "0.2.6"  // 0.2: TAP (0x0C); 0.2.1: the phone's Bluetooth signal in status; 0.2.2: activity icon; 0.2.3: FORGET (0x0D); 0.2.4: setup advertising waits for its data; 0.2.5: network scan while online; 0.2.6: named Phone Use Bridge
+#define BRIDGE_FW "0.3.0"  // 0.2: TAP (0x0C); 0.2.1: the phone's Bluetooth signal in status; 0.2.2: activity icon; 0.2.3: FORGET (0x0D); 0.2.4: setup advertising waits for its data; 0.2.5: network scan while online; 0.2.6: named Phone Use Bridge; 0.3.0: several PCs, ADOPT (0x11), more in FIND
 #define BRIDGE_NAME "Phone Use Bridge"  // the name the iPhone sees in Bluetooth settings
 
 typedef enum {
@@ -33,6 +33,12 @@ typedef struct {
     volatile uint32_t bt_rssi_at_ms;     // when it was last measured (0: never)
     volatile uint8_t activity;           // the last input the PC sent: ACT_*
     volatile uint32_t activity_ms;       // when it came
+    // Another PC asks to use the bridge (ADOPT): the screen shows its name and the code,
+    // and a press of either button allows it.
+    volatile bool asking;
+    char asking_name[24];
+    uint32_t asking_code;
+    volatile uint8_t answer;             // the button's answer for link.c: 1 allow
 } bridge_t;
 
 // What the screen's activity icon shows, for ACT_SHOW_MS after the input.
@@ -79,3 +85,4 @@ int hid_tap(uint16_t x, uint16_t y, uint16_t hold_ms);
 
 // link.c
 void link_start(void);
+void link_host_removed(int i);  // settings dropped allowed PC i: end its sessions

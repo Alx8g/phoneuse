@@ -1,6 +1,7 @@
 // Setup key exchange and packet authentication.
 //
-// Setup: the PC and the bridge exchange X25519 public keys over BLE. Both derive,
+// Setup: the PC and the bridge exchange X25519 public keys over BLE (or over the
+// network, when another PC asks to use a set-up bridge: ADOPT in link.c). Both derive,
 // with HKDF-SHA256 over the shared secret (salt: bridge key || PC key):
 //   "phoneuse code"    -> a 6-digit code, shown on the screen and on the PC; the
 //                         person compares them (a different code means someone
@@ -12,10 +13,11 @@
 #include <stdint.h>
 
 void crypto_init(void);
-// New X25519 key pair; writes our public key (32 bytes).
-int crypto_keypair(uint8_t pub[32]);
+// New X25519 key pair in *priv (a PSA key id; 0 at first, replaced on each call);
+// writes our public key (32 bytes). BLE setup and ADOPT keep one pair each.
+int crypto_keypair(uint32_t *priv, uint8_t pub[32]);
 // Agree with the peer's public key; derives the code and the keys.
-int crypto_agree(const uint8_t peer[32], const uint8_t ours[32], uint32_t *code, uint8_t wifi_key[32],
+int crypto_agree(uint32_t priv, const uint8_t peer[32], const uint8_t ours[32], uint32_t *code, uint8_t wifi_key[32],
                  uint8_t ctrl_key[32]);
 // AES-256-GCM open: in = nonce(12) || ciphertext || tag(16). Returns plaintext length or -1.
 int crypto_open(const uint8_t key[32], const uint8_t *in, size_t n, uint8_t *out, size_t cap);
