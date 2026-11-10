@@ -167,7 +167,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             UNNotificationCategory(identifier: "UNLOCK", actions: [unlock, deny], intentIdentifiers: []),
             UNNotificationCategory(identifier: "SESSION", actions: [allow, denySession], intentIdentifiers: []),
         ])
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+        #if DEBUG
+        let screenshots = UserDefaults.standard.bool(forKey: "screenshots")  // -screenshots YES: no permission prompt
+        #else
+        let screenshots = false
+        #endif
+        if !screenshots { center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in } }
         application.registerForRemoteNotifications()
         Task { await PushRegistrar.shared.resendAll() }  // also on background launches
         return true

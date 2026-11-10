@@ -10,6 +10,8 @@ final class AppModel: ObservableObject {
     static let shared = AppModel()
 
     @Published var pairing: Pairing? = PairingStore.load()
+    /// "See a Demo": a simulated computer (Demo.swift), nothing over the network. Never saved.
+    @Published private(set) var demo = false
     @Published var state: PCState?
     @Published var reachable = false
     @Published var error: String?
@@ -31,7 +33,34 @@ final class AppModel: ObservableObject {
 
     var client: CompanionClient? { pairing.map(CompanionClient.init) }
 
+    func startDemo() {
+        demo = true
+        pairing = Demo.pairing
+        state = Demo.state
+        reachable = true
+        error = nil
+    }
+
+    #if DEBUG
+    func startDemoForScreenshots() {
+        startDemo()
+        if UserDefaults.standard.bool(forKey: "demoRequest") {
+            state?.agent.state = "idle"
+            state?.session?.pending = PCState.Pending(id: "demo", since: Date().timeIntervalSince1970,
+                                                      action: "Check the weather in Weather", mode: "ask", deadline: nil)
+        }
+    }
+    #endif
+
+    func stopDemo() {
+        demo = false
+        pairing = PairingStore.load()
+        state = nil
+        reachable = false
+    }
+
     func pair(from url: URL) {
+        if demo { stopDemo() }
         guard let p = Pairing(url: url) else {
             error = "That pairing link isn't valid."
             return
@@ -50,6 +79,7 @@ final class AppModel: ObservableObject {
     /// whether or not the PC answered, since it may be offline. The client keeps a copy of the key, so the
     /// signed request still goes out after the local pairing is gone.
     func unpair() {
+        if demo { return stopDemo() }
         if let client {
             Task {
                 _ = try? await client.send("DELETE", "/v1/pairing", json: nil, timeout: 4)
@@ -88,6 +118,7 @@ final class AppModel: ObservableObject {
     }
 
     func refresh() async {
+        if demo { reachable = true; return }
         guard let client else { return }
         do {
             let s = try await client.get("/v1/state", as: PCState.self)
@@ -111,6 +142,15 @@ final class AppModel: ObservableObject {
     @discardableResult
     func run(_ key: String, _ method: String, _ path: String, _ json: [String: Any]? = nil,
              timeout: TimeInterval = 6) async -> Data? {
+        if demo, var s = state {
+            busy.insert(key)
+            try? await Task.sleep(for: .milliseconds(300))  // as quick as a computer nearby
+            let answer = Demo.apply(method, path, json, to: &s)
+            state = s
+            busy.remove(key)
+            error = nil
+            return try? JSONSerialization.data(withJSONObject: answer)
+        }
         guard let client else { return nil }
         busy.insert(key)
         defer { busy.remove(key) }
@@ -209,6 +249,7 @@ final class AppModel: ObservableObject {
     func setBridge(_ on: Bool) async { await run("bridge", "POST", "/v1/bridge/use", ["on": on]) }
 
     func networks() async throws -> [BridgeNetwork] {
+        if demo { return Demo.networks }
         guard let client else { throw CompanionError.notPaired }
         struct Answer: Decodable { var networks: [BridgeNetwork] }
         return try await client.get("/v1/bridge/networks", as: Answer.self).networks
@@ -264,6 +305,7 @@ final class AppModel: ObservableObject {
     }
 
     func syncActivity() async {
+        if demo { return }  // no Live Activity for the simulated computer
         await refresh()
         guard reachable, let s = state else { return }
         let live = Self.live()

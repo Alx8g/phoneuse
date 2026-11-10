@@ -18,6 +18,7 @@
 		577720DFA56A5CB657C35710 /* CompanionCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0E5981525F6136B8126827 /* CompanionCrypto.swift */; };
 		57CF17221301F264356C37A8 /* PhoneUseWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E1FCAFAAC1696A3028D1A7ED /* PhoneUseWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		63569514AB93D32847E343D3 /* Push.swift in Sources */ = {isa = PBXBuildFile; fileRef = 489D23D034BD4EAB6BC03865 /* Push.swift */; };
+		6AC45EAC53B4BF8008594BBF /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = CACC8810B2D9D61FA55FC6A0 /* Demo.swift */; };
 		777B2BDF8A70679A4531AC90 /* CompanionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12BEBE4E61C3043D7067FA9 /* CompanionClient.swift */; };
 		92C0E3AB29D71C0A6E6B4745 /* Pairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F02074B048620193B3B9E23 /* Pairing.swift */; };
 		957F742942E56EAC59E1A6E6 /* CompanionCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0E5981525F6136B8126827 /* CompanionCrypto.swift */; };
@@ -94,6 +95,7 @@
 		ABC78A689A6D939A8431C06B /* PhoneUseTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PhoneUseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7C6BC6CCEBD2C719D28978F /* PhoneUse.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PhoneUse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF6503FBA88C4C609778B5EB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CACC8810B2D9D61FA55FC6A0 /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
 		DE125BEF83809A7A3AAFD4FE /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		E02BE5A480CB6C53141CE49E /* CompanionCryptoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionCryptoTests.swift; sourceTree = "<group>"; };
 		E12BEBE4E61C3043D7067FA9 /* CompanionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionClient.swift; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 				DE125BEF83809A7A3AAFD4FE /* AppModel.swift */,
 				BF6503FBA88C4C609778B5EB /* Assets.xcassets */,
 				2EDD5C1D42C5084700766D23 /* ContentView.swift */,
+				CACC8810B2D9D61FA55FC6A0 /* Demo.swift */,
 				21CB2894AC2FE090100445FB /* Info.plist */,
 				AA752275146E79EF1EC56420 /* PCState.swift */,
 				7E67D7D720A78ABB19E838A3 /* PhoneUse.entitlements */,
@@ -358,6 +361,7 @@
 				777B2BDF8A70679A4531AC90 /* CompanionClient.swift in Sources */,
 				957F742942E56EAC59E1A6E6 /* CompanionCrypto.swift in Sources */,
 				EF510DABF80DFC3E9DA6BA5E /* ContentView.swift in Sources */,
+				6AC45EAC53B4BF8008594BBF /* Demo.swift in Sources */,
 				06C3CB4C7B4F48E3DF865D32 /* PCState.swift in Sources */,
 				BBCBBBB49D5679FEDA066BB0 /* Pairing.swift in Sources */,
 				073E7121CBC8AEF6FA0DBE09 /* PhoneUseApp.swift in Sources */,
@@ -531,7 +535,7 @@
 				PRODUCT_NAME = PhoneUseWidgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -552,7 +556,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "PhoneUse Widgets AppStore";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -605,7 +609,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = co.lxe.phoneuse;
 				PRODUCT_NAME = PhoneUse;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -626,7 +630,7 @@
 				PRODUCT_NAME = PhoneUse;
 				PROVISIONING_PROFILE_SPECIFIER = "PhoneUse AppStore";
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

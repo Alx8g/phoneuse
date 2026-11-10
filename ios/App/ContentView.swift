@@ -134,7 +134,7 @@ struct UnpairedView: View {
         ContentUnavailableView {
             Label("Not Paired", systemImage: "qrcode.viewfinder")
         } description: {
-            Text("On your computer, open Phone Use and choose Pair iPhone App. Then scan the code it shows.")
+            Text("On your computer, open Phone Use and choose Pair iPhone. Then scan the code it shows.")
         } actions: {
             Button {
                 model.error = nil
@@ -155,6 +155,10 @@ struct UnpairedView: View {
             .buttonStyle(.plain)
             .foregroundStyle(.tint)
             .padding(.top, 4)
+            Button("See a Demo") { model.startDemo() }
+                .buttonStyle(.plain)
+                .foregroundStyle(.tint)
+                .accessibilityIdentifier("seeDemo")
             if let error = model.error { Text(error).foregroundStyle(.red).font(.footnote) }
         }
         .navigationTitle("Phone Use")
@@ -214,12 +218,23 @@ struct PhoneTab: View {
                 }
                 .disabled(offline)
             }
-            Section {
-                if let p = model.pairing {
-                    LabeledContent("Paired with", value: p.name)
-                    LabeledContent("Address", value: "\(p.host):\(p.port)")
+            if model.demo && !Demo.forScreenshots {
+                Section {
+                    LabeledContent("Paired with", value: "\(Demo.pcName) (demo)")
+                    Button("Exit Demo") { model.stopDemo() }
+                        .accessibilityIdentifier("exitDemo")
+                } footer: {
+                    Text("A simulated computer. To use your own iPhone, open Phone Use on your computer and choose "
+                         + "Pair iPhone.")
                 }
-                Button("Unpair", role: .destructive) { confirmUnpair = true }
+            } else {
+                Section {
+                    if let p = model.pairing {
+                        LabeledContent("Paired with", value: p.name)
+                        if !model.demo { LabeledContent("Address", value: "\(p.host):\(p.port)") }
+                    }
+                    Button("Unpair", role: .destructive) { confirmUnpair = true }
+                }
             }
         }
         .toolbar(.hidden, for: .navigationBar)  // the tab bar names the tab

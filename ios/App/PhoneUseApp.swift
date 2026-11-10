@@ -13,6 +13,9 @@ struct PhoneUseApp: App {
                 .onOpenURL { model.pair(from: $0) }
                 #if DEBUG
                 .task { model.startDemoActivityIfAsked() }
+                .task {  // screenshots: -demo YES opens the demo; -demoRequest YES adds an agent asking to start
+                    if UserDefaults.standard.bool(forKey: "demo") { model.startDemoForScreenshots() }
+                }
                 .task {  // screenshots: launch with -pairLink <phoneuse://pair?...> to pair without the system prompt
                     if let link = UserDefaults.standard.string(forKey: "pairLink"), let url = URL(string: link) {
                         model.pair(from: url)
