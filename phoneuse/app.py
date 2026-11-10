@@ -440,9 +440,9 @@ class Window(Adw.ApplicationWindow):
         if st.get("error"):
             state.set_label("Offline")
             state.add_css_class("error")
-        elif st.get("connected"):
+        elif st.get("connected"):  # the iPhone's name, after a phone icon, in plain text
             state.set_label(st.get("phone") or "iPhone")
-            state.add_css_class("success")
+            r.add_suffix(Gtk.Image(icon_name="phone-symbolic"))
         else:
             state.set_label("iPhone not connected")
             state.add_css_class("warning")
