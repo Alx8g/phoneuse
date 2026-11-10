@@ -566,6 +566,14 @@ def key_combo(h, combo):
 # ---------- gestures (recipes verified on iOS 26, see RECIPES.md) ----------
 
 def home(h):
+    if touch.LINK == "ble":
+        return _home_ble(h)
+    h.cmd("key h gui")
+
+
+def _home_ble(h):
+    """Windows (Bluetooth LE). Measured there (BO5AMIS, iPhone 14 Pro Max, iOS 26.5); on
+    Linux and macOS Cmd+H works, and the rest stays as it was (lxe, 2026-11-10)."""
     # The Home key (consumer page), not Cmd+H: on the home screen's Today view (the page
     # left of the first) Cmd+H and Cmd+Space did nothing, and the Home key went home
     # (iPhone 14 Pro Max, iOS 26.5). Elsewhere both work.
@@ -654,10 +662,12 @@ def steplog(*a):
         print(f"{time.time():.3f}", *a, file=sys.stderr, flush=True)
 
 
-def step(h, command, quiet=0.1, change=1.0):
+def step(h, command, quiet=0.1, change=None):
     """Send one HID command and wait until the phone has shown its result (the
     frames service), instead of a fixed pause. `quiet`: how long the picture
     must stay still, longer where results stream in (search)."""
+    if change is None:  # the first change's wait: 0.6 s, or 1 s over Bluetooth LE (slower to show)
+        change = 1.0 if touch.LINK == "ble" else 0.6
     seq = frame_seq()
     steplog("send", command)
     h.cmd(command)
@@ -814,6 +824,50 @@ def awake_cmd(arg):
 
 
 def open_app(h, name):
+    if touch.LINK == "ble":
+        return _open_app_ble(h, name)
+    step(h, "key h gui", change=0.3)  # often already home (no change); also wakes a locked phone
+    refuse_if_locked()
+    step(h, "key space gui")
+    step(h, "type " + name, quiet=0.35)  # search results arrive in waves
+    spot = spotlight_app(screen_text(), name)
+    if spot:  # the app is a result, but not the top hit (typing "Gmail" puts Mail first)
+        seq = frame_seq()
+        touch.tap(h, *spot)
+        if seq is not None:
+            try:
+                screen.frames_request(f"settle {seq} 0.3 0.6", timeout=6)  # the app comes up
+                acted(None)
+            except OSError:
+                time.sleep(0.8)
+    else:
+        step(h, "key enter", quiet=0.3)  # wait for the app to come up
+
+
+def spotlight_app(lines, name):
+    """Where to tap in Spotlight's results to open the app called `name`, or None
+    when Enter already opens it (it is the top hit) or no app has that exact name.
+    The top hit is the first line under the search field; the Apps section lists
+    one app per line, indented, until the next section's header at the left edge."""
+    want = _plain(name)
+    below = [ln for ln in lines if ln[1] > 0.12]
+    if not want or not below or _plain(below[0][2]) == want:
+        return None
+    apps = False
+    for x, y, text in below:
+        if _plain(text) == "apps" and x < 0.22:
+            apps = True
+        elif apps and x < 0.22:  # the next section's header
+            return None
+        elif apps and _plain(text) == want:
+            return x, y
+    return None
+
+
+def _open_app_ble(h, name):
+    """Windows (Bluetooth LE): every step checked on the screen. Measured on iOS 26.5, where
+    Spotlight blurs the home screen; on iOS 26 without the blur (lxe's iPhone 17 Pro) the
+    check that Spotlight opened fails, so Linux and macOS keep the sequence above."""
     # The home screen first (also wakes a locked phone), with Home pressed twice
     # (home()): an app opened from Spotlight goes back to Spotlight on the first press
     # (measured, iPhone 14 Pro Max, iOS 26.5: 4 of 4). Typing into that Spotlight was
