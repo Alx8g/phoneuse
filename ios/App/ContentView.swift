@@ -220,7 +220,7 @@ struct PhoneTab: View {
                 Button("Unpair", role: .destructive) { confirmUnpair = true }
             }
         }
-        .navigationTitle("Phone")
+        .toolbar(.hidden, for: .navigationBar)  // the tab bar names the tab
         .refreshable { await model.refresh() }
         .alert("Unpair from \(model.pairing?.name ?? "the PC")?", isPresented: $confirmUnpair) {
             Button("Cancel", role: .cancel) {}
@@ -360,7 +360,7 @@ struct AgentsTab: View {
                 .disabled(offline)
             }
         }
-        .navigationTitle("Agents")
+        .toolbar(.hidden, for: .navigationBar)  // the tab bar names the tab
         .refreshable { await model.refresh() }
         .sheet(isPresented: $passcodeSheet) { PasscodeSheet(replace: s?.unlock.passcodeSaved == true) }
         .alert("Forget the passcode?", isPresented: $confirmForget) {
@@ -514,26 +514,11 @@ struct BridgeTab: View {
                             RowTitle("No bridge", "Set it up in Phone Use on the PC: Bridge › Set Up Bridge.")
                         }
                     }
-                    if s.bridge != nil {
-                        Section {
-                            Button(role: .destructive) { confirmForget = true } label: {
-                                HStack {
-                                    Text("Forget Bridge…")
-                                    if model.busy.contains("forgetBridge") { ProgressView().tint(.white) }
-                                }
-                                .padding(.horizontal, 8)
-                            }
-                            .buttonStyle(.borderedProminent).tint(.red).buttonBorderShape(.capsule)
-                            .frame(maxWidth: .infinity)
-                            .accessibilityIdentifier("forgetBridge")
-                        }
-                        .listRowBackground(Color.clear)
-                    }
                 }
                 .disabled(offline)
             }
         }
-        .navigationTitle(s?.inputTitle ?? "Bridge")
+        .toolbar(.hidden, for: .navigationBar)  // the tab bar names the tab
         .refreshable { await model.refresh() }
         .alert("Forget the bridge?", isPresented: $confirmForget) {
             Button("Cancel", role: .cancel) {}
@@ -591,6 +576,8 @@ struct BridgeTab: View {
                 LabeledContent("Wi-Fi Network", value: b.ssid ?? "")
             }
             .accessibilityIdentifier("bridgeNetwork")
+            Button("Forget Bridge", role: .destructive) { confirmForget = true }  // like Unpair on the Phone tab
+                .accessibilityIdentifier("forgetBridge")
         }
     }
 
@@ -680,6 +667,7 @@ struct NetworksView: View {
             }
         }
         .navigationTitle("Choose a Network")
+        .toolbar(.visible, for: .navigationBar)  // a page within the tab: its title and Back
         .disabled(joining != nil)
         .overlay {
             if let joining {
