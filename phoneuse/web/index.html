@@ -548,7 +548,7 @@ async function bridgeShow() {
   bForget.hidden = false;
 }
 async function bridgeFind() {
-  bview(`<div class="item dim">Looking for bridges…</div>`);
+  bview(`<div class="item dim">Looking for the bridge…</div>`);
   const j = await bapi("/find", {});
   if (j.error) return bview(`<button class="item" id="bAgain"><span class="grow link">Try Again</span></button>`, "!" + esc(j.error)), on("#bAgain", bridgeFind);
   if (!j.bridges.length) {
@@ -566,20 +566,20 @@ async function bridgePair(b) {
   const j = await bapi("/pair", { address: b.address });
   if (j.error) return bview(`<button class="item" id="bAgain"><span class="grow link">Try Again</span></button>`, "!" + esc(j.error)), on("#bAgain", bridgeFind);
   bview(`<div class="code">${esc(j.code)}</div>
-         <button class="item" id="bSame"><span class="grow link">The Bridge Shows This Code</span></button>
-         <button class="item" id="bDiff"><span class="grow link">It Shows Another Code</span></button>`,
-        "Compare with the bridge's screen. A different code means something else answered; stop there.");
+         <button class="item" id="bSame"><span class="grow link">Codes Match</span></button>
+         <button class="item" id="bDiff"><span class="grow link" style="color:#ff453a">Don't Match</span></button>`,
+        "Does the bridge show the same code?");
   on("#bSame", bridgeNetworks);
   on("#bDiff", async () => { await bapi("/cancel", {}); bridgeShow(); });
 }
 async function bridgeNetworks() {
-  bview(`<div class="item dim">The bridge is looking for Wi-Fi networks…</div>`);
+  bview(`<div class="item dim">Looking for Wi-Fi…</div>`);
   const j = await bapi("/networks", {});
   if (j.error) return bview(`<button class="item" id="bAgain"><span class="grow link">Start Again</span></button>`, "!" + esc(j.error)), on("#bAgain", bridgeFind);
   const lock = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="opacity:.5"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
   bview(j.networks.map((n, i) => `<button class="item" data-i="${i}"><span class="grow">${esc(n.s)}</span>${n.l ? lock : ""}<span class="dim">${n.r}</span></button>`).join("") +
         `<button class="item" id="bRescan"><span class="grow link">Scan Again</span></button>`,
-        "Networks the bridge sees. It needs 2.4 GHz Wi-Fi, on the same network as this PC.");
+        "Choose the same 2.4 GHz network as this PC.");
   bridgeBox.querySelectorAll("[data-i]").forEach((el) => el.onclick = () => bridgePassword(j.networks[+el.dataset.i]));
   on("#bRescan", bridgeNetworks);
 }

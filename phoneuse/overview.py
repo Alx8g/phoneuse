@@ -31,8 +31,8 @@ def hero(s, name):
         return _step("setup_bridge", "Set up the bridge", "The bridge lets Phone Use tap and type on your iPhone. "
                      "Plug it in near the iPhone, then set it up here.", "setup_bridge", icon="keyboard")
     if not s.get("paired"):
-        return _step("pair_app", "Pair the iPhone app", "Agents can use the iPhone only while the Phone Use app "
-                     "on it is paired. You allow and stop them there.", "pair_app")
+        return _step("pair_app", "Pair the iPhone app", "Install and pair the Phone Use app. It's where you allow "
+                     "and stop agents.", "pair_app")
     if not pic.get("live"):
         fw = bool(s.get("firewall")) and not s.get("confirmed")
         return _step("start_mirroring", "Start Screen Mirroring",
@@ -45,8 +45,7 @@ def hero(s, name):
                      "Wi-Fi as this PC.", "retry", icon="offline")
     if not st.get("connected"):
         return _step("connect_bridge", "Connect the bridge to the iPhone", "On the iPhone, open Settings › "
-                     "Bluetooth and tap PhoneUse Bridge. If it's listed as connected, keep the bridge closer to "
-                     "the iPhone.", icon="bluetooth")
+                     "Bluetooth and tap PhoneUse Bridge. Already connected? Move the bridge closer.", icon="bluetooth")
     if pic.get("paused"):
         return _step("taken_over", "You're in control", "You took over from the agent.", "open_phone", good=True)
     if pic.get("stale"):
