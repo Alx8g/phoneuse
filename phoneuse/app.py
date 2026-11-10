@@ -506,8 +506,14 @@ class PairDialog(Adw.Dialog):
         buf = io.BytesIO()
         qrcode.make(link, border=2, box_size=8).save(buf, format="PNG")
         tex = Gdk.Texture.new_from_bytes(GLib.Bytes.new(buf.getvalue()))
-        self.box.append(Gtk.Picture(paintable=tex, can_shrink=True, content_fit=Gtk.ContentFit.CONTAIN,
-                                    height_request=260, css_classes=["card"]))
+        css = Gtk.CssProvider()
+        css.load_from_string(".qr { border-radius: 12px; }")
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css,
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        # A square the size of the code, clipped to rounded corners, so nothing shows around it.
+        self.box.append(Gtk.Picture(paintable=tex, can_shrink=True, content_fit=Gtk.ContentFit.FILL,
+                                    width_request=260, height_request=260, halign=Gtk.Align.CENTER,
+                                    overflow=Gtk.Overflow.HIDDEN, css_classes=["qr"]))
         self.box.append(Gtk.Label(label="Point the iPhone's camera at the code and open the link in Phone Use.",
                                   wrap=True, justify=Gtk.Justification.CENTER, css_classes=["dim-label"]))
 
