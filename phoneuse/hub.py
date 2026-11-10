@@ -65,7 +65,11 @@ class Hub:
         self.pipe = Gst.parse_launch(
             f'udpsrc reuse=false address=127.0.0.1 port={screen.HUB_RTP_PORT} buffer-size=8388608 caps="{rtp}" '
             f"! rtph264depay ! h264parse ! {dec} ! {download}appsink name=raw sync=false async=false emit-signals=true "
-            f"appsrc name=src is-live=true format=time do-timestamp=true ! {encoder(dec)} "
+            # At most one frame waits for the encoder, the newest: when the phone sends faster than the encoder
+            # keeps up (a busy screen, a slower CPU), older frames are dropped, so viewers fall behind by at
+            # most a frame instead of an ever-growing backlog.
+            f"appsrc name=src is-live=true format=time do-timestamp=true max-buffers=1 leaky-type=downstream "
+            f"! {encoder(dec)} "
             f"! h264parse ! rtph264pay pt=96 mtu=60000 config-interval=-1 "
             f"! multiudpsink name=out sync=false async=false")
         self.src = self.pipe.get_by_name("src")
