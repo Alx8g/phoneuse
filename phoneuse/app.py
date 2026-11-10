@@ -456,6 +456,13 @@ class Window(Adw.ApplicationWindow):
         firmware = nav_row("Flash LilyGO T-Display", "Install the bridge firmware over USB",
                            lambda: FirmwareDialog(self).present(self))
         if not saved:
+            # Bridges another PC set up answer on the network: one row each, to use it here too.
+            for nb in (b or {}).get("nearby") or []:
+                phone = nb.get("phone") or "No iPhone"
+                r = Adw.ActionRow(title=f"Bridge {nb['id'][-4:]}",
+                                  subtitle=f"{phone} · {nb.get('ssid') or nb.get('ip')}")
+                r.add_suffix(button("Use…", None, lambda nb=nb: BridgeSetup(self, adopt=nb).present(self)))
+                add(r)
             add(nav_row("Set Up Existing Bridge", None, lambda: BridgeSetup(self).present(self)))
             add(firmware)
             return
@@ -486,7 +493,10 @@ class Window(Adw.ApplicationWindow):
         add(net)
         add(firmware)
         # Forget: the last row, like Unpair (the Mac and iPhone apps do the same)
-        forget = Adw.ActionRow(title="Forget Bridge", subtitle="Resets the bridge and disconnects it from your iPhone")
+        others = (st.get("hosts") or 1) - 1  # other PCs the bridge lets in (firmware 0.3+)
+        forget = Adw.ActionRow(title="Forget Bridge", subtitle=(
+            f"Other computers keep using it ({others})" if others > 0 else
+            "Resets the bridge and disconnects it from your iPhone"))
         forget.add_suffix(button("Forget…", None, self._confirm_forget_bridge))
         add(forget)
 
@@ -585,6 +595,8 @@ class Window(Adw.ApplicationWindow):
             self.toast(f"Couldn't forget the bridge: {err}")
         elif j.get("reset"):
             self.toast("Bridge reset. Also forget Phone Use Bridge in the iPhone's Bluetooth settings")
+        elif j.get("why") == "kept":
+            self.toast("Bridge removed from this computer; other computers keep using it")
         else:  # forgotten here; the bridge itself didn't answer (offline, or older firmware)
             self.toast("Bridge removed, but it didn't respond to the reset")
         self.refresh()
@@ -757,16 +769,17 @@ class BridgeSetup(Adw.Dialog):
     network, type its password, then wait for the iPhone to connect to it), or move a set-up
     bridge to another network."""
 
-    def __init__(self, win, change=False):
-        super().__init__(title="Wi-Fi Network" if change else "Set Up Bridge", content_width=420,
-                         content_height=540)
-        self.win, self.change, self.waiting = win, change, None
+    def __init__(self, win, change=False, adopt=None):
+        super().__init__(title="Wi-Fi Network" if change else "Use Bridge" if adopt else "Set Up Bridge",
+                         content_width=420, content_height=540)
+        self.win, self.change, self.waiting, self.ended = win, change, None, False
         self.nav = Adw.NavigationView()
         self.set_child(self.nav)
         self.connect("closed", self._closed)
-        self.networks() if change else self.find()
+        self.networks() if change else self.adopt(adopt) if adopt else self.find()
 
     def _closed(self, *_):
+        self.ended = True
         if self.waiting:
             GLib.source_remove(self.waiting)
         if not self.change:
@@ -821,15 +834,50 @@ class BridgeSetup(Adw.Dialog):
     def _found(self, j, err):
         if err or (j or {}).get("error"):
             return self._error("Find the Bridge", str(err or j["error"]), self.find)
-        if not j["bridges"]:
+        near = j.get("nearby") or []
+        if not j["bridges"] and not near:
             return self._page("Find the Bridge", self._text("No bridge found. Hold the bridge's lower button for 3 "
                                                             "seconds, then try again."),
                               actions=[("Try Again", "pill", self.find),
                                        ("Flash LilyGO T-Display", "pill", self._firmware)])
         g = Adw.PreferencesGroup(description="Choose your bridge.")
+        for nb in near:  # set up already, on this network: ask it to let this computer in
+            g.add(nav_row(f"Bridge {nb['id'][-4:]}", f"{nb.get('phone') or 'No iPhone'} · {nb.get('ssid') or nb['ip']}",
+                          lambda nb=nb: self.adopt(nb)))
         for b in j["bridges"]:
             g.add(nav_row(b.get("name") or "Phone Use Bridge", b["address"], lambda a=b["address"]: self.pair(a)))
         self._page("Find the Bridge", g)
+
+    # ---- a bridge another computer set up: it shows this one's name and a code ----
+    def adopt(self, nb):
+        self.adopting = nb
+        self._wait("Check the Code", "Asking the bridge…")
+        in_thread(lambda: api("/api/bridge/adopt", {"id": nb["id"]}, timeout=15), self._asked)
+
+    def _asked(self, j, err):
+        if err or (j or {}).get("error"):
+            return self._error("Check the Code", str(err or j["error"]), lambda: self.adopt(self.adopting))
+        g = Adw.PreferencesGroup()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, margin_top=12)
+        box.append(Gtk.Label(label=j["code"], css_classes=["title-1", "numeric"]))
+        box.append(Gtk.Label(label=f"If the bridge shows {j['name']} and the same code, press either of its buttons.",
+                             wrap=True, justify=Gtk.Justification.CENTER, css_classes=["dim-label"]))
+        box.append(Adw.Spinner(height_request=24))
+        g.add(box)
+        self._page("Check the Code", g)
+        self._adopt_wait()
+
+    def _adopt_wait(self):
+        def done(j, err):
+            if self.ended:
+                return
+            if err or (j or {}).get("error"):
+                return self._error("Check the Code", str(err or j["error"]), lambda: self.adopt(self.adopting))
+            if j.get("waiting"):
+                return self._adopt_wait()
+            self.win.toast("This computer now uses the bridge")
+            self.close()
+        in_thread(lambda: api("/api/bridge/adopt/wait", {}, timeout=40), done)
 
     def pair(self, address):
         self._wait("Check the Code", "Connecting…")

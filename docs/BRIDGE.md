@@ -25,10 +25,33 @@ or `phoneuse bridge setup` in a terminal. No USB cable is needed.
 The PC saves the bridge's id and control key in `~/.config/phoneuse/bridge.json`
 before the bridge joins, and finds it again by id if its address changes.
 
+## Using a bridge from another computer
+
+A bridge with firmware 0.3 or later can be used by up to four computers, each with
+its own control key, so a second computer doesn't need to set the bridge up again or
+flash it. Any computer on the bridge's network sees it: Settings › Bluetooth bridge
+lists it with its iPhone and network, and `phoneuse bridge find` prints it.
+
+To use it, click Use… (or run `phoneuse bridge use`). The computer and the bridge
+exchange X25519 keys over the network, as in setup, and the bridge's screen shows the
+computer's name and a 6-digit code. If the computer shows the same code, press either
+of the bridge's buttons. The bridge then trusts that computer's key. If nobody presses
+a button within 90 seconds, the request lapses. The bridge takes one request at a time,
+so a second computer has to wait until the first request is answered or lapses.
+
+When a fifth computer is allowed, the bridge drops the computer it allowed first.
+Forget Bridge on one computer removes only that computer. The bridge resets (no Wi-Fi,
+no iPhone pairing) only when the last computer forgets it.
+
+Updating a 0.2 bridge to 0.3 over USB with `phoneuse bridge flash` keeps its network,
+its key and its iPhone pairing: the flash leaves the settings partition alone, and the
+old key becomes the first computer's.
+
 ## The control link
 
-UDP port 47700. Every packet is signed (HMAC-SHA256 with the control key from
-setup, truncated to 8 bytes), so nobody else on the network can type on the phone.
+UDP port 47700. Every packet is signed (HMAC-SHA256 with the sending computer's
+control key, truncated to 8 bytes), so nobody else on the network can type on the
+phone. Only FIND and ADOPT go unsigned, and their answers carry no secrets.
 The bridge answers each report at once: sent, skipped (its Bluetooth queue is busy,
 so the sender keeps the motion), or no phone. `bridge/main/link.c` has the packet
 format.

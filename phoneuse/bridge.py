@@ -1,13 +1,17 @@
 """The Bluetooth bridge: an ESP32 (LilyGO T-Display) that the iPhone pairs with as
 its Bluetooth keyboard and mouse, driven by phoneuse over Wi-Fi.
 
-Three parts, in the order a new bridge meets them:
+Four parts, in the order a bridge meets them:
 
   1. Firmware over USB (developers): build bridge/ with ESP-IDF and flash it.
   2. Setup over BLE (everyone): find the bridge, exchange keys, compare the code on
      its screen, list the Wi-Fi networks it sees, send the chosen one's password
      encrypted. The bridge joins and phoneuse saves its id, address and key.
-  3. The control link over UDP: signed HID reports, answered one by one
+  3. Using a bridge another PC set up (firmware 0.3+): it answers on the network,
+     so this PC sees it, asks to use it (ADOPT), and the person presses the
+     bridge's buttons when its screen shows the same code. Up to four PCs
+     can use one bridge, each with its own key.
+  4. The control link over UDP: signed HID reports, answered one by one
      (bridge/main/link.c has the packet format).
 
 Saved in ~/.config/phoneuse/bridge.json: {"id", "ip", "key" (hex), "ssid"}.
@@ -84,16 +88,16 @@ def resolve(cfg=None):
 
 
 def forget(reset=True):
-    """Forget the saved bridge. With reset, first tell the bridge to forget everything too.
-    Returns None once the bridge has reset, else why it couldn't (it stays as it was)."""
+    """Forget the saved bridge. With reset, first tell the bridge to stop trusting this PC;
+    it resets fully when no other PC uses it. Returns None once it reset, "kept" when other
+    PCs still use it (it keeps its Wi-Fi and iPhone), else why it couldn't be reached."""
     why = "not asked"
     cfg = saved() if reset else None
     if cfg:
         try:
             link = Link(resolve(cfg) or cfg)
             try:
-                link.reset()
-                why = None
+                why = None if link.reset() else "kept"
             finally:
                 link.close()
         except (RuntimeError, OSError) as e:
@@ -360,7 +364,103 @@ def find_lan(timeout=1.0):
     return list(out.values())
 
 
-# ---------- 3. the control link ----------
+# ---------- 3. using a bridge another PC set up ----------
+
+def nearby(timeout=1.0):
+    """Bridges on this network that this PC doesn't use: [{"id","ip","ssid","phone",...}]."""
+    mine = (saved() or {}).get("id")
+    return [b for b in find_lan(timeout) if b.get("id") != mine]
+
+
+def this_pc_name():
+    return (os.uname().nodename or "a computer")[:23]
+
+
+class Adoption:
+    """Asks a set-up bridge to let this PC use it. start() returns the 6-digit code the
+    bridge now shows with this PC's name; wait() returns once the person pressed the
+    bridge's buttons (the bridge then answers HELLO signed with the new key) and
+    saves the bridge, or raises when they declined or nobody answered."""
+
+    def __init__(self, found):
+        self.found = found  # a find_lan() entry
+        self.code = None
+        self.key = None
+
+    def start(self):
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
+        from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+        if _fw(self.found) < (0, 3):
+            raise RuntimeError(f"this bridge has firmware {self.found.get('fw')}; using it from a second PC "
+                               "needs 0.3 or later (flash it once over USB, keeping its settings)")
+        ours = X25519PrivateKey.generate()
+        pub = ours.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+        pkt = b"PU\x01\x11" + bytes(8) + pub + this_pc_name().encode()
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0.4)
+        theirs = None
+        try:
+            for _ in range(6):
+                s.sendto(pkt, (self.found["ip"], PORT))
+                try:
+                    b = s.recv(256)
+                except socket.timeout:
+                    continue
+                if b[:4] == b"PU\x01\x91" and len(b) >= 44:
+                    theirs = b[12:44]
+                    break
+        finally:
+            s.close()
+        if not theirs:
+            raise RuntimeError("the bridge didn't answer. If its screen asks about another computer, wait "
+                               "a minute and try again")
+        shared = ours.exchange(X25519PublicKey.from_public_bytes(theirs))
+
+        def derive(info, n=32):
+            return HKDF(hashes.SHA256(), n, theirs + pub, info.encode()).derive(shared)
+
+        self.code = int.from_bytes(derive("phoneuse code", 4), "big") % 1000000
+        self.key = derive("phoneuse control")
+        return self.code
+
+    def wait(self, seconds=90):
+        """Saves and returns the bridge once it allows this PC; None while still asking
+        after `seconds`; raises once it stopped asking without allowing."""
+        cfg = {"id": self.found["id"], "ip": self.found["ip"], "key": self.key.hex(),
+               "ssid": self.found.get("ssid"), "use": True, "set_up": time.strftime("%Y-%m-%d %H:%M"),
+               "shared": True}
+        end = time.time() + seconds
+        while time.time() < end:
+            link = Link(cfg)
+            try:
+                if link.hello_once():
+                    save(cfg)
+                    return cfg
+            finally:
+                link.close()
+            asking = [b for b in find_lan(0.5) if b["id"] == cfg["id"]]
+            if asking and not asking[0].get("asking"):
+                # It stopped asking: allowed just now, declined, or timed out. One more try tells.
+                link = Link(cfg)
+                try:
+                    if link.hello_once():
+                        save(cfg)
+                        return cfg
+                finally:
+                    link.close()
+                raise RuntimeError("the bridge didn't allow this computer (declined, or no answer in time)")
+        return None
+
+
+def _fw(found):
+    try:
+        return tuple(int(x) for x in str(found.get("fw", "0")).split(".")[:2])
+    except ValueError:
+        return (0, 0)
+
+
+# ---------- 4. the control link ----------
 
 class Link:
     """Signed UDP session with a set-up bridge.
@@ -456,6 +556,22 @@ class Link:
         finally:
             self.waiters.pop(("hello", nonce), None)
 
+    def hello_once(self, wait=0.4):
+        """One HELLO: True if the bridge answered (it knows this PC's key)."""
+        nonce = os.urandom(8)
+        w = self.waiters[("hello", nonce)] = [threading.Event(), None]
+        try:
+            with self.lock:
+                self.session, self.seq = 0, 0
+                self.sock.sendto(self._pack(0x01, 0, nonce), self.addr)
+            if w[0].wait(wait):
+                with self.lock:
+                    self.session = w[1]
+                return True
+            return False
+        finally:
+            self.waiters.pop(("hello", nonce), None)
+
     def _call(self, type_, body=b"", tries=4, wait=None):
         if not self.session:
             self.hello()
@@ -541,9 +657,12 @@ class Link:
         self._call(0x05)
 
     def reset(self):
-        """Have the bridge forget everything (firmware 0.2.3+): its iPhone pairings, its Wi-Fi
-        and this PC's key. It restarts invisible over Bluetooth until its button is held."""
-        self._call(0x0D, tries=3)
+        """Have the bridge stop trusting this PC (firmware 0.2.3+). If no other PC uses it
+        (always, before 0.3), it forgets everything: its iPhone pairings, its Wi-Fi and
+        the key, and restarts invisible over Bluetooth until its button is held.
+        Returns True when it reset, False when other PCs keep it."""
+        body = self._call(0x0D, tries=3)
+        return not body or body[:1] == b"\x01"
 
     def networks(self):
         """Wi-Fi networks the bridge sees (it scans while staying online, ~2 s)."""
@@ -613,6 +732,38 @@ def setup_cli():
     asyncio.run(run())
 
 
+def use_cli(args):
+    """Use a bridge another PC set up: phoneuse bridge use [ID]."""
+    found = nearby(1.5)
+    if args:
+        found = [b for b in found if b["id"].endswith(args[0].lower())]
+    if not found:
+        raise SystemExit("No other bridge answers on this network." if not args else f"No bridge {args[0]} here.")
+    if len(found) > 1:
+        for b in found:
+            print(f"  {b['id'][-4:]}  on {b.get('ssid') or '?'}, {b.get('phone') or 'no iPhone'}")
+        raise SystemExit("Several bridges: phoneuse bridge use ID (the last 4 characters)")
+    b = found[0]
+    if saved():
+        print(f"This PC uses bridge {saved()['id'][-4:]} now; it will use {b['id'][-4:]} instead.")
+    a = Adoption(b)
+    code = a.start()
+    print(f"Bridge {b['id'][-4:]} shows {this_pc_name()} and a code. If it's {code // 1000:03d} {code % 1000:03d}, "
+          "press either button on the bridge.")
+    try:
+        cfg = a.wait()
+    except RuntimeError as e:
+        raise SystemExit(str(e))
+    if not cfg:
+        raise SystemExit("No answer from the bridge.")
+    from .hidclient import Hid
+    try:
+        Hid().cmd(f"bridge {cfg['ip']} {cfg['key']}")
+    except Exception:
+        pass
+    print(f"This PC now uses bridge {b['id'][-4:]} on {b.get('ssid')}. Phone: {b.get('phone') or 'not paired yet'}")
+
+
 def status_cli():
     cfg = saved()
     if not cfg:
@@ -651,12 +802,24 @@ def main(args):
     if sub == "status":
         return status_cli()
     if sub == "find":
-        print("On the network:", find_lan() or "none")
+        mine = (saved() or {}).get("id")
+        lan = find_lan(1.5)
+        print("On the network:" if lan else "On the network: none")
+        for b in lan:
+            who = "this PC uses it" if b["id"] == mine else (
+                f"used by {b['hosts']} other PC{'s' if b['hosts'] != 1 else ''}" if b.get("hosts") else
+                "firmware before 0.3" if _fw(b) < (0, 3) else "not set up")
+            phone = b.get("phone") and f"{b['phone']}{'' if b.get('connected') else ' (not connected)'}"
+            print(f"  {b['id'][-4:]}  {b['ip']}  firmware {b.get('fw')}  {b.get('ssid') or ''}  "
+                  f"{phone or 'no iPhone'}  ({who})")
         print("In setup mode nearby:", asyncio.run(scan_ble()) or "none")
         return
+    if sub == "use":
+        return use_cli(args[1:])
     if sub == "forget":
         why = forget()
         return print("Forgot the bridge, and it reset: no Wi-Fi, no iPhone pairing, hidden until its button is held "
-                     "3 s." if why is None else f"Forgot the bridge here. It didn't reset ({why}); it keeps its "
-                     "pairing and Wi-Fi until it's set up again or flashed.")
-    raise SystemExit("usage: phoneuse bridge [status|setup|find|flash|build|log [SECONDS]|forget]")
+                     "3 s." if why is None else "Forgot the bridge here. Other PCs still use it, so it keeps its "
+                     "Wi-Fi and iPhone." if why == "kept" else f"Forgot the bridge here. It didn't reset ({why}); "
+                     "it keeps its pairing and Wi-Fi until it's set up again or flashed.")
+    raise SystemExit("usage: phoneuse bridge [status|setup|find|use [ID]|flash|build|log [SECONDS]|forget]")

@@ -1,8 +1,13 @@
 """The browser mirror's routes for the Bluetooth bridge's setup (Settings > Bluetooth
 bridge). The page walks through: find the bridge over BLE, compare the code on its
 screen, pick a Wi-Fi network it sees, type that network's password, done. The BLE
-conversation lives here between the page's requests."""
+conversation lives here between the page's requests.
+
+A bridge another PC already set up answers on the network: GET /api/bridge lists it
+under "nearby" while this PC has none, and POST /api/bridge/adopt asks it to let this
+PC in (the person presses either of its buttons when its screen shows the same code)."""
 import asyncio
+import threading
 import time
 
 from aiohttp import web
@@ -31,6 +36,23 @@ class BridgeRoutes:
         self.session = None  # bridge.Setup while a setup runs
         self.bridge_id = None
         self.lock = asyncio.Lock()
+        self.adoption = None  # bridge.Adoption while this PC asks a bridge to let it in
+        self._nearby, self._nearby_at, self._looking = [], 0.0, False
+
+    def nearby(self):
+        """Bridges on the network that this PC doesn't use, looked up at most every 4 s in
+        the background (a lookup can take a second): the last answer at once."""
+        if time.time() - self._nearby_at > 4 and not self._looking:
+            self._looking = True
+
+            def look():
+                try:
+                    self._nearby = bridge.nearby(0.8)
+                except OSError:
+                    self._nearby = []
+                self._nearby_at, self._looking = time.time(), False
+            threading.Thread(target=look, daemon=True).start()
+        return self._nearby
 
     async def _close(self):
         if self.session:
@@ -50,6 +72,9 @@ class BridgeRoutes:
             why = await loop.run_in_executor(None, bridge.forget)
             return web.json_response({"saved": None, "reset": why is None, "why": why})
         out = {"saved": None, "setup": bool(self.session)}
+        if not cfg:
+            out["nearby"] = [{k: b.get(k) for k in ("id", "ip", "fw", "ssid", "phone", "connected", "hosts")}
+                             for b in self.nearby()]
         if cfg:
             out["saved"] = {"id": cfg["id"], "ip": cfg.get("ip") or "", "ssid": cfg.get("ssid"), "use": cfg.get("use", True)}
 
@@ -75,7 +100,10 @@ class BridgeRoutes:
                 found = await bridge.scan_ble(5)
             except Exception as e:
                 return web.json_response({"error": f"Bluetooth on this PC: {e}"})
-        return web.json_response({"bridges": [{"address": a, "name": n, "rssi": r} for a, n, r in found]})
+        near = await asyncio.get_running_loop().run_in_executor(None, bridge.nearby, 1.0)
+        return web.json_response({"bridges": [{"address": a, "name": n, "rssi": r} for a, n, r in found],
+                                  "nearby": [{k: b.get(k) for k in ("id", "ip", "fw", "ssid", "phone", "hosts")}
+                                             for b in near]})
 
     async def pair(self, req):
         self._guard(req)
@@ -185,6 +213,43 @@ class BridgeRoutes:
         return web.json_response({"error": f"The bridge left {old} and this PC can't find it. If {ssid} is "
                                            "another network, this PC must be on it too."})
 
+    async def adopt(self, req):
+        """Ask a bridge on the network to let this PC use it: {"id"} -> {"code"}."""
+        self._guard(req)
+        want = (await req.json())["id"]
+        loop = asyncio.get_running_loop()
+        found = [b for b in await loop.run_in_executor(None, bridge.nearby, 1.0) if b["id"] == want]
+        if not found:
+            return web.json_response({"error": "That bridge doesn't answer on this network any more."})
+        a = bridge.Adoption(found[0])
+        try:
+            code = await loop.run_in_executor(None, a.start)
+        except Exception as e:
+            return web.json_response({"error": str(e)})
+        self.adoption = a
+        return web.json_response({"code": f"{code // 1000:03d} {code % 1000:03d}", "id": want,
+                                  "name": bridge.this_pc_name()})
+
+    async def adopt_wait(self, req):
+        """Up to ~20 s: {"ok": true, ...} once the bridge allowed this PC, {"waiting": true}
+        while it still asks, {"error"} once it declined or stopped asking."""
+        self._guard(req)
+        a = self.adoption
+        if not a:
+            return web.json_response({"error": "Start again."})
+        loop = asyncio.get_running_loop()
+        try:
+            cfg = await loop.run_in_executor(None, a.wait, 20)
+        except Exception as e:
+            self.adoption = None
+            return web.json_response({"error": str(e)})
+        if not cfg:
+            return web.json_response({"waiting": True})
+        self.adoption = None
+        self._nearby_at = 0
+        answer = await loop.run_in_executor(None, use_bridge, cfg)
+        return web.json_response({"ok": True, "ip": cfg["ip"], "ssid": cfg.get("ssid"), "daemon": answer})
+
     async def cancel(self, req):
         self._guard(req)
         async with self.lock:
@@ -220,5 +285,7 @@ class BridgeRoutes:
         r.add_post("/api/bridge/networks", self.networks)
         r.add_post("/api/bridge/join", self.join)
         r.add_post("/api/bridge/cancel", self.cancel)
+        r.add_post("/api/bridge/adopt", self.adopt)
+        r.add_post("/api/bridge/adopt/wait", self.adopt_wait)
         r.add_post("/api/bridge/use", self.use)
         r.add_post("/api/bridge/change", self.change)

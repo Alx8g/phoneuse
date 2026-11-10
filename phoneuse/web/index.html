@@ -540,9 +540,12 @@ bForget.onclick = async () => { await fetch("/api/bridge", { method: "DELETE" })
 async function bridgeShow() {
   const j = await bapi("");
   if (!j.saved) {
-    bview(`<button class="item" id="bSetup"><span class="grow link">Set Up Bridge…</span></button>`,
+    // Bridges another computer set up answer on the network: use one here too.
+    const near = (j.nearby || []).map((b, i) => `<div class="item"><span class="grow">Bridge ${esc(b.id.slice(-4))}<span class="sub">${esc(b.phone || "No iPhone")} · ${esc(b.ssid || b.ip)}</span></span><button class="link" data-n="${i}">Use…</button></div>`).join("");
+    bview(near + `<button class="item" id="bSetup"><span class="grow link">Set Up Bridge…</span></button>`,
           "A LilyGO T-Display the iPhone pairs with as its keyboard and mouse. phoneuse reaches it over Wi-Fi.");
     on("#bSetup", bridgeFind);
+    bridgeBox.querySelectorAll("[data-n]").forEach((el) => el.onclick = () => bridgeAdopt(j.nearby[+el.dataset.n]));
     return;
   }
   const st = j.status || {}, sv = j.saved;
@@ -559,10 +562,25 @@ async function bridgeShow() {
   on("#bChange", bridgeNetworks);  // over the network: no BLE, no code
   bForget.hidden = false;
 }
+async function bridgeAdopt(b) {
+  bview(`<div class="item dim">Asking the bridge…</div>`);
+  const j = await bapi("/adopt", { id: b.id });
+  const again = (msg) => (bview(`<button class="item" id="bAgain"><span class="grow link">Try Again</span></button>`, "!" + esc(msg)), on("#bAgain", () => bridgeAdopt(b)));
+  if (j.error) return again(j.error);
+  bview(`<div class="code">${esc(j.code)}</div>`,
+        `If the bridge shows ${esc(j.name)} and the same code, press either of its buttons.`);
+  for (;;) {
+    const w = await bapi("/adopt/wait", {});
+    if (w.waiting) continue;
+    if (w.error) return again(w.error);
+    return bridgeShow();
+  }
+}
 async function bridgeFind() {
   bview(`<div class="item dim">Looking for the bridge…</div>`);
   const j = await bapi("/find", {});
   if (j.error) return bview(`<button class="item" id="bAgain"><span class="grow link">Try Again</span></button>`, "!" + esc(j.error)), on("#bAgain", bridgeFind);
+  if (!j.bridges.length && (j.nearby || []).length) return bridgeShow();  // set up already: listed there
   if (!j.bridges.length) {
     bview(`<button class="item" id="bAgain"><span class="grow link">Look Again</span></button>
            <button class="item" id="bBack"><span class="grow link">Cancel</span></button>`,

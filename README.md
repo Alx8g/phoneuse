@@ -145,6 +145,10 @@ unused.
 3. **Pair the iPhone** with the bridge: on the iPhone, open Settings › Bluetooth and
    tap **Phone Use Bridge**.
 
+To use the same bridge from another computer, open Settings › Bluetooth bridge
+there, click Use… next to the bridge, and press either of the bridge's buttons when
+its screen shows the same code.
+
 `phoneuse bridge status` shows the bridge's address, which phone is connected to it,
 and how long a message takes to reach the bridge and come back. When the phone
 disconnects, the bridge reconnects to it by itself. [docs/BRIDGE.md](docs/BRIDGE.md)
