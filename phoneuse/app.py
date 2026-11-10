@@ -250,8 +250,16 @@ class Window(Adw.ApplicationWindow):
         g.add(self.login_row)
         self.phone_page.add(g)
 
+        # This PC's Bluetooth first: it needs no bridge
+        g = Adw.PreferencesGroup(title="This PC's Bluetooth")
+        self.pcbt_row = Adw.SwitchRow(title="Use This PC's Bluetooth", subtitle="Works with or without the bridge")
+        self._pcbt_quiet = False  # set while the app moves the switch itself
+        self.pcbt_row.connect("notify::active", self._pcbt_toggled)
+        g.add(self.pcbt_row)
+        self.bridge_page.add(g)
+
         # Bridge
-        self.bridge_group = Adw.PreferencesGroup()  # the tab names it
+        self.bridge_group = Adw.PreferencesGroup(title="Bridge")
         self.bridge_rows = []
         self.bridge_page.add(self.bridge_group)
 
@@ -275,13 +283,6 @@ class Window(Adw.ApplicationWindow):
         self.net_group.add(self.fw_row)
         self.bridge_page.add(self.net_group)
 
-        # This PC's Bluetooth: a second way in, with or without the bridge (bluetooth_setup.py)
-        g = Adw.PreferencesGroup(title="This PC's Bluetooth")
-        self.pcbt_row = Adw.SwitchRow(title="Use This PC's Bluetooth", subtitle="Works with or without the bridge")
-        self._pcbt_quiet = False  # set while the app moves the switch itself
-        self.pcbt_row.connect("notify::active", self._pcbt_toggled)
-        g.add(self.pcbt_row)
-        self.bridge_page.add(g)
 
         # Forget, at the bottom of the tab, once a bridge is set up
         self.forget_group = Adw.PreferencesGroup(visible=False)
