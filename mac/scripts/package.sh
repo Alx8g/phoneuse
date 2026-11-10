@@ -17,8 +17,9 @@ if [[ "${1:-}" == "--fresh" || ! -d build/core ]]; then
 fi
 
 xcodegen generate -q
+TEAM=$(sed -n 's/.*(\([A-Z0-9]*\))$/\1/p' <<< "$IDENTITY")  # "Developer ID Application: Name (TEAMID)"
 xcodebuild -project PhoneUseMac.xcodeproj -scheme PhoneUse -configuration Release -derivedDataPath build \
-  CODE_SIGN_IDENTITY="$IDENTITY" build -quiet
+  CODE_SIGN_IDENTITY="$IDENTITY" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$TEAM" build -quiet
 APP="$OUT/Phone Use.app"
 rm -rf "$OUT" && mkdir -p "$OUT"
 cp -R "build/Build/Products/Release/Phone Use.app" "$APP"
@@ -37,7 +38,7 @@ while IFS= read -r -d '' f; do
   fi
 done < <(find "$APP/Contents/Resources/core" -type f -print0)
 sign --entitlements "$ENT" "$APP"
-codesign --verify --deep --strict "$APP" && echo "signed: $(codesign -dv "$APP" 2>&1 | grep Authority= | head -1)"
+codesign --verify --deep --strict "$APP" && echo "signed: $(codesign -dvv "$APP" 2>&1 | grep Authority= | head -1)"
 
 hdiutil create -quiet -fs HFS+ -volname "Phone Use" -srcfolder "$APP" -ov -format UDZO "$OUT/PhoneUse.dmg"
 if [[ "$IDENTITY" == Developer\ ID* ]]; then
