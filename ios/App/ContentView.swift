@@ -170,7 +170,6 @@ struct UnpairedView: View {
 struct PhoneTab: View {
     @EnvironmentObject var model: AppModel
     @State private var confirmUnpair = false
-    @State private var pointerSheet = false
 
     private var s: PCState? { model.state }
     private var offline: Bool { !model.reachable || s == nil }
@@ -201,7 +200,6 @@ struct PhoneTab: View {
                         Label("Start Screen Mirroring to \(s.pc.receiverName) again.", systemImage: "exclamationmark.triangle")
                             .foregroundStyle(.orange)
                     }
-                    pointerRow
                     Button {
                         Task { await model.toggleKeyboard() }
                     } label: {
@@ -212,7 +210,7 @@ struct PhoneTab: View {
                 }
                 .disabled(offline)
             }
-            Section("Computer") {
+            Section {
                 if let p = model.pairing {
                     LabeledContent("Paired with", value: p.name)
                     LabeledContent("Address", value: "\(p.host):\(p.port)")
@@ -222,7 +220,6 @@ struct PhoneTab: View {
         }
         .navigationTitle("Phone")
         .refreshable { await model.refresh() }
-        .sheet(isPresented: $pointerSheet) { PointerSheet().presentationDetents([.medium]) }
         .alert("Unpair from \(model.pairing?.name ?? "the PC")?", isPresented: $confirmUnpair) {
             Button("Cancel", role: .cancel) {}
             Button("Unpair", role: .destructive) { model.unpair() }
@@ -231,25 +228,6 @@ struct PhoneTab: View {
         }
     }
 
-    /// The pointer is an action, not a setting: the row shows the last known state and opens a sheet to change it.
-    private var pointerRow: some View {
-        Button {
-            if model.pointer == nil { Task { await model.checkPointer() } } else { pointerSheet = true }
-        } label: {
-            LabeledContent {
-                if model.busy.contains("pointer") && !pointerSheet {
-                    ProgressView()
-                } else {
-                    Text(model.pointer == "on" ? "On" : model.pointer == "off" ? "Off" : "Check")
-                        .foregroundStyle(model.pointer == nil ? Color.accentColor : Color.secondary)
-                }
-            } label: {
-                RowTitle("Pointer", "Turned on and off through Siri")
-            }
-        }
-        .tint(.primary)
-        .accessibilityIdentifier("pointer")
-    }
 }
 
 /// The next thing to do, or the iPhone: the Linux window's hero (phoneuse/overview.py), from what /v1/state says.
@@ -484,25 +462,22 @@ struct AgentsTab: View {
                     if model.busy.contains("unlock") { Spacer(); ProgressView() }
                 }
             }
-            LabeledContent("Passcode", value: s.unlock.passcodeSaved ? "Saved" : "Not saved")
-                .accessibilityIdentifier("passcodeStatus")
+            LabeledContent("Passcode") {
+                HStack(spacing: 12) {
+                    Text(s.unlock.passcodeSaved ? "Saved" : "Not saved")
+                    if s.unlock.passcodeSaved {  // rare and destructive: a quiet button, not a row of its own
+                        Button("Forget…", role: .destructive) { confirmForget = true }
+                            .buttonStyle(.borderless)
+                            .foregroundStyle(.red)
+                            .accessibilityIdentifier("forgetPasscode")
+                    }
+                }
+            }
+            .accessibilityIdentifier("passcodeStatus")
             Button { passcodeSheet = true } label: {
                 BusyRow(title: s.unlock.passcodeSaved ? "Replace Passcode" : "Save Passcode", key: "passcode")
             }
             .accessibilityIdentifier("savePasscode")
-        } header: {
-            HStack {
-                Text("Unlock")
-                Spacer()
-                // rare and destructive: a quiet button in the header, as in the Linux window
-                if s.unlock.passcodeSaved {
-                    Button("Forget…", role: .destructive) { confirmForget = true }
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.red)
-                        .textCase(nil)
-                        .accessibilityIdentifier("forgetPasscode")
-                }
-            }
         } footer: {
             Text("Phone Use types the passcode only after you allow each Unlock.")
         }
@@ -538,8 +513,6 @@ struct BridgeTab: View {
                                 RowTitle("Use This PC's Bluetooth", "Works with or without the bridge")
                             }
                             .accessibilityIdentifier("pcBluetooth")
-                        } header: {
-                            Text("This PC's Bluetooth")
                         } footer: {
                             Text("Turn it on or off in Phone Use on the PC.")
                         }
@@ -840,7 +813,7 @@ struct StartModeRow: View {
             Text("After a delay").tag("countdown")
             Text("Ask every time").tag("ask")
         } label: {
-            RowTitle("Agent control", "What happens when an agent wants the phone")
+            Text("Agent control")
         }
         .pickerStyle(.menu)
         .accessibilityIdentifier("sessionMode")
@@ -852,58 +825,10 @@ struct StartModeRow: View {
             )) {
                 ForEach(Array(Set([5, 10, 15, 30, current])).sorted(), id: \.self) { Text("\($0) seconds").tag($0) }
             } label: {
-                RowTitle("Delay", "You can stop the agent until then")
+                Text("Delay")
             }
             .pickerStyle(.menu)
             .accessibilityIdentifier("sessionSeconds")
         }
-    }
-}
-
-/// Turning the pointer on or off: the PC asks Siri out loud, so the phone has to be unlocked and in earshot.
-struct PointerSheet: View {
-    @EnvironmentObject var model: AppModel
-    @Environment(\.dismiss) private var dismiss
-    @State private var running = false
-    @State private var result: String?
-
-    var body: some View {
-        let turnOn = model.pointer != "on"
-        VStack(spacing: 18) {
-            Image(systemName: "cursorarrow").font(.system(size: 40, weight: .semibold)).foregroundStyle(.tint)
-            if running {
-                ProgressView()
-                Text("Asking Siri…").font(.headline)
-            } else if let result {
-                Text(result).font(.headline).multilineTextAlignment(.center)
-                Button { dismiss() } label: { Text("Done").frame(maxWidth: .infinity, minHeight: 44) }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("pointerDone")
-            } else {
-                VStack(spacing: 6) {
-                    Text(turnOn ? "Turn on the pointer?" : "Turn off the pointer?").font(.title3.bold())
-                    Text("Phone Use asks Siri through your PC's speakers. Keep this iPhone unlocked and near the PC.")
-                        .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                }
-                VStack(spacing: 10) {
-                    Button {
-                        Task {
-                            running = true
-                            let failure = await model.setPointer(turnOn)
-                            running = false
-                            result = failure ?? (model.pointer == "on" ? "The pointer is on." :
-                                                 model.pointer == "off" ? "The pointer is off." : "Done.")
-                        }
-                    } label: {
-                        Text(turnOn ? "Turn On" : "Turn Off").frame(maxWidth: .infinity, minHeight: 44)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("pointerConfirm")
-                    Button("Cancel") { dismiss() }
-                }
-            }
-        }
-        .padding(24)
-        .interactiveDismissDisabled(running)
     }
 }

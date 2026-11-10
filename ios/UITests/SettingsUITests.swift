@@ -77,21 +77,8 @@ final class SettingsUITests: XCTestCase {
         flip("awake")
         waitFor("value != %@".replacingOccurrences(of: "%@", with: "'\(awake)'"), app.switches["awake"])
 
-        // Keyboard and pointer.
+        // Keyboard.
         app.buttons["keyboard"].tap()
-        app.swipeUp()
-        let pointer = app.buttons["pointer"]
-        if pointer.label.contains("Check") {
-            pointer.tap()  // GET /v1/cursor
-            sleep(3)
-        }
-        screenshot("pointer-checked")
-        pointer.tap()
-        sleep(1)
-        screenshot("pointer-sheet")
-        app.buttons["pointerConfirm"].tap()  // POST /v1/cursor
-        XCTAssertTrue(app.buttons["pointerDone"].waitForExistence(timeout: 15))
-        app.buttons["pointerDone"].tap()
         XCTAssertFalse(app.staticTexts["error"].exists)
 
         // Bridge: input through it, then move it to another network.
