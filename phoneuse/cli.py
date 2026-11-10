@@ -86,7 +86,7 @@ LAST_ACTION = os.path.join(RUNTIME_DIR, "phoneuse-last-action")
 MIRROR_ARGS = [os.environ.get("PHONEUSE_UXPLAY", "uxplay"), "-p",
                *([str(CFG["airplay_port"])] if CFG.get("airplay_port") else []),
                "-n", NAME, "-nh",  # -nh: no "@hostname" after the name
-               "-vrtp", f"config-interval=1 pt=96 mtu=60000 ! udpsink host=127.0.0.1 port={screen.HUB_RTP_PORT} sync=false",
+               "-vrtp", f"config-interval=1 pt=96 mtu={screen.RTP_MTU} ! udpsink host=127.0.0.1 port={screen.HUB_RTP_PORT} sync=false",
                "-vsync", "no", "-s", f"{SCREEN_PT[0] * 3}x{SCREEN_PT[1] * 3}@60", "-fps", "60",
                # audio: mirrored audio already plays unsynced (-vsync no); keep the sink's
                # buffer at 40 ms (pulsesink default is up to 200 ms) and ask the phone to

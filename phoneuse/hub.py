@@ -70,7 +70,7 @@ class Hub:
             # most a frame instead of an ever-growing backlog.
             f"appsrc name=src is-live=true format=time do-timestamp=true max-buffers=1 leaky-type=downstream "
             f"! {encoder(dec)} "
-            f"! h264parse ! rtph264pay pt=96 mtu=60000 config-interval=-1 "
+            f"! h264parse ! rtph264pay pt=96 mtu={screen.RTP_MTU} config-interval=-1 "
             f"! multiudpsink name=out sync=false async=false")
         self.src = self.pipe.get_by_name("src")
         self.out = self.pipe.get_by_name("out")
