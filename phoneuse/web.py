@@ -35,6 +35,19 @@ from .config import CFG, NAME, SCREEN_PT, config_path  # noqa: E402
 from .hidclient import Hid  # noqa: E402
 from .pointer import Keys, Pointer  # noqa: E402
 
+NOT_PAIRED = ("No iPhone app is paired with this PC, so agents can't control the phone: nothing was sent. "
+              "Stop and ask the user to pair the Phone Use app on the iPhone (Pair iPhone App in the Phone Use "
+              "window on the PC).")
+
+
+def paired():
+    """Whether an iPhone app is paired. Unreadable pairings count as none, so agents stay out."""
+    try:
+        from . import companion
+        return companion.paired() > 0
+    except Exception:  # noqa: BLE001
+        return False
+
 # Where the pointer rests while nobody uses the phone (after Bluetooth reconnects,
 # after an agent session, and during keep-awake nudges): the very bottom left corner,
 # clear of the dock and the home bar, where it covers nothing and touches nothing.
@@ -577,6 +590,8 @@ class SessionRequests:
     _gate_sent = None
 
     def gate_value(self):
+        if not paired():  # agents need the iPhone app, where the owner approves and stops them
+            return "closed"
         return self.session.gate(start_setting()["mode"])
 
     def sync_gate(self, force=False):
@@ -731,6 +746,8 @@ def app(mirror):
             action = str((await req.json()).get("action", ""))[:80]
         except ValueError:
             action = ""
+        if not paired():
+            return web.json_response({"ok": False, "result": NOT_PAIRED}, status=409)
         if mirror.sessions.needed():
             allowed = await mirror.sessions.ask(action)
             if allowed is not True:

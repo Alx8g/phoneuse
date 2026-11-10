@@ -13,8 +13,10 @@ the full list.
 
 ## Before acting
 
-1. Run `phoneuse status`. You need `HID service: active`, `connected=True`, and
-   `Mirror window: ... showing the phone`.
+1. Run `phoneuse status`. You need `iPhone app: 1 paired` (or more), `HID service:
+   active`, `connected=True`, and `Mirror window: ... showing the phone`. "not paired":
+   stop and ask the user to pair the Phone Use app (Pair iPhone App in the Phone Use
+   window); every action is refused until they do.
 2. No mirror window: check whether `phoneuse up` is running. If it isn't, start it
    somewhere the user can see it (a terminal or tmux window they use), not hidden in
    the background. "not mirroring" (or no window): ask the user to start Screen

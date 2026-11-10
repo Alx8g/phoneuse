@@ -4,7 +4,7 @@ Every shell (the GTK window, the Mac app) shows the same step, so the order of c
 here, and the shells read it from GET /api/app. A step is
   {"step": id, "title", "detail", "action": id or None, "icon": id, "good": bool, "quiet": bool}
 where `detail` is plain text (a shell may bold `bold` inside it), `action` names what the
-button does (start, setup_bridge, open_ports, retry, open_phone), `icon` is one of phone,
+button does (start, setup_bridge, pair_app, open_ports, retry, open_phone), `icon` is one of phone,
 keyboard, offline, bluetooth, `good` marks a healthy state and `quiet` a button that is a
 fallback rather than the step itself.
 """
@@ -21,7 +21,7 @@ def stopped():
 
 
 def hero(s, name):
-    """s: {"picture", "bridge", "firewall", "confirmed"} as /api/app gathers them."""
+    """s: {"picture", "bridge", "firewall", "confirmed", "paired"} as /api/app gathers them."""
     pic, b = s.get("picture"), s.get("bridge") or {}
     st, saved = b.get("status") or {}, b.get("saved")
     if not pic:
@@ -29,6 +29,9 @@ def hero(s, name):
     if not saved:
         return _step("setup_bridge", "Set up the bridge", "A small board next to the iPhone that it pairs with as "
                      "its keyboard and mouse. Phone Use reaches it over Wi-Fi.", "setup_bridge", icon="keyboard")
+    if not s.get("paired"):
+        return _step("pair_app", "Pair the iPhone app", "Agents can use the iPhone only while the Phone Use app "
+                     "on it is paired. You allow and stop them there.", "pair_app")
     if not pic.get("live"):
         fw = bool(s.get("firewall")) and not s.get("confirmed")
         return _step("start_mirroring", "Start Screen Mirroring",

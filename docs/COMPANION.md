@@ -23,6 +23,11 @@ mirror's settings show the same link as a QR code. The app saves the key in the 
 `~/.config/phoneuse/companion.json` (mode 600). A pairing link works once, for 10 minutes. The app keeps the
 host it was given and falls back to Bonjour (by `id`) when the PC's address changes.
 
+Agents need a paired app: while none is paired, the PC refuses every agent action and keeps the HID daemon's
+agent gate closed, because the app is where the owner allows and stops agents. When the app unpairs, it sends
+`DELETE /v1/pairing` first, so the PC forgets its key. `phoneuse app unpair` (or Unpair in the Phone Use
+window) forgets every app from the PC's side.
+
 ## Signing requests
 
 Every request carries three headers:
@@ -63,6 +68,7 @@ Every response is JSON. Errors are `{"error": "<short sentence for the owner>"}`
 | `POST /v1/bridge/network` | `{"ssid", "sealed"}` (field `password`) | Moves the bridge to that Wi-Fi network |
 | `POST /v1/mirror/audio` | `{"on": bool}` | Turns the mirror's audio on or off (see Audio) |
 | `POST /v1/push` | see Push | Registers the app's push tokens |
+| `DELETE /v1/pairing` | | Unpairs this app: the PC forgets its key |
 
 `GET /v1/state` returns:
 

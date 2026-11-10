@@ -251,6 +251,7 @@ class Window(Adw.ApplicationWindow):
         self.paired_row = Adw.ActionRow(title="Paired")
         self.paired_count = Gtk.Label(css_classes=["dim-label"], valign=Gtk.Align.CENTER)
         self.paired_row.add_suffix(self.paired_count)
+        self.paired_row.add_suffix(button("Unpair", "flat", self._confirm_unpair))
         g.add(self.paired_row)
         self.pair_row = nav_row("Pair iPhone App", "Allow and stop agents from the iPhone, and see what they do",
                                 lambda: PairDialog(self).present(self))
@@ -330,7 +331,8 @@ class Window(Adw.ApplicationWindow):
 
     HERO_ICONS = {"phone": "phone-symbolic", "keyboard": "input-keyboard-symbolic",
                   "offline": "network-offline-symbolic", "bluetooth": "bluetooth-symbolic"}
-    HERO_BUTTONS = {"start": "Start Phone Use", "setup_bridge": "Set Up Bridge", "open_ports": "Open Ports…",
+    HERO_BUTTONS = {"start": "Start Phone Use", "setup_bridge": "Set Up Bridge",
+                    "pair_app": "Pair iPhone App", "open_ports": "Open Ports…",
                     "retry": "Try Again", "open_phone": "Open iPhone"}
 
     def _show_hero(self, s):
@@ -341,6 +343,7 @@ class Window(Adw.ApplicationWindow):
             bold = GLib.markup_escape_text(h["bold"])
             detail = detail.replace(bold, f"<b>{bold}</b>", 1)
         actions = {"start": self.app.start_services, "setup_bridge": lambda: BridgeSetup(self).present(self),
+                   "pair_app": lambda: PairDialog(self).present(self),
                    "open_ports": self._allow_network, "retry": self.refresh, "open_phone": self.app.open_phone}
         act = h.get("action")
         return self._hero(h["title"], detail, self.HERO_BUTTONS.get(act), actions.get(act),
@@ -452,6 +455,17 @@ class Window(Adw.ApplicationWindow):
             in_thread(claude_setup.connect, lambda _r, e: (
                 self.toast(f"Couldn't connect: {e}" if e else "Connected. New Claude Code sessions can use the "
                            "phone."), self.refresh()))
+
+    def _confirm_unpair(self):
+        n = paired_iphones()
+        confirm(self, "Unpair the iPhone app?" if n == 1 else f"Unpair {n} iPhone apps?",
+                "Agents can't use the iPhone until you pair the app again.", "Unpair", self._unpair)
+
+    def _unpair(self):
+        from . import companion
+        companion.forget()
+        self.toast("iPhone app unpaired")
+        self.refresh()
 
     def _allow_network(self):
         self.fw_btn.set_sensitive(False)

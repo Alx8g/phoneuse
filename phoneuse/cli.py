@@ -30,6 +30,7 @@ points if any value is > 1 (screen_points in ~/.config/phoneuse/config.toml):
   phoneuse key COMBO            e.g. enter, escape, cmd+h, cmd+space, shift+tab
   phoneuse keyboard             show or hide the iPhone's on-screen keyboard (Eject key)
   phoneuse app pair             pair the companion app (docs/COMPANION.md); --print for the link only
+  phoneuse app unpair           unpair every companion app (agents are refused until one pairs again)
   phoneuse awake [on|off]       keep the screen awake: a tiny pointer nudge every second
                                 while nobody uses the phone (also in the page's settings)
   phoneuse cursor [on|off]      whether the pointer works (AssistiveTouch); on/off asks
@@ -1180,6 +1181,9 @@ def status():
     else:
         svc = subprocess.run(["systemctl", "is-active", "phoneuse-hid"], capture_output=True, text=True).stdout.strip()
     print("AirPlay receiver:", NAME)
+    from . import companion
+    n = companion.paired()
+    print("iPhone app:", f"{n} paired" if n else "not paired (agents are refused until the user pairs it)")
     print("HID service:", svc)
     if svc == "active":
         print("Bluetooth:", Hid().cmd("status").replace("ok ", ""))
@@ -1225,8 +1229,13 @@ def app_cmd(args):
     """`phoneuse app pair`: make a one-time pairing link and open it on the phone,
     which asks to open it in the PhoneUse app. `--print` only prints the link."""
     import json
+    if args[:1] == ["unpair"]:
+        from . import companion
+        n = companion.forget()
+        return print(f"Unpaired {n} iPhone app{'s' if n != 1 else ''}. Agents can't use the phone until one "
+                     "pairs again." if n else "No iPhone app was paired.")
     if args[:1] != ["pair"]:
-        die("usage: phoneuse app pair [--print]")
+        die("usage: phoneuse app pair [--print] | phoneuse app unpair")
     req = urllib.request.Request(f"http://127.0.0.1:{CFG['web_port']}/api/companion/pair", data=b"{}",
                                  method="POST", headers={"Content-Type": "application/json"})
     try:
