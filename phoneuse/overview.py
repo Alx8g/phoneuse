@@ -28,8 +28,8 @@ def hero(s, name):
     if not pic:
         return _step("starting", "Starting…")
     if not saved:
-        return _step("setup_bridge", "Set up the bridge", "A small board next to the iPhone that it pairs with as "
-                     "its keyboard and mouse. Phone Use reaches it over Wi-Fi.", "setup_bridge", icon="keyboard")
+        return _step("setup_bridge", "Set up the bridge", "The bridge lets Phone Use tap and type on your iPhone. "
+                     "Plug it in near the iPhone, then set it up here.", "setup_bridge", icon="keyboard")
     if not s.get("paired"):
         return _step("pair_app", "Pair the iPhone app", "Agents can use the iPhone only while the Phone Use app "
                      "on it is paired. You allow and stop them there.", "pair_app")
