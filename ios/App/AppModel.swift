@@ -13,6 +13,9 @@ final class AppModel: ObservableObject {
     @Published var state: PCState?
     @Published var reachable = false
     @Published var error: String?
+    /// A short confirmation, shown for a few seconds at the bottom (the Linux window's toasts).
+    @Published var notice: String?
+    private var noticeTask: Task<Void, Never>?
     @Published var busy: Set<String> = []
     @Published var askRemirror = false
     /// Notifications are off (not yet allowed, or denied) for PhoneUse.
@@ -145,13 +148,34 @@ final class AppModel: ObservableObject {
         await run("unlock", "POST", "/v1/unlock/answer", ["id": id, "approve": approve])
     }
 
+    /// Shows a short confirmation at the bottom of the screen.
+    func say(_ text: String) {
+        notice = text
+        noticeTask?.cancel()
+        noticeTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            if !Task.isCancelled { notice = nil }
+        }
+    }
+
     func savePasscode(_ passcode: String) async {
         guard let key = pairing?.key, let sealed = try? CompanionCrypto.seal(key: key, field: "passcode", plaintext: passcode)
         else { return }
-        await run("passcode", "POST", "/v1/passcode", ["sealed": sealed])
+        if await run("passcode", "POST", "/v1/passcode", ["sealed": sealed]) != nil { say("Passcode saved") }
     }
 
-    func forgetPasscode() async { await run("passcode", "DELETE", "/v1/passcode") }
+    func forgetPasscode() async {
+        if await run("passcode", "DELETE", "/v1/passcode") != nil { say("Passcode forgotten") }
+    }
+
+    /// Forgets the bridge on the PC, which also resets the bridge when it answers (DELETE /v1/bridge).
+    func forgetBridge() async {
+        guard let data = await run("forgetBridge", "DELETE", "/v1/bridge", nil, timeout: 20) else { return }
+        let answer = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        say(answer?["reset"] as? Bool == true
+            ? "Bridge reset. Also forget PhoneUse Bridge in the iPhone's Bluetooth settings"
+            : "Bridge removed, but it didn't respond to the reset")
+    }
 
     func setAwake(_ on: Bool) async { await run("awake", "POST", "/v1/awake", ["on": on]) }
 

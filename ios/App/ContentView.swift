@@ -1,14 +1,27 @@
 import SwiftUI
 
+/// The Linux window's three tabs, on the phone: Phone (what to do next, Keep Awake, this iPhone's pairing), Agents
+/// (agent control, Unlock) and Bridge. PC-only settings (Start at Login, Open Ports, Claude Code, starting and
+/// stopping the services) stay on the PC.
 struct ContentView: View {
     @EnvironmentObject var model: AppModel
+    @State private var tab = UserDefaults.standard.string(forKey: "tab") ?? "phone"  // launch with -tab agents
 
     var body: some View {
-        NavigationStack {
+        Group {
             if model.pairing == nil {
-                UnpairedView()
+                NavigationStack { UnpairedView() }
             } else {
-                SettingsView()
+                TabView(selection: $tab) {
+                    NavigationStack { PhoneTab() }
+                        .tabItem { Label("Phone", systemImage: "iphone") }.tag("phone")
+                    NavigationStack { AgentsTab() }
+                        .tabItem { Label("Agents", systemImage: "sparkles") }.tag("agents")
+                    NavigationStack { BridgeTab() }
+                        .tabItem { Label("Bridge", systemImage: "dot.radiowaves.left.and.right") }.tag("bridge")
+                        .badge(bridgeNeedsAttention ? Text("!") : nil)
+                }
+                .overlay(alignment: .bottom) { NoticeView().padding(.bottom, 64) }
             }
         }
         .sheet(item: Binding(get: { model.foregroundRequest }, set: { _ in })) { request in
@@ -20,6 +33,93 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Open Control Center, tap Screen Mirroring, and choose \(model.state?.pc.receiverName ?? "PhoneUse").")
+        }
+    }
+
+    /// As the Linux window marks its Bridge tab: no bridge and no PC Bluetooth, or a bridge that's offline.
+    private var bridgeNeedsAttention: Bool {
+        guard let s = model.state else { return false }
+        if let b = s.bridge { return !b.online }
+        return s.pcBluetooth?.on != true
+    }
+}
+
+/// The Linux window's toasts: a confirmation for a few seconds, or the last error until the next change works.
+struct NoticeView: View {
+    @EnvironmentObject var model: AppModel
+
+    var body: some View {
+        Group {
+            if let error = model.error {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(.red.opacity(0.9), in: Capsule())
+                    .accessibilityIdentifier("error")
+                    .onTapGesture { model.error = nil }
+            } else if let notice = model.notice {
+                Text(notice)
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(.regularMaterial, in: Capsule())
+                    .accessibilityIdentifier("notice")
+            }
+        }
+        .font(.subheadline.weight(.medium))
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, 16)
+        .animation(.snappy, value: model.notice)
+        .animation(.snappy, value: model.error)
+    }
+}
+
+/// A row's title with a dim subtitle under it, as the Linux window's rows have.
+struct RowTitle: View {
+    var title: String
+    var subtitle: String?
+
+    init(_ title: String, _ subtitle: String? = nil) {
+        self.title = title
+        self.subtitle = subtitle
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+            if let subtitle, !subtitle.isEmpty {
+                Text(subtitle).font(.footnote).foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+/// A toggle binding that shows the PC's value and sends a change at once.
+@MainActor func sendBinding(_ value: Bool, _ apply: @escaping (Bool) async -> Void) -> Binding<Bool> {
+    Binding(get: { value }, set: { on in Task { await apply(on) } })
+}
+
+/// A row title with a spinner while its change is in flight.
+struct BusyRow: View {
+    @EnvironmentObject var model: AppModel
+    var title: String
+    var subtitle: String?
+    var key: String
+
+    var body: some View {
+        HStack {
+            RowTitle(title, subtitle)
+            if model.busy.contains(key) { Spacer(); ProgressView() }
+        }
+    }
+}
+
+/// For the Agents and Bridge tabs while the PC doesn't answer.
+struct OfflineSection: View {
+    @EnvironmentObject var model: AppModel
+
+    var body: some View {
+        Section {
+            Label("Can't reach \(model.pairing?.name ?? "the PC").", systemImage: "wifi.exclamationmark")
+                .foregroundStyle(.orange)
         }
     }
 }
@@ -65,10 +165,10 @@ struct UnpairedView: View {
     }
 }
 
-struct SettingsView: View {
+// MARK: - Phone
+
+struct PhoneTab: View {
     @EnvironmentObject var model: AppModel
-    @State private var passcodeSheet = false
-    @State private var confirmForget = false
     @State private var confirmUnpair = false
     @State private var pointerSheet = false
 
@@ -77,88 +177,217 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            statusSection
+            Section { PhoneHero() }
             if model.notificationsOff {
                 Section {
                     Button { Task { await model.turnOnNotifications() } } label: {
-                        Label("Turn On Notifications", systemImage: "bell.badge")
+                        RowTitle("Turn On Notifications", "So you can allow agents and Unlock while the iPhone mirrors")
                     }
                     .accessibilityIdentifier("turnOnNotifications")
-                } footer: {
-                    Text("So you can approve agents and unlocks while the phone mirrors.")
                 }
             }
             if let s {
-                Group {
-                agentSection(s)
-                unlockSection(s)
-                Section("Phone") {
-                    Toggle(isOn: binding(s.awake) { on in await model.setAwake(on) }) {
-                        Label("Keep Awake", systemImage: "sun.max")
+                Section {
+                    Toggle(isOn: sendBinding(s.awake) { on in await model.setAwake(on) }) {
+                        BusyRow(title: "Keep Awake", subtitle: "The screen stays on while the iPhone mirrors", key: "awake")
                     }
                     .accessibilityIdentifier("awake")
-                    Button {
-                        Task { await model.toggleKeyboard() }
-                    } label: {
-                        row("Show or Hide Keyboard", "keyboard", busy: "keyboard")
-                    }
-                    .accessibilityIdentifier("keyboard")
-                    pointerRow
-                }
-                bridgeSection(s)
-                Section {
-                    Toggle(isOn: binding(s.audio.on) { on in await model.setAudio(on) }) {
-                        row("Sound on the PC", "speaker.wave.2", busy: "audio")
+                    Toggle(isOn: sendBinding(s.audio.on) { on in await model.setAudio(on) }) {
+                        BusyRow(title: "Sound on the PC", subtitle: "Off mutes it. iOS can't keep sound on the iPhone "
+                                + "while it mirrors.", key: "audio")
                     }
                     .accessibilityIdentifier("audio")
                     if s.audio.needsRemirror == true {
-                        Label("Start Screen Mirroring to \(s.pc.receiverName) again.", systemImage: "airplayvideo")
+                        Label("Start Screen Mirroring to \(s.pc.receiverName) again.", systemImage: "exclamationmark.triangle")
                             .foregroundStyle(.orange)
                     }
-                } header: { Text("Mirror") } footer: {
-                    Text("Off mutes it; iOS can't keep sound on the phone while mirroring.")
-                }
+                    pointerRow
+                    Button {
+                        Task { await model.toggleKeyboard() }
+                    } label: {
+                        BusyRow(title: "Show or Hide Keyboard", key: "keyboard")
+                    }
+                    .tint(.primary)
+                    .accessibilityIdentifier("keyboard")
                 }
                 .disabled(offline)
             }
-            pcSection
+            Section("Computer") {
+                if let p = model.pairing {
+                    LabeledContent("Paired with", value: p.name)
+                    LabeledContent("Address", value: "\(p.host):\(p.port)")
+                }
+                Button("Unpair", role: .destructive) { confirmUnpair = true }
+            }
         }
-        .sheet(isPresented: $pointerSheet) { PointerSheet().presentationDetents([.medium]) }
-        .navigationTitle("Phone Use")
+        .navigationTitle("Phone")
         .refreshable { await model.refresh() }
-        .sheet(isPresented: $passcodeSheet) { PasscodeSheet() }
+        .sheet(isPresented: $pointerSheet) { PointerSheet().presentationDetents([.medium]) }
+        .alert("Unpair from \(model.pairing?.name ?? "the PC")?", isPresented: $confirmUnpair) {
+            Button("Cancel", role: .cancel) {}
+            Button("Unpair", role: .destructive) { model.unpair() }
+        } message: {
+            Text("Agents can't use the iPhone until you pair the app again.")
+        }
     }
 
-    // MARK: Sections
+    /// The pointer is an action, not a setting: the row shows the last known state and opens a sheet to change it.
+    private var pointerRow: some View {
+        Button {
+            if model.pointer == nil { Task { await model.checkPointer() } } else { pointerSheet = true }
+        } label: {
+            LabeledContent {
+                if model.busy.contains("pointer") && !pointerSheet {
+                    ProgressView()
+                } else {
+                    Text(model.pointer == "on" ? "On" : model.pointer == "off" ? "Off" : "Check")
+                        .foregroundStyle(model.pointer == nil ? Color.accentColor : Color.secondary)
+                }
+            } label: {
+                RowTitle("Pointer", "Turned on and off through Siri")
+            }
+        }
+        .tint(.primary)
+        .accessibilityIdentifier("pointer")
+    }
+}
 
-    private var statusSection: some View {
-        Section {
-            if offline {
-                Label("Can't reach \(model.pairing?.name ?? "the PC").", systemImage: "wifi.exclamationmark")
-                    .foregroundStyle(.orange)
-                    .accessibilityIdentifier("offline")
+/// The next thing to do, or the iPhone: the Linux window's hero (phoneuse/overview.py), from what /v1/state says.
+struct PhoneHero: View {
+    @EnvironmentObject var model: AppModel
+
+    private struct Step {
+        var icon: String
+        var title: String
+        var detail: String? = nil
+        var steps: [String]? = nil
+        var bold: String? = nil
+        var good = false
+        var retry = false
+    }
+
+    private var step: Step {
+        guard model.reachable, let s = model.state else {
+            return Step(icon: "wifi.exclamationmark", title: "Can't reach \(model.pairing?.name ?? "the PC")",
+                        detail: "Check that Phone Use is running on the PC and that this iPhone is on the same network.",
+                        retry: true)
+        }
+        if !s.mirroring {
+            let name = s.pc.receiverName
+            return Step(icon: "iphone", title: "Start Screen Mirroring",
+                        steps: ["Swipe down from the top-right corner.", "Tap {mirroring} Screen Mirroring.",
+                                "Choose \(name)."], bold: name)
+        }
+        if let b = s.bridge, !b.online {
+            return Step(icon: "wifi.exclamationmark", title: "The bridge is offline",
+                        detail: "Check that it has power and is on the same Wi-Fi as the PC.", retry: true)
+        }
+        if s.bridge != nil, !s.bluetooth.connected {
+            return Step(icon: "dot.radiowaves.left.and.right", title: "Connect the bridge to the iPhone",
+                        detail: "Open Settings › Bluetooth and tap PhoneUse Bridge. If it won't connect, forget it there "
+                            + "and tap it again.")
+        }
+        if s.agent.state == "paused" {
+            return Step(icon: "iphone", title: "You're in control", detail: "You took over from the agent.", good: true)
+        }
+        return Step(icon: "iphone", title: s.phone ?? "iPhone", detail: "Mirroring to \(s.pc.name)", good: true)
+    }
+
+    var body: some View {
+        let h = step
+        VStack(spacing: 8) {
+            Image(systemName: h.icon)
+                .font(.system(size: 48, weight: .regular))
+                .foregroundStyle(h.good ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
+                .frame(height: 58)
+            Text(h.title).font(.title2.weight(.semibold)).multilineTextAlignment(.center)
+                .accessibilityIdentifier(h.retry && !model.reachable ? "offline" : "heroTitle")
+            if let steps = h.steps { StepsList(steps: steps, bold: h.bold) }
+            if let d = h.detail, !d.isEmpty {
+                Text(d).foregroundStyle(.secondary).multilineTextAlignment(.center)
             }
+            if h.retry {
+                Button("Try Again") { Task { await model.refresh() } }
+                    .buttonStyle(.bordered).buttonBorderShape(.capsule).padding(.top, 6)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+    }
+}
+
+/// Numbered steps: dim numbers, left-aligned text, the receiver's name bold, and "{mirroring}" drawn as Control
+/// Center's Screen Mirroring glyph.
+struct StepsList: View {
+    var steps: [String]
+    var bold: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(Array(steps.enumerated()), id: \.offset) { i, step in
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("\(i + 1).").foregroundStyle(.secondary).monospacedDigit()
+                    line(step).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .multilineTextAlignment(.leading)
+        .padding(.top, 4)
+    }
+
+    private func line(_ step: String) -> Text {
+        let parts = step.components(separatedBy: "{mirroring}")
+        var text = Text(styled(parts[0]))
+        for part in parts.dropFirst() {
+            text = text + Text(Image("ScreenMirroring").renderingMode(.template)) + Text(styled(part))
+        }
+        return text
+    }
+
+    private func styled(_ s: String) -> AttributedString {
+        var a = AttributedString(s)
+        if let bold, !bold.isEmpty, let r = a.range(of: bold) { a[r].inlinePresentationIntent = .stronglyEmphasized }
+        return a
+    }
+}
+
+// MARK: - Agents
+
+struct AgentsTab: View {
+    @EnvironmentObject var model: AppModel
+    @State private var passcodeSheet = false
+    @State private var confirmForget = false
+
+    private var s: PCState? { model.state }
+    private var offline: Bool { !model.reachable || s == nil }
+
+    var body: some View {
+        Form {
+            if offline { OfflineSection() }
             if let s {
-                LabeledContent {
-                    Text(s.mirroring ? "Mirroring" : "Not mirroring")
-                } label: {
-                    Label(s.pc.name, systemImage: "desktopcomputer")
+                Group {
+                    agentSection(s)
+                    if let session = s.session {
+                        Section { StartModeRow(session: session) }
+                    }
+                    unlockSection(s)
                 }
-                LabeledContent {
-                    Text(s.bluetooth.connected ? (s.bluetooth.via == "bridge" ? "Via bridge" : "Via PC") : "Off")
-                } label: {
-                    Label("Bluetooth", systemImage: "dot.radiowaves.left.and.right")
-                }
+                .disabled(offline)
             }
-            if let error = model.error {
-                Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red).font(.footnote)
-                    .accessibilityIdentifier("error")
-            }
+        }
+        .navigationTitle("Agents")
+        .refreshable { await model.refresh() }
+        .sheet(isPresented: $passcodeSheet) { PasscodeSheet(replace: s?.unlock.passcodeSaved == true) }
+        .alert("Forget the passcode?", isPresented: $confirmForget) {
+            Button("Cancel", role: .cancel) {}
+            Button("Forget", role: .destructive) { Task { await model.forgetPasscode() } }
+        } message: {
+            Text("Unlock stops working until you save it again.")
         }
     }
 
     private func agentSection(_ s: PCState) -> some View {
-        Section("Agent") {
+        Section {
             Label {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(agentTitle(s.agent)).font(.headline)
@@ -202,15 +431,12 @@ struct SettingsView: View {
             }
             if s.agent.state == "driving" {
                 Button(role: .destructive) { Task { await model.takeOver() } } label: {
-                    row("Take Over", "hand.raised.fill", busy: "agent")
+                    BusyRow(title: "Take Over", key: "agent")
                 }
                 .accessibilityIdentifier("takeover")
             } else if s.agent.state == "paused" {
-                Button { Task { await model.resume() } } label: { row("Resume", "play.fill", busy: "agent") }
+                Button { Task { await model.resume() } } label: { BusyRow(title: "Resume", key: "agent") }
                     .accessibilityIdentifier("resume")
-            }
-            if let session = s.session {
-                StartModeRow(session: session)
             }
         }
     }
@@ -243,7 +469,7 @@ struct SettingsView: View {
     }
 
     private func unlockSection(_ s: PCState) -> some View {
-        Section("Unlock") {
+        Section {
             if let pending = s.unlock.pending {
                 Label("Unlock requested", systemImage: "lock.open").foregroundStyle(.orange)
                 HStack {
@@ -258,85 +484,132 @@ struct SettingsView: View {
                     if model.busy.contains("unlock") { Spacer(); ProgressView() }
                 }
             }
-            LabeledContent {
-                Text(s.unlock.passcodeSaved ? "Saved" : "Not saved")
-            } label: {
-                Label("Passcode", systemImage: "key")
-            }
-            .accessibilityIdentifier("passcodeStatus")
+            LabeledContent("Passcode", value: s.unlock.passcodeSaved ? "Saved" : "Not saved")
+                .accessibilityIdentifier("passcodeStatus")
             Button { passcodeSheet = true } label: {
-                row(s.unlock.passcodeSaved ? "Replace Passcode" : "Save Passcode", "square.and.pencil", busy: "passcode")
+                BusyRow(title: s.unlock.passcodeSaved ? "Replace Passcode" : "Save Passcode", key: "passcode")
             }
             .accessibilityIdentifier("savePasscode")
-            if s.unlock.passcodeSaved {
-                Button(role: .destructive) { confirmForget = true } label: { Label("Forget Passcode", systemImage: "trash") }
-                    .accessibilityIdentifier("forgetPasscode")
-                    .confirmationDialog("Forget the passcode?", isPresented: $confirmForget, titleVisibility: .visible) {
-                        Button("Forget", role: .destructive) { Task { await model.forgetPasscode() } }
-                    }
-            }
-        }
-    }
-
-    /// The pointer is an action, not a setting: the row shows the last known state and opens a sheet to change it.
-    private var pointerRow: some View {
-        Button {
-            if model.pointer == nil { Task { await model.checkPointer() } } else { pointerSheet = true }
-        } label: {
-            LabeledContent {
-                if model.busy.contains("pointer") && !pointerSheet {
-                    ProgressView()
-                } else {
-                    Text(model.pointer == "on" ? "On" : model.pointer == "off" ? "Off" : "Check")
-                        .foregroundStyle(model.pointer == nil ? Color.accentColor : Color.secondary)
+        } header: {
+            HStack {
+                Text("Unlock")
+                Spacer()
+                // rare and destructive: a quiet button in the header, as in the Linux window
+                if s.unlock.passcodeSaved {
+                    Button("Forget…", role: .destructive) { confirmForget = true }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.red)
+                        .textCase(nil)
+                        .accessibilityIdentifier("forgetPasscode")
                 }
-            } label: {
-                Label("Pointer", systemImage: "cursorarrow")
             }
+        } footer: {
+            Text("Phone Use types the passcode only after you allow each Unlock.")
         }
-        .tint(.primary)
-        .accessibilityIdentifier("pointer")
     }
+}
 
-    @ViewBuilder
-    private func bridgeSection(_ s: PCState) -> some View {
-        Section("Bridge") {
-            if let b = s.bridge {
-                if let w = b.warning {
-                    Label {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(w.title).font(.headline)
-                            if let d = w.detail { Text(d).font(.subheadline).foregroundStyle(.secondary) }
+// MARK: - Bridge
+
+struct BridgeTab: View {
+    @EnvironmentObject var model: AppModel
+    @State private var confirmForget = false
+
+    private var s: PCState? { model.state }
+    private var offline: Bool { !model.reachable || s == nil }
+
+    var body: some View {
+        Form {
+            if offline { OfflineSection() }
+            if let s {
+                Group {
+                    if let b = s.bridge {
+                        bridgeSection(s, b)
+                    } else {
+                        Section {
+                            RowTitle("No bridge", "Set it up in Phone Use on the PC: Bridge › Set Up Bridge.")
                         }
-                    } icon: {
-                        Image(systemName: "person.crop.circle.badge.exclamationmark.fill")
-                            .symbolRenderingMode(.hierarchical)
                     }
-                    .foregroundStyle(.orange)
-                    .accessibilityIdentifier("bridgeWarning")
+                    if let pc = s.pcBluetooth {
+                        Section {
+                            LabeledContent {
+                                Text(pc.on ? "On" : "Off")
+                            } label: {
+                                RowTitle("Use This PC's Bluetooth", "Works with or without the bridge")
+                            }
+                            .accessibilityIdentifier("pcBluetooth")
+                        } header: {
+                            Text("This PC's Bluetooth")
+                        } footer: {
+                            Text("Turn it on or off in Phone Use on the PC.")
+                        }
+                    }
+                    if s.bridge != nil {
+                        Section {
+                            Button(role: .destructive) { confirmForget = true } label: {
+                                HStack {
+                                    Text("Forget Bridge…")
+                                    if model.busy.contains("forgetBridge") { ProgressView().tint(.white) }
+                                }
+                                .padding(.horizontal, 8)
+                            }
+                            .buttonStyle(.borderedProminent).tint(.red).buttonBorderShape(.capsule)
+                            .frame(maxWidth: .infinity)
+                            .accessibilityIdentifier("forgetBridge")
+                        }
+                        .listRowBackground(Color.clear)
+                    }
                 }
-                LabeledContent {
-                    Text(b.online ? (b.rttMs.map { "Online, \(Int($0)) ms" } ?? "Online") : "Offline")
-                        .foregroundStyle(b.online ? Color.secondary : Color.orange)
-                } label: {
-                    Label(b.ssid ?? "Bridge", systemImage: "cpu")
-                }
-                .accessibilityIdentifier("bridgeStatus")
-                if let phone = b.signal?.phone { signalRow("Bridge to iPhone", "cellularbars", phone) }
-                if let wifi = b.signal?.wifi { signalRow("Bridge Wi-Fi", "wifi", wifi) }
-                Toggle(isOn: binding(b.use) { on in await model.setBridge(on) }) {
-                    row("Input Through Bridge", "arrow.triangle.branch", busy: "bridge")
-                }
-                .accessibilityIdentifier("bridgeUse")
-                NavigationLink {
-                    NetworksView(current: b.ssid)
-                } label: {
-                    Label("Wi-Fi Network", systemImage: "wifi")
-                }
-                .accessibilityIdentifier("bridgeNetwork")
-            } else {
-                Label("No bridge", systemImage: "cpu").foregroundStyle(.secondary)
+                .disabled(offline)
             }
+        }
+        .navigationTitle("Bridge")
+        .refreshable { await model.refresh() }
+        .alert("Forget the bridge?", isPresented: $confirmForget) {
+            Button("Cancel", role: .cancel) {}
+            Button("Forget", role: .destructive) { Task { await model.forgetBridge() } }
+        } message: {
+            Text("The bridge resets and disconnects from your iPhone. To use it again, hold its lower button for 3 "
+                 + "seconds and set it up.")
+        }
+    }
+
+    private func bridgeSection(_ s: PCState, _ b: PCState.Bridge) -> some View {
+        Section {
+            if let w = b.warning {
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(w.title).font(.headline)
+                        if let d = w.detail { Text(d).font(.subheadline).foregroundStyle(.secondary) }
+                    }
+                } icon: {
+                    Image(systemName: "person.crop.circle.badge.exclamationmark.fill")
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .foregroundStyle(.orange)
+                .accessibilityIdentifier("bridgeWarning")
+            }
+            let connected = s.bluetooth.connected && s.bluetooth.via == "bridge"
+            LabeledContent {
+                Text(!b.online ? "Offline" : connected ? "Connected" : "Not connected")
+                    .foregroundStyle(!b.online ? Color.red : connected ? Color.green : Color.orange)
+            } label: {
+                RowTitle("Bridge \(String((b.id ?? "").suffix(4)))",
+                         b.online && !connected ? "Settings › Bluetooth › PhoneUse Bridge" : b.ip)
+            }
+            .accessibilityIdentifier("bridgeStatus")
+            if let phone = b.signal?.phone { signalRow("Bridge to iPhone", "cellularbars", phone) }
+            if let wifi = b.signal?.wifi { signalRow("Bridge Wi-Fi", "wifi", wifi) }
+            Toggle(isOn: sendBinding(b.use) { on in await model.setBridge(on) }) {
+                BusyRow(title: "Enable Input", key: "bridge")
+            }
+            .accessibilityIdentifier("bridgeUse")
+            NavigationLink {
+                NetworksView(current: b.ssid)
+            } label: {
+                LabeledContent("Wi-Fi Network", value: b.ssid ?? "")
+            }
+            .accessibilityIdentifier("bridgeNetwork")
         }
     }
 
@@ -344,41 +617,19 @@ struct SettingsView: View {
     private func signalRow(_ title: String, _ symbol: String, _ quality: String) -> some View {
         let level: Double = quality == "good" ? 1 : quality == "fair" ? 0.66 : 0.33
         return LabeledContent {
-            Text(quality.capitalized).foregroundStyle(.secondary)
-        } label: {
-            Label { Text(title) } icon: { Image(systemName: symbol, variableValue: level) }
-        }
-    }
-
-    private var pcSection: some View {
-        Section {
-            if let p = model.pairing {
-                LabeledContent("Paired with", value: p.name)
-                LabeledContent("Address", value: "\(p.host):\(p.port)")
+            HStack(spacing: 6) {
+                Image(systemName: symbol, variableValue: level)
+                Text(quality.capitalized)
             }
-            Button("Unpair", role: .destructive) { confirmUnpair = true }
-                .confirmationDialog("Unpair from this PC?", isPresented: $confirmUnpair, titleVisibility: .visible) {
-                    Button("Unpair", role: .destructive) { model.unpair() }
-                }
-        } header: { Text("PC") }
-    }
-
-    // MARK: Helpers
-
-    /// A toggle binding that shows the PC's value and sends a change at once.
-    private func binding(_ value: Bool, _ apply: @escaping (Bool) async -> Void) -> Binding<Bool> {
-        Binding(get: { value }, set: { on in Task { await apply(on) } })
-    }
-
-    private func row(_ title: String, _ icon: String, busy key: String) -> some View {
-        HStack {
-            Label(title, systemImage: icon)
-            if model.busy.contains(key) { Spacer(); ProgressView() }
+            .foregroundStyle(.secondary)
+        } label: {
+            Text(title)
         }
     }
 }
 
 struct PasscodeSheet: View {
+    var replace = false
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var code = ""
@@ -386,12 +637,12 @@ struct PasscodeSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                SecureField("Passcode", text: $code)
+                SecureField("New Passcode", text: $code)
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
                     .accessibilityIdentifier("passcodeField")
             }
-            .navigationTitle("iPhone Passcode")
+            .navigationTitle(replace ? "Replace Passcode" : "Save Passcode")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -418,11 +669,12 @@ struct NetworksView: View {
     @State private var loadError: String?
     @State private var chosen: BridgeNetwork?
     @State private var password = ""
-    @State private var moving = false
+    @State private var joining: String?
 
     var body: some View {
         List {
             if let loadError { Label(loadError, systemImage: "exclamationmark.triangle").foregroundStyle(.red) }
+            Section {
             if let networks {
                 ForEach(networks) { n in
                     Button {
@@ -440,12 +692,19 @@ struct NetworksView: View {
                     .accessibilityIdentifier("network-\(n.ssid)")
                 }
             } else if loadError == nil {
-                HStack { Spacer(); ProgressView(); Spacer() }
+                HStack { Spacer(); ProgressView("Looking for Wi-Fi…"); Spacer() }
+            }
+            } footer: {
+                Text("Choose the same 2.4 GHz network as the PC.")
             }
         }
-        .navigationTitle("Bridge Wi-Fi")
-        .disabled(moving)
-        .overlay { if moving { ProgressView("Moving the bridge…").padding().background(.regularMaterial, in: .rect(cornerRadius: 12)) } }
+        .navigationTitle("Choose a Network")
+        .disabled(joining != nil)
+        .overlay {
+            if let joining {
+                ProgressView("Joining \(joining)…").padding().background(.regularMaterial, in: .rect(cornerRadius: 12))
+            }
+        }
         .task { await load() }
         .refreshable { await load() }
         .alert(chosen?.ssid ?? "", isPresented: Binding(get: { chosen != nil }, set: { if !$0 { chosen = nil } })) {
@@ -472,9 +731,9 @@ struct NetworksView: View {
     }
 
     private func move(_ n: BridgeNetwork, _ password: String?) async {
-        moving = true
+        joining = n.ssid
         let ok = await model.moveBridge(ssid: n.ssid, password: password)
-        moving = false
+        joining = nil
         if ok { dismiss() } else { loadError = model.error }
     }
 }
@@ -573,23 +832,27 @@ struct StartModeRow: View {
     var session: PCState.Session
 
     var body: some View {
-        Picker("Agent control", selection: Binding(
+        Picker(selection: Binding(
             get: { session.currentMode },
             set: { mode in Task { await model.setSessionMode(mode) } }
         )) {
             Text("Always").tag("auto")
             Text("After a delay").tag("countdown")
             Text("Ask every time").tag("ask")
+        } label: {
+            RowTitle("Agent control", "What happens when an agent wants the phone")
         }
         .pickerStyle(.menu)
         .accessibilityIdentifier("sessionMode")
         if session.currentMode == "countdown" {
             let current = session.seconds ?? 10
-            Picker("Delay", selection: Binding(
+            Picker(selection: Binding(
                 get: { current },
                 set: { seconds in Task { await model.setSessionSeconds(seconds) } }
             )) {
-                ForEach(Array(Set([5, 10, 15, 30, current])).sorted(), id: \.self) { Text("\($0) s").tag($0) }
+                ForEach(Array(Set([5, 10, 15, 30, current])).sorted(), id: \.self) { Text("\($0) seconds").tag($0) }
+            } label: {
+                RowTitle("Delay", "You can stop the agent until then")
             }
             .pickerStyle(.menu)
             .accessibilityIdentifier("sessionSeconds")

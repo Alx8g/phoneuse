@@ -43,6 +43,7 @@ def initial_state():
                    "signal": {"wifi": "good", "phone": "fair"},
                    "warning": {"title": "Bridge is too far from your iPhone", "detail": "Move it closer."},
                    "online": True, "rtt_ms": 15},
+        "pc_bluetooth": {"on": False},
     }
 
 
@@ -207,6 +208,12 @@ class Handler(BaseHTTPRequestHandler):
             s["bridge"]["use"] = on
             s["bluetooth"]["via"] = "bridge" if on else "pc"
             return ok()
+        if route == ("DELETE", "/v1/bridge"):
+            if not s["bridge"]:
+                return self.error(409, "There is no bridge.", logged)
+            s["bridge"] = None
+            s["bluetooth"] = {"connected": False, "via": "pc"}
+            return ok("bridge forgotten and reset", extra={"saved": None, "reset": True, "why": None})
         if route == ("GET", "/v1/bridge/networks"):
             return self.reply(200, {"networks": NETWORKS})
         if route == ("POST", "/v1/bridge/network"):
