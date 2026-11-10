@@ -251,6 +251,7 @@ class Window(Adw.ApplicationWindow):
         self.paired_row = Adw.ActionRow(title="Paired")
         self.paired_count = Gtk.Label(css_classes=["dim-label"], valign=Gtk.Align.CENTER)
         self.paired_row.add_suffix(self.paired_count)
+        self.paired_row.add_suffix(button("Unpair", "flat", self._confirm_unpair))
         g.add(self.paired_row)
         self.pair_row = nav_row("Pair iPhone App", "Allow and stop agents from the iPhone, and see what they do",
                                 lambda: PairDialog(self).present(self))
@@ -330,7 +331,8 @@ class Window(Adw.ApplicationWindow):
 
     HERO_ICONS = {"phone": "phone-symbolic", "keyboard": "input-keyboard-symbolic",
                   "offline": "network-offline-symbolic", "bluetooth": "bluetooth-symbolic"}
-    HERO_BUTTONS = {"start": "Start Phone Use", "setup_bridge": "Set Up Bridge", "open_ports": "Open Ports…",
+    HERO_BUTTONS = {"start": "Start Phone Use", "setup_bridge": "Set Up Bridge",
+                    "pair_app": "Pair iPhone App", "open_ports": "Open Ports…",
                     "retry": "Try Again", "open_phone": "Open iPhone"}
 
     def _show_hero(self, s):
@@ -341,6 +343,7 @@ class Window(Adw.ApplicationWindow):
             bold = GLib.markup_escape_text(h["bold"])
             detail = detail.replace(bold, f"<b>{bold}</b>", 1)
         actions = {"start": self.app.start_services, "setup_bridge": lambda: BridgeSetup(self).present(self),
+                   "pair_app": lambda: PairDialog(self).present(self),
                    "open_ports": self._allow_network, "retry": self.refresh, "open_phone": self.app.open_phone}
         act = h.get("action")
         return self._hero(h["title"], detail, self.HERO_BUTTONS.get(act), actions.get(act),
@@ -453,6 +456,17 @@ class Window(Adw.ApplicationWindow):
                 self.toast(f"Couldn't connect: {e}" if e else "Connected. New Claude Code sessions can use the "
                            "phone."), self.refresh()))
 
+    def _confirm_unpair(self):
+        n = paired_iphones()
+        confirm(self, "Unpair the iPhone app?" if n == 1 else f"Unpair {n} iPhone apps?",
+                "Agents can't use the iPhone until you pair the app again.", "Unpair", self._unpair)
+
+    def _unpair(self):
+        from . import companion
+        companion.forget()
+        self.toast("iPhone app unpaired")
+        self.refresh()
+
     def _allow_network(self):
         self.fw_btn.set_sensitive(False)
         self.hero_btn.set_sensitive(False)
@@ -506,8 +520,14 @@ class PairDialog(Adw.Dialog):
         buf = io.BytesIO()
         qrcode.make(link, border=2, box_size=8).save(buf, format="PNG")
         tex = Gdk.Texture.new_from_bytes(GLib.Bytes.new(buf.getvalue()))
-        self.box.append(Gtk.Picture(paintable=tex, can_shrink=True, content_fit=Gtk.ContentFit.CONTAIN,
-                                    height_request=260, css_classes=["card"]))
+        css = Gtk.CssProvider()
+        css.load_from_string(".qr { border-radius: 12px; }")
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css,
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        # A square the size of the code, clipped to rounded corners, so nothing shows around it.
+        self.box.append(Gtk.Picture(paintable=tex, can_shrink=True, content_fit=Gtk.ContentFit.FILL,
+                                    width_request=260, height_request=260, halign=Gtk.Align.CENTER,
+                                    overflow=Gtk.Overflow.HIDDEN, css_classes=["qr"]))
         self.box.append(Gtk.Label(label="Point the iPhone's camera at the code and open the link in Phone Use.",
                                   wrap=True, justify=Gtk.Justification.CENTER, css_classes=["dim-label"]))
 
@@ -705,16 +725,18 @@ class App(Adw.Application):
         if not self.win:
             self.win = Window(self)
             self.win.connect("close-request", self._on_close)
-            GLib.timeout_add_seconds(2, lambda: (self.win.refresh(), True)[1])
+            self._tick = GLib.timeout_add_seconds(2, lambda: (self.win.refresh(), True)[1])
             if not services_running():
                 self.start_services()
         self.win.present()
         self.win.refresh()
 
     def _on_close(self, *_):
-        if self.proc:  # the services keep running for agents; the window comes back on the next launch
-            self.win.set_visible(False)
-            return True
+        # The window closes for good (a hidden GTK window doesn't map again on some compositors,
+        # Hyprland among them); the services keep running for agents, and the next launch builds
+        # a new window.
+        GLib.source_remove(self._tick)
+        self.win = None
         return False
 
     def start_services(self):

@@ -57,6 +57,23 @@ def load():
     return d
 
 
+def paired():
+    """How many iPhone apps are paired. Agents may control the phone only while one is."""
+    return len(load()["devices"])
+
+
+def forget(dev_id=None):
+    """Unpair one app, or every app when dev_id is None. Returns how many were removed."""
+    d = load()
+    gone = list(d["devices"]) if dev_id is None else [dev_id] if dev_id in d["devices"] else []
+    for k in gone:
+        del d["devices"][k]
+    if gone:
+        save(d)
+        log("unpaired", "every app" if dev_id is None else f"an app: {dev_id}")
+    return len(gone)
+
+
 def save(d):
     os.makedirs(os.path.dirname(STORE), mode=0o700, exist_ok=True)
     tmp = STORE + ".tmp"
@@ -192,7 +209,7 @@ class Companion:
             if hmac.compare_digest(signature(key, req.method, req.path_qs, t, nonce, body), sig):
                 break
         else:
-            return web.json_response({"error": "This app isn't paired with the PC. Run `phoneuse app pair`."},
+            return web.json_response({"error": "This app isn't paired with the PC. Pair it again from Phone Use on the PC."},
                                      status=401)
         self.nonces[nonce] = now
         if dev_id is None:  # first request with a pairing key: the pairing is used up
@@ -204,6 +221,11 @@ class Companion:
         req["device"], req["key"] = dev_id, key
         req["json"] = json.loads(body) if body else {}
         return await handler(req)
+
+    async def unpair(self, req):
+        """The app unpairs itself: the PC forgets its key, so agents stop until an app pairs again."""
+        forget(req["device"])
+        return web.json_response({"ok": True})
 
     # ---- state ----
     def daemon(self, cmd):
@@ -785,6 +807,7 @@ class Companion:
         r.add_post("/v1/bridge/network", self.bridge_network)
         r.add_post("/v1/mirror/audio", self.audio)
         r.add_post("/v1/push", self.push)
+        r.add_delete("/v1/pairing", self.unpair)
         return a
 
     async def start(self):
