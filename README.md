@@ -23,7 +23,7 @@ features every iPhone has: Screen Mirroring and AssistiveTouch.
 |---|---|
 | `PhoneUse-<version>-x86_64.flatpak` | Phone Use for Linux |
 | `PhoneUse-<version>-mac.dmg` | Phone Use for macOS 15 or later, signed and notarized |
-| `phoneuse-bridge-<version>.bin` | Firmware for the bridge (LilyGO T-Display, ESP32) |
+| `phoneuse-bridge-<version>.bin` | Firmware for the bridge (a [LilyGO T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display)) |
 
 The iPhone app isn't in the App Store yet. To install it, build it from [`ios/`](ios/README.md)
 with Xcode onto your phone.
@@ -47,7 +47,13 @@ uses the bridge for input.
 
 ### The bridge
 
-Flash the firmware once over USB with [esptool](https://github.com/espressif/esptool):
+The bridge is a [LilyGO T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display): an ESP32
+board with a 1.14-inch screen, two buttons and USB-C. Any T-Display works; nothing needs
+soldering.
+
+The Linux app installs the firmware for you: plug the bridge in with a USB cable and open
+Bridge › Install Firmware. You can also flash it yourself with
+[esptool](https://github.com/espressif/esptool):
 
 ```sh
 pip install esptool
@@ -73,7 +79,7 @@ The rest of this page covers running Phone Use from a checkout on Linux, with th
 | Python 3.11+ | `python-dbus`, `python-gobject`, `numpy`, `pillow`, `aiohttp` |
 | `grim` | takes screenshots for agents |
 | `uv` (optional) | runs the models that read the screen |
-| For the bridge (optional) | LilyGO T-Display (ESP32), ESP-IDF v6.1, `python-bleak`, `python-cryptography`, `python-pyserial` |
+| For the bridge (optional) | [LilyGO T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display) (ESP32), ESP-IDF v6.1, `python-bleak`, `python-cryptography`, `python-pyserial` |
 
 The phone and the PC must be on the same network. If you run a firewall, open TCP
 ports 7000, 7001 and 7100 and UDP ports 6000, 6001 and 7011 for AirPlay, and UDP
@@ -117,8 +123,8 @@ port 47700 for the bridge. The iPhone app needs TCP port 8778.
 
 ## The Bluetooth bridge
 
-The bridge is a small puck (an ESP32) that the iPhone pairs with as its Bluetooth
-keyboard and mouse. phoneuse sends commands to the bridge over Wi-Fi, so you can leave the bridge
+The bridge is a small puck (a [LilyGO T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display),
+an ESP32) that the iPhone pairs with as its Bluetooth keyboard and mouse. phoneuse sends commands to the bridge over Wi-Fi, so you can leave the bridge
 next to the phone on a battery or a charger, and the PC's own Bluetooth adapter stays
 unused.
 
