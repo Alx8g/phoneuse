@@ -209,11 +209,12 @@ class Window(Adw.ApplicationWindow):
                                    visible=False)
         self._steps_shown = None
         # The pairing QR code (overview's "qr"), made here and renewed before its link expires.
-        self.hero_qr = Gtk.Picture(can_shrink=True, content_fit=Gtk.ContentFit.FILL, width_request=220,
-                                   height_request=220, halign=Gtk.Align.CENTER, margin_top=10, margin_bottom=4,
-                                   overflow=Gtk.Overflow.HIDDEN, css_classes=["qr"], visible=False)
+        self.hero_qr = Gtk.Picture(can_shrink=True, content_fit=Gtk.ContentFit.CONTAIN,
+                                   overflow=Gtk.Overflow.HIDDEN, css_classes=["qr"])
+        self.hero_qr_clamp = Adw.Clamp(maximum_size=220, child=self.hero_qr, margin_top=10, margin_bottom=4,
+                                       visible=False)
         self._qr_made = 0.0
-        for w in (self.hero_icon, self.hero_title, self.hero_qr, self.hero_steps, self.hero_sub, self.hero_btn):
+        for w in (self.hero_icon, self.hero_title, self.hero_qr_clamp, self.hero_steps, self.hero_sub, self.hero_btn):
             box.append(w)
         hero.add(box)
         self.phone_page.add(hero)
@@ -280,13 +281,13 @@ class Window(Adw.ApplicationWindow):
         self.bridge_page.add(self.bridge_group)
 
         # iPhone App
-        g = Adw.PreferencesGroup(title="iPhone App")
+        g = Adw.PreferencesGroup(title="iPhone")
         self.paired_row = Adw.ActionRow(title="Paired")
         self.paired_count = Gtk.Label(css_classes=["dim-label"], valign=Gtk.Align.CENTER)
         self.paired_row.add_suffix(self.paired_count)
         self.paired_row.add_suffix(button("Unpair", "flat", self._confirm_unpair))
         g.add(self.paired_row)
-        self.pair_row = nav_row("Pair iPhone App", "Allow and stop agents from the iPhone, and see what they do",
+        self.pair_row = nav_row("Pair iPhone", "Allow and stop agents from the iPhone, and see what they do",
                                 lambda: PairDialog(self).present(self))
         g.add(self.pair_row)
         self.phone_page.add(g)
@@ -362,7 +363,7 @@ class Window(Adw.ApplicationWindow):
 
         self.paired_row.set_visible(s["paired"] > 0)
         self.paired_count.set_label(f"{s['paired']} iPhone" + ("s" if s["paired"] != 1 else ""))
-        self.pair_row.set_title("Pair Another iPhone" if s["paired"] else "Pair iPhone App")
+        self.pair_row.set_title("Pair Another iPhone" if s["paired"] else "Pair iPhone")
 
         self._show_bridge(s.get("bridge"), running)
         st = (s.get("bridge") or {}).get("status") or {}
@@ -377,7 +378,7 @@ class Window(Adw.ApplicationWindow):
                   "offline": "network-offline-symbolic", "bluetooth": "bluetooth-symbolic",
                   "mirroring": "co.lxe.PhoneUse-mirroring-symbolic"}
     HERO_BUTTONS = {"start": "Start Phone Use", "setup_bridge": "Set Up Bridge",
-                    "pair_app": "Pair iPhone App", "open_ports": "Open Ports…",
+                    "pair_app": "Pair iPhone", "open_ports": "Open Ports…",
                     "retry": "Try Again", "open_phone": "Open iPhone"}
 
     def _show_hero(self, s):
@@ -398,7 +399,7 @@ class Window(Adw.ApplicationWindow):
                           quiet=h.get("quiet"))
 
     def _show_qr(self, on):
-        self.hero_qr.set_visible(on)
+        self.hero_qr_clamp.set_visible(on)
         self.hero_icon.set_visible(not on)
         if not on:
             self._qr_made = 0.0
@@ -616,7 +617,7 @@ class PairDialog(Adw.Dialog):
     has paired, and makes a new code when this one runs out."""
 
     def __init__(self, win):
-        super().__init__(title="Pair iPhone App", content_width=360)
+        super().__init__(title="Pair iPhone", content_width=360)
         self.win = win
         self.before = paired_iphones()
         view = Adw.ToolbarView()
@@ -655,7 +656,7 @@ class PairDialog(Adw.Dialog):
 
     def _check(self):
         if paired_iphones() > self.before:
-            self.win.toast("iPhone App paired")
+            self.win.toast("iPhone paired")
             self.win.refresh()
             self.close()
             return False
