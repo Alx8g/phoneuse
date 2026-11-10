@@ -164,7 +164,7 @@ class Window(Adw.ApplicationWindow):
         self.tabs = {}
         for key, page, title, icon in (("phone", self.phone_page, "Phone", "phone-symbolic"),
                                        ("agents", self.agents_page, "Agents", "co.lxe.PhoneUse-agent-symbolic"),
-                                       ("bridge", self.bridge_page, "Bridge", "bluetooth-symbolic")):
+                                       ("bridge", self.bridge_page, "Bridge", "input-keyboard-symbolic")):
             self.tabs[key] = self.stack.add_titled_with_icon(page, key, title, icon)
         switcher = Adw.ViewSwitcher(stack=self.stack, policy=Adw.ViewSwitcherPolicy.WIDE)
         header.set_title_widget(switcher)
