@@ -252,6 +252,8 @@ def main():
     ap.add_argument("--open", action="store_true", help="open the pairing link in the booted simulator")
     ap.add_argument("--agent", default="driving", choices=["idle", "driving", "paused"],
                     help="the agent's state at start")
+    ap.add_argument("--input", default="bridge", choices=["bridge", "pc", "none"],
+                    help="what carries the input: the bridge, this PC's Bluetooth, or nothing yet")
     ap.add_argument("--bonjour", action="store_true", help="advertise _phoneuse._tcp with dns-sd")
     args = ap.parse_args()
 
@@ -259,6 +261,11 @@ def main():
     key = b64url_decode(args.key) if args.key else secrets.token_bytes(32)
     Handler.mock = Mock(key, args.cursor_delay)
     Handler.mock.state["agent"]["state"] = args.agent
+    if args.input != "bridge":  # no bridge: this PC's Bluetooth (on and connected), or nothing at all
+        st = Handler.mock.state
+        st["bridge"] = None
+        st["pc_bluetooth"] = {"on": args.input == "pc"}
+        st["bluetooth"] = {"connected": args.input == "pc", "via": "pc"}
     link = "phoneuse://pair?" + urllib.parse.urlencode(
         {"id": PC_ID, "name": PC_NAME, "host": args.host, "port": args.port, "key": b64url_encode(key)},
         quote_via=urllib.parse.quote)

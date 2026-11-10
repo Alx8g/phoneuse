@@ -18,7 +18,8 @@ struct ContentView: View {
                     NavigationStack { AgentsTab() }
                         .tabItem { Label("Agents", systemImage: "sparkles") }.tag("agents")
                     NavigationStack { BridgeTab() }
-                        .tabItem { Label("Bridge", systemImage: "dot.radiowaves.left.and.right") }.tag("bridge")
+                        .tabItem { Label(model.state?.inputTitle ?? "Bridge", systemImage: "dot.radiowaves.left.and.right") }
+                        .tag("bridge")
                         .badge(bridgeNeedsAttention ? Text("!") : nil)
                 }
                 .overlay(alignment: .bottom) { NoticeView().padding(.bottom, 64) }
@@ -40,7 +41,8 @@ struct ContentView: View {
     private var bridgeNeedsAttention: Bool {
         guard let s = model.state else { return false }
         if let b = s.bridge { return !b.online }
-        return s.pcBluetooth?.on != true
+        if s.usesPCBluetooth { return !s.bluetooth.connected }
+        return true
     }
 }
 
@@ -259,6 +261,11 @@ struct PhoneHero: View {
         if let b = s.bridge, !b.online {
             return Step(icon: "wifi.exclamationmark", title: "The bridge is offline",
                         detail: "Check that it has power and is on the same Wi-Fi as the PC.", retry: true)
+        }
+        if s.bridge == nil, s.usesPCBluetooth, !s.bluetooth.connected {
+            return Step(icon: "dot.radiowaves.left.and.right", title: "Connect the iPhone to the PC",
+                        detail: "Open Settings › Bluetooth and tap PhoneUse. If it won't connect, forget it there and "
+                            + "tap it again.")
         }
         if let b = s.bridge, !(b.connected ?? s.bluetooth.connected) {
             return Step(icon: "dot.radiowaves.left.and.right", title: "Connect the bridge to the iPhone",
@@ -500,21 +507,11 @@ struct BridgeTab: View {
                 Group {
                     if let b = s.bridge {
                         bridgeSection(s, b)
+                    } else if s.usesPCBluetooth {
+                        Section { pcBluetoothRow(s) }
                     } else {
                         Section {
                             RowTitle("No bridge", "Set it up in Phone Use on the PC: Bridge › Set Up Bridge.")
-                        }
-                    }
-                    if let pc = s.pcBluetooth {
-                        Section {
-                            LabeledContent {
-                                Text(pc.on ? "On" : "Off")
-                            } label: {
-                                RowTitle("Use This PC's Bluetooth", "Works with or without the bridge")
-                            }
-                            .accessibilityIdentifier("pcBluetooth")
-                        } footer: {
-                            Text("Turn it on or off in Phone Use on the PC.")
                         }
                     }
                     if s.bridge != nil {
@@ -536,7 +533,7 @@ struct BridgeTab: View {
                 .disabled(offline)
             }
         }
-        .navigationTitle("Bridge")
+        .navigationTitle(s?.inputTitle ?? "Bridge")
         .refreshable { await model.refresh() }
         .alert("Forget the bridge?", isPresented: $confirmForget) {
             Button("Cancel", role: .cancel) {}
@@ -545,6 +542,17 @@ struct BridgeTab: View {
             Text("The bridge resets and disconnects from your iPhone. To use it again, hold its lower button for 3 "
                  + "seconds and set it up.")
         }
+    }
+
+    /// The PC's own Bluetooth as the iPhone's keyboard and mouse: no bridge in between.
+    private func pcBluetoothRow(_ s: PCState) -> some View {
+        let connected = s.bluetooth.connected && s.bluetooth.via != "bridge"
+        return LabeledContent {
+            Text(connected ? "Connected" : "Not connected").foregroundStyle(connected ? Color.green : Color.orange)
+        } label: {
+            RowTitle("PC's Bluetooth", connected ? s.pc.name : "Settings › Bluetooth › PhoneUse")
+        }
+        .accessibilityIdentifier("pcBluetooth")
     }
 
     private func bridgeSection(_ s: PCState, _ b: PCState.Bridge) -> some View {
