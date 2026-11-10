@@ -17,6 +17,7 @@ import json
 import os
 import socket
 import sys
+import threading
 import time
 
 from .config import VISION_SOCKET as SOCK  # noqa: E402  (shared with the CLI)

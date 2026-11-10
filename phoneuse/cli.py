@@ -71,6 +71,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.request
 
 from . import calibrate, config, ipc, phones, screen, touch
 from .config import CFG, HID_SOCKET, IS_WINDOWS, MACOS, NAME, RUNTIME_DIR, SCREEN_PT, VISION_SOCKET, runtime_path
@@ -1537,14 +1538,10 @@ def up_linux(headless=False):
 
 def stop_vision():
     """Ask the OCR service to exit (it runs detached, so agents' commands can share it)."""
-    import socket
     try:
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.settimeout(2)
-        s.connect(VISION_SOCK)
-        s.sendall(b'{"op": "quit"}\n')
-        s.makefile().readline()
-        s.close()
+        with ipc.connect("vision", timeout=2) as s:
+            s.sendall(b'{"op": "quit"}\n')
+            s.makefile("rb").readline()
     except OSError:
         pass  # not running
 
