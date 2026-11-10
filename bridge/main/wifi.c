@@ -181,12 +181,20 @@ static void json_str(char **p, char *end, const char *s) {
 
 int wifi_scan_json(char *out, int cap) {
     if (!scan_done) scan_done = xSemaphoreCreateBinary();
+    // The driver scans by itself too (reconnecting), and each of its scans signals done: drop
+    // a signal left from one of those, so the wait below is for this scan.
+    xSemaphoreTake(scan_done, 0);
     wifi_scan_config_t sc = {.show_hidden = false};
-    if (esp_wifi_scan_start(&sc, false) != ESP_OK) return snprintf(out, cap, "[]");
-    xSemaphoreTake(scan_done, pdMS_TO_TICKS(6000));
+    esp_err_t e = esp_wifi_scan_start(&sc, false);
+    if (e != ESP_OK) {
+        ESP_LOGW(TAG, "scan: %s", esp_err_to_name(e));
+        return snprintf(out, cap, "[]");
+    }
+    bool done = xSemaphoreTake(scan_done, pdMS_TO_TICKS(6000));
     uint16_t n = 20;
     wifi_ap_record_t recs[20];
     esp_wifi_scan_get_ap_records(&n, recs);
+    ESP_LOGI(TAG, "scan: %u networks%s", n, done ? "" : " (timed out)");
     char *p = out, *end = out + cap - 2;
     *p++ = '[';
     int written = 0;

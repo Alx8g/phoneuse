@@ -22,17 +22,18 @@ def stopped():
 
 
 def hero(s, name):
-    """s: {"picture", "bridge", "firewall", "confirmed", "paired"} as /api/app gathers them."""
+    """s: {"picture", "bridge", "firewall", "confirmed", "paired", "pc_bluetooth"} as /api/app
+    gathers them."""
     pic, b = s.get("picture"), s.get("bridge") or {}
     st, saved = b.get("status") or {}, b.get("saved")
     if not pic:
         return _step("starting", "Starting…")
-    if not saved:
-        return _step("setup_bridge", "Set up the bridge", "A small board next to the iPhone that it pairs with as "
-                     "its keyboard and mouse. Phone Use reaches it over Wi-Fi.", "setup_bridge", icon="keyboard")
+    if not saved and not s.get("pc_bluetooth"):
+        return _step("setup_bridge", "Set up the bridge", "The bridge is a small puck that taps and types on your "
+                     "iPhone over Bluetooth, and connects to this PC over Wi-Fi. Keep it plugged in near your iPhone.", "setup_bridge", icon="keyboard")
     if not s.get("paired"):
-        return _step("pair_app", "Pair the iPhone app", "Agents can use the iPhone only while the Phone Use app "
-                     "on it is paired. You allow and stop them there.", "pair_app")
+        return _step("pair_app", "Pair the iPhone app", "Install and pair the Phone Use app. It's where you allow "
+                     "and stop agents.", "pair_app")
     if not pic.get("live"):
         fw = bool(s.get("firewall")) and not s.get("confirmed")
         return _step("start_mirroring", "Start Screen Mirroring",
@@ -40,13 +41,12 @@ def hero(s, name):
                      "open_ports" if fw else None, quiet=True, bold=name,
                      steps=["On the iPhone, swipe down from the top-right corner.",
                             "Tap {mirroring} Screen Mirroring.", f"Choose {name}."])
-    if st.get("error"):
+    if saved and st.get("error"):
         return _step("bridge_offline", "The bridge is offline", "Check that it has power and is on the same "
                      "Wi-Fi as this PC.", "retry", icon="offline")
-    if not st.get("connected"):
+    if saved and not st.get("connected"):
         return _step("connect_bridge", "Connect the bridge to the iPhone", "On the iPhone, open Settings › "
-                     "Bluetooth and tap PhoneUse Bridge. If it's listed as connected, keep the bridge closer to "
-                     "the iPhone.", icon="bluetooth")
+                     "Bluetooth and tap PhoneUse Bridge. If it won't connect, forget it there and tap it again.", icon="bluetooth")
     if pic.get("paused"):
         return _step("taken_over", "You're in control", "You took over from the agent.", "open_phone", good=True)
     if pic.get("stale"):

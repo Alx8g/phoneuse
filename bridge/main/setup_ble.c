@@ -58,6 +58,7 @@ static const esp_gatts_attr_db_t db[A_N] = {
     [A_JOIN_V] = VAL(U_JOIN, ESP_GATT_PERM_WRITE, 200, 0, join_val),
 };
 
+static bool adv_ready;  // the advertising data is set (gap_cb)
 static esp_ble_adv_params_t adv = {
     .adv_int_min = 0x40, .adv_int_max = 0x80, .adv_type = ADV_TYPE_IND,
     .own_addr_type = BLE_ADDR_TYPE_PUBLIC, .channel_map = ADV_CHNL_ALL, .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
@@ -96,7 +97,7 @@ void setup_ble_open(bool open) {
         }
         new_keys();
         if (bridge.state != ST_JOINING && bridge.state != ST_ONLINE) bridge.state = ST_SETUP;
-        esp_ble_gap_start_advertising(&adv);
+        if (adv_ready) esp_ble_gap_start_advertising(&adv);  // else gap_cb starts it
     } else {
         esp_ble_gap_stop_advertising();
         if (conn != 0xFFFF) esp_ble_gatts_close(gif, conn);
@@ -179,7 +180,21 @@ static void gatts_cb(esp_gatts_cb_event_t ev, esp_gatt_if_t g, esp_ble_gatts_cb_
     }
 }
 
-static void gap_cb(esp_gap_ble_cb_event_t ev, esp_ble_gap_cb_param_t *p) {}
+// Advertising starts only once its data is in place: a start sent before the controller has the
+// scan response (both are set asynchronously at init) is refused, and nothing retries it.
+static void gap_cb(esp_gap_ble_cb_event_t ev, esp_ble_gap_cb_param_t *p) {
+    switch (ev) {
+    case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
+        adv_ready = true;
+        if (bridge.setup_open) esp_ble_gap_start_advertising(&adv);
+        break;
+    case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
+        ESP_LOGI("setup", "advertising: %s", p->adv_start_cmpl.status == ESP_BT_STATUS_SUCCESS ? "on" : "refused");
+        break;
+    default:
+        break;
+    }
+}
 
 void setup_ble_init(void) {
     esp_ble_gap_register_callback(gap_cb);

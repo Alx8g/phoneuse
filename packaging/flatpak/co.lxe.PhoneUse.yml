@@ -14,7 +14,8 @@ finish-args:
   - --socket=pulseaudio        # the phone's mirrored sound; the spoken Siri request for the pointer
   - --device=dri
   - --system-talk-name=org.freedesktop.Avahi        # advertise the AirPlay receiver and the companion API
-  - --system-talk-name=org.bluez                    # set up a bridge over BLE
+  - --system-talk-name=org.bluez                    # set up a bridge over BLE; this PC's Bluetooth (HID profiles)
+  - --allow=bluetooth                               # this PC's Bluetooth: L2CAP sockets to the iPhone
   - --system-talk-name=org.fedoraproject.FirewallD1 # "Allow on this network" (asks for the password)
   - --talk-name=org.freedesktop.Flatpak             # the same for ufw (pkexec on the host)
   - --filesystem=~/.claude:create                   # connect Claude Code: the skill and the MCP server
@@ -73,6 +74,15 @@ modules:
         url: https://github.com/FDH2/UxPlay.git
         tag: v1.73.7
         commit: df67c212a433cf6dda3676dd40c097900d24e645
+
+  # BlueZ for this PC's Bluetooth (hid_daemon.py: profiles, the pairing agent)
+  - name: dbus-python
+    buildsystem: meson
+    config-opts: [-Dtests=disabled, -Ddoc=disabled, -Dpython=python3]
+    sources:
+      - type: archive
+        url: https://files.pythonhosted.org/packages/f3/cc/23f24bc7cbfec3a0ab508b7e11bc98837d77a91445d5f666a8545353a147/dbus_python-1.5.1.tar.gz
+        sha256: 57423cf87d09b7d084f420b55b737fe654c33339b06df77945620d97795c6ac4
 
   - python-deps.json
 

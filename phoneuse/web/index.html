@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>phoneuse</title>
+<title>Phone Use</title>
+<!-- the app's icon (packaging/flatpak/co.lxe.PhoneUse.svg) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='8 8 112 112'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%236d5dfc'/><stop offset='1' stop-color='%233b2fb8'/></linearGradient></defs><rect x='8' y='8' width='112' height='112' rx='26' fill='url(%23g)'/><rect x='42' y='22' width='44' height='84' rx='10' fill='none' stroke='%23fff' stroke-width='7'/><rect x='56' y='92' width='16' height='5' rx='2.5' fill='%23fff'/></svg>">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; }
   html { background: #0e0e11; }  /* on html only: the agent glow sits behind the phone, above this */
@@ -79,7 +81,7 @@
               pointer-events: none; transition: left .12s ease-out, top .12s ease-out, transform .1s, opacity .3s; }
   #agentDot.down { transform: scale(.7); box-shadow: 0 0 0 2px #fff, 0 0 20px 8px rgba(10, 132, 255, .95); }
   #agentDot[hidden] { display: block; opacity: 0; }
-  #btDown { position: fixed; z-index: 10; top: 56px; left: 14px; height: 34px; padding: 0 14px; border-radius: 99px;
+  #btDown { position: fixed; z-index: 10; top: 14px; left: 14px; height: 34px; padding: 0 14px; border-radius: 99px;
             font-size: 14px; display: flex; align-items: center; gap: 8px; }
   #btDown[hidden] { display: none; }
   #btDown .dot { width: 7px; height: 7px; border-radius: 50%; background: #ff9f0a; }
@@ -546,13 +548,13 @@ async function bridgeShow() {
   bForget.hidden = false;
 }
 async function bridgeFind() {
-  bview(`<div class="item dim">Looking for bridges…</div>`);
+  bview(`<div class="item dim">Looking for the bridge…</div>`);
   const j = await bapi("/find", {});
   if (j.error) return bview(`<button class="item" id="bAgain"><span class="grow link">Try Again</span></button>`, "!" + esc(j.error)), on("#bAgain", bridgeFind);
   if (!j.bridges.length) {
     bview(`<button class="item" id="bAgain"><span class="grow link">Look Again</span></button>
            <button class="item" id="bBack"><span class="grow link">Cancel</span></button>`,
-          "No bridge is waiting for setup. A new one waits by itself; a set-up one does after you hold its lower button for 3 seconds.");
+          "No bridge found. Hold the bridge's lower button for 3 seconds, then try again.");
     on("#bAgain", bridgeFind); on("#bBack", bridgeShow);
     return;
   }
@@ -564,20 +566,20 @@ async function bridgePair(b) {
   const j = await bapi("/pair", { address: b.address });
   if (j.error) return bview(`<button class="item" id="bAgain"><span class="grow link">Try Again</span></button>`, "!" + esc(j.error)), on("#bAgain", bridgeFind);
   bview(`<div class="code">${esc(j.code)}</div>
-         <button class="item" id="bSame"><span class="grow link">The Bridge Shows This Code</span></button>
-         <button class="item" id="bDiff"><span class="grow link">It Shows Another Code</span></button>`,
-        "Compare with the bridge's screen. A different code means something else answered; stop there.");
+         <button class="item" id="bSame"><span class="grow link">Codes Match</span></button>
+         <button class="item" id="bDiff"><span class="grow link" style="color:#ff453a">Don't Match</span></button>`,
+        "Does the bridge show the same code?");
   on("#bSame", bridgeNetworks);
   on("#bDiff", async () => { await bapi("/cancel", {}); bridgeShow(); });
 }
 async function bridgeNetworks() {
-  bview(`<div class="item dim">The bridge is looking for Wi-Fi networks…</div>`);
+  bview(`<div class="item dim">Looking for Wi-Fi…</div>`);
   const j = await bapi("/networks", {});
   if (j.error) return bview(`<button class="item" id="bAgain"><span class="grow link">Start Again</span></button>`, "!" + esc(j.error)), on("#bAgain", bridgeFind);
   const lock = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="opacity:.5"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
   bview(j.networks.map((n, i) => `<button class="item" data-i="${i}"><span class="grow">${esc(n.s)}</span>${n.l ? lock : ""}<span class="dim">${n.r}</span></button>`).join("") +
         `<button class="item" id="bRescan"><span class="grow link">Scan Again</span></button>`,
-        "Networks the bridge sees. It needs 2.4 GHz Wi-Fi, on the same network as this PC.");
+        "Choose the same 2.4 GHz network as this PC.");
   bridgeBox.querySelectorAll("[data-i]").forEach((el) => el.onclick = () => bridgePassword(j.networks[+el.dataset.i]));
   on("#bRescan", bridgeNetworks);
 }

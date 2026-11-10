@@ -978,8 +978,8 @@ def up(headless=False):
     """Run everything. headless (`phoneuse serve`): no mirror window, so no Hyprland;
     the phone is watched and used in the browser mirror. In bridge-only mode the HID
     daemon runs here as the user; otherwise it is the root service from `phoneuse install`."""
-    from .config import BRIDGE_ONLY
-    if not BRIDGE_ONLY and subprocess.run(["systemctl", "is-active", "--quiet", "phoneuse-hid"]).returncode != 0:
+    from .config import USER_DAEMON
+    if not USER_DAEMON and subprocess.run(["systemctl", "is-active", "--quiet", "phoneuse-hid"]).returncode != 0:
         die("Bluetooth HID service isn't running. Run: phoneuse install")
     import socket
     probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -1029,7 +1029,7 @@ def up(headless=False):
                 pass
     threading.Thread(target=start_vision, daemon=True).start()
 
-    if BRIDGE_ONLY:
+    if USER_DAEMON:
         def keep_hid():
             # The HID daemon as the user (bridge-only mode): input reaches the phone only
             # through the bridge. Restarts on code changes; clients reconnect by themselves.
@@ -1179,8 +1179,8 @@ def stop_vision():
 
 
 def status():
-    from .config import BRIDGE_ONLY
-    if BRIDGE_ONLY:
+    from .config import USER_DAEMON
+    if USER_DAEMON:
         svc = "active" if os.path.exists(HID_SOCKET) else "not running (start Phone Use, or `phoneuse serve`)"
     else:
         svc = subprocess.run(["systemctl", "is-active", "phoneuse-hid"], capture_output=True, text=True).stdout.strip()

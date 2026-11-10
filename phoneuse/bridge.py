@@ -512,8 +512,7 @@ def setup_cli():
         print("Looking for bridges in setup mode (5 s)...")
         found = await scan_ble()
         if not found:
-            raise SystemExit("None found. A new bridge starts in setup mode; a set-up one enters it when you "
-                             "hold its lower button for 3 s.")
+            raise SystemExit("No bridge found. Hold the bridge's lower button for 3 seconds, then try again.")
         for i, (addr, name, rssi) in enumerate(found):
             print(f"  {i + 1}. {name}  ({addr}, {rssi} dBm)")
         pick = found[int(_ask("Which one? [1] ") or 1) - 1]

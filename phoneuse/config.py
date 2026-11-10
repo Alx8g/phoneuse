@@ -88,9 +88,13 @@ def load():
 
 CFG = load()
 # Bridge only: the HID daemon runs as the user and never touches this PC's Bluetooth.
-BRIDGE_ONLY = CFG["bluetooth"] == "bridge"
+USER_DAEMON = CFG["bluetooth"] == "bridge"  # the app: the HID daemon runs as the user, never as root
+# The app can use this PC's Bluetooth too, once bluetoothd is prepared for it (one admin password;
+# see bluetooth_setup.py): this file exists while that is on.
+PC_BLUETOOTH_FLAG = os.path.join(os.path.dirname(config_path()), "pc-bluetooth")
+BRIDGE_ONLY = USER_DAEMON and not os.path.exists(PC_BLUETOOTH_FLAG)
 # The HID daemon's command socket: the root service's, or the user's own in bridge-only mode.
-HID_SOCKET = os.path.join(RUNTIME_DIR, "phoneuse-hid.sock") if BRIDGE_ONLY else "/run/phoneuse-hid.sock"
+HID_SOCKET = os.path.join(RUNTIME_DIR, "phoneuse-hid.sock") if USER_DAEMON else "/run/phoneuse-hid.sock"
 STATE_DIR = os.path.join(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")), "phoneuse")
 NAME = CFG["name"]
 SCREEN_PT = tuple(CFG["screen_points"])
