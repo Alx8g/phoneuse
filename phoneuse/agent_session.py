@@ -124,7 +124,8 @@ class AgentSession:
             if r["deadline"] and now >= r["deadline"]:
                 self._allow("the countdown ran out")
             elif not r["deadline"] and now >= r["since"] + ASK_WAIT:
-                self._end_request("timed out", "no answer from the owner")
+                self._end_request("timed out", "the phone never got the request" if r["mode"] == "countdown"
+                                  else "no answer from the owner")
 
     # ---- transitions ----
     def ask(self, action, mode, seconds):
@@ -133,10 +134,21 @@ class AgentSession:
         if self.current() == "requested":
             return self.request
         now = time.time()
+        # a countdown starts only once the owner's phone has the request (start_countdown):
+        # until then the agent waits, as it would for an answer
         self.request = {"id": secrets.token_hex(8), "action": action, "mode": mode, "since": now,
-                        "deadline": now + seconds if mode == "countdown" else None}
+                        "seconds": seconds, "deadline": None}
         self._set("requested", "an agent asked to start")
         return self.request
+
+    def start_countdown(self, rid, at=None):
+        """The owner has been told about request `rid` (at `at`): its countdown runs from then.
+        False when that request is over, isn't a countdown, or already runs."""
+        if (self.current() != "requested" or self.request["id"] != rid or self.request["mode"] != "countdown"
+                or self.request["deadline"]):
+            return False
+        self.request["deadline"] = (at or time.time()) + self.request["seconds"]
+        return True
 
     def answer(self, rid, approve):
         """The owner's answer. False when that request is over."""

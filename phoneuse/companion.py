@@ -27,8 +27,13 @@ from .config import CFG, MACOS, NAME, RUNTIME_DIR, config_path
 
 PORT = 8778
 STORE = os.path.join(os.path.dirname(config_path()), "companion.json")
-HEARTBEAT = 1.0  # seconds between Live Activity refreshes while an agent drives: each one is an animation frame
 PHASE_HOLD = 4.0  # seconds a driving phase must last before the Live Activity's icon changes to it
+
+
+def _key(want):
+    """What a Live Activity push is for: the state, action, request and warning, without the
+    step count and phase, which change with every action."""
+    return None if not want else (want[0], want[2], want[4]) + tuple(want[5:]) + (want[1] == "warning",)
 START_RETRY = 600  # seconds between Live Activity start pushes to a device that sent no activity token back
 MIRROR_GONE = 90  # seconds mirroring must stay off (not a stall or a sleeping screen) before the activity ends
 WARN_HOLD = 3  # bridge checks (5 s apart) a warning, or its all-clear, must hold before it shows
@@ -468,6 +473,16 @@ class Companion:
     def _devices(self):
         return [dev for dev in load()["devices"].values() if dev.get("bundle_id") and self.push_mode(dev)]
 
+    def has_devices(self):
+        """Whether a paired phone can get pushes (an agent's countdown waits for one to take it)."""
+        return any(dev.get("device") or (dev.get("activity") or {}).get("token") for dev in self._devices())
+
+    def _told(self, rid, r, at):
+        """A push about request `rid` went out at `at` with result `r`: once Apple took one,
+        the owner has the request, and its countdown runs from then."""
+        if r and r[0] == 200 and rid and self.mirror.sessions:
+            self.mirror.sessions.countdown_started(rid, at)
+
     def _send(self, dev, field, token, payload, topic, push_type, priority=10):
         """Send to one of a device's tokens. A token from another build can belong to the
         other APNs environment (a TestFlight token on a development build): on
@@ -505,8 +520,9 @@ class Companion:
         for dev in self._devices():
             if dev.get("device") and not (dev.get("activity") or {}).get("token"):
                 p = self.mirror.sessions.pending or {}
-                title = (f"Agent taking control in {round(p['deadline'] - time.time())} s" if p.get("deadline")
+                title = (f"Agent taking control in {p['seconds']} s" if p.get("mode") == "countdown"
                          else "Agent requests control")
+                at = time.time()
                 r = self._send(dev, "device", dev["device"], {"aps": {"alert": {"title": title,
                                                                  "body": action or "Using the phone"},
                                                        "category": "SESSION", "sound": "default",
@@ -514,6 +530,7 @@ class Companion:
                                               "session_id": rid},
                               dev["bundle_id"], "alert")
                 log("session request push:", r)
+                self._told(rid, r, at)
 
     def push_unlock(self, rid):
         for dev in self._devices():
@@ -536,13 +553,10 @@ class Companion:
             if not self._devices():
                 continue
             want = self._activity_state()
-            urgent = bool(want and self.sent and want[0] != self.sent[0])  # a new state goes out at once
-            # while an agent drives, a quiet refresh every few seconds restarts the app's
-            # progress ring, so the Dynamic Island keeps moving for the whole session
-            heartbeat = bool(want and want[0] == "driving" and time.time() - self.sent_at > HEARTBEAT)
-            if want == self.sent and not heartbeat and not self._needs_start(want):
-                continue
-            if not urgent and want and self.sent and time.time() - self.sent_at < 1.0:
+            # one push per change the owner should see: a new state, request, action or
+            # warning. The ring and the robot animate on the phone by themselves, and the
+            # step count and phase ride along with the next push.
+            if _key(want) == _key(self.sent) and not self._needs_start(want):
                 continue
             await self.run(self._send_activity, want)
 
@@ -558,8 +572,9 @@ class Companion:
             return None
         self._off_since = 0
         p = m.sessions.pending if m.sessions else None
-        if p:
-            return ("asking", "asking", p["action"] or "Using the phone", 0, p["id"], p.get("deadline"))
+        if p:  # a countdown's length: its deadline is set when the phone takes the push
+            return ("asking", "asking", p["action"] or "Using the phone", 0, p["id"],
+                    p.get("seconds") if p.get("mode") == "countdown" else None)
         a = m.agent()
         if a == "driving":
             return ("driving", self._steady_phase(m.current_phase()), m.agent_action or "Working", m.agent_steps, "")
@@ -644,12 +659,16 @@ class Companion:
     def _send_activity(self, want):
         m, before = self.mirror, self.sent
         self.sent, self.sent_at = want, time.time()
+        sent_at = self.sent_at
+        # an asking countdown runs from this push: the phone and the PC count to the same deadline
+        req = (self.mirror.sessions.pending or {}) if want and want[0] == "asking" and self.mirror.sessions else {}
+        deadline = req.get("deadline") or (sent_at + want[5] if want and want[0] == "asking" and want[5] else None)
         self.frame = (self.frame + 1) % 1000
 
         def content(st):
             return {"state": st[0], "phase": st[1], "action": st[2], "steps": st[3], "requestId": st[4],
                     # asking with a countdown: when the agent starts unless the owner stops it
-                    "deadline": round(st[5]) if len(st) > 5 and st[5] else None,
+                    "deadline": round(deadline) if st[0] == "asking" and deadline else None,
                     # idle with phase "warning": action is the title, detail the second line
                     "detail": st[6] if len(st) > 6 else None,
                     "updatedAt": round(time.time(), 2),  # every refresh differs, and restarts the ring
@@ -658,8 +677,7 @@ class Companion:
 
         alert = None
         if want and want[0] == "asking" and (not before or before[0] != "asking"):
-            dl = want[5] if len(want) > 5 else None
-            alert = {"title": f"Agent taking control in {round(dl - time.time())} s" if dl else "Agent requests control",
+            alert = {"title": f"Agent taking control in {want[5]} s" if want[5] else "Agent requests control",
                      "body": want[2], "sound": "default"}
         elif (want and want[1] == "warning" and (not before or before[1] != "warning")
               and time.time() - self.warned_at.get(want[2], 0) > WARN_ALERT_EVERY):
@@ -711,6 +729,8 @@ class Companion:
             else:
                 continue
             log(f"live activity {aps.get('event')} ({want[0] if want else 'off'}):", r)
+            if want and want[0] == "asking":
+                self._told(want[4], r, sent_at)
 
     def mirror_since(self):
         if self.mirror.live():

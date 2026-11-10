@@ -61,9 +61,9 @@ xcodebuild test -project ios/PhoneUse.xcodeproj -scheme PhoneUse \
 ## The Live Activity
 
 One activity stays up while the phone mirrors to the PC; the PC drives it with pushes. It shows one card per
-state (idle, asking, driving, paused). While driving, the PC refreshes it every second at priority 10 with
-`frame` counting up: the ring turns 45 degrees per frame, and the robot plays an 8-step loop per phase. Timer-driven
-views don't move in the compact Dynamic Island, and priority-5 refreshes get held back, so both are needed.
+state (idle, asking, driving, paused). The PC pushes once per change (a new state, request, action or warning),
+at priority 10, since iOS held back priority-5 pushes; the ring and the robot animate on the phone between pushes.
+An asking countdown starts when Apple takes the push, so the agent waits until the phone has the request.
 While Screen Mirroring's own activity shares the island, iOS shows only our compact leading view.
 
 The app logs the tokens it gets and sends to `Library/Caches/phoneuse.log`:

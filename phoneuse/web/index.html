@@ -641,11 +641,12 @@ const ICONS = {
   session: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>',
   unlock: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>',
 };
-let askTick = null;
+let askTick = null, askDeadline = null;
 function showAsk(id, kind, action, deadline) {
   if (!id && kind !== askKind) return;  // the other request ended
   const fresh = id && id !== askId;
-  askId = id; askKind = kind; ask.hidden = !id;
+  const started = deadline && deadline !== askDeadline;  // a countdown starts once the phone has the request
+  askId = id; askKind = kind; askDeadline = deadline || null; ask.hidden = !id;
   clearInterval(askTick);
   if (!id) return;
   const title = document.getElementById("askTitle"), timer = document.getElementById("askTimer");
@@ -667,9 +668,9 @@ function showAsk(id, kind, action, deadline) {
     document.getElementById("approve").textContent = kind === "session" ? "Allow" : "Unlock";
     document.getElementById("deny").textContent = "Deny";
   }
-  if (fresh) {  // restart the countdown bar and the entrance
+  if (fresh || started) {  // restart the countdown bar (and, for a new request, the entrance)
     const secs = deadline ? Math.max(1, deadline - Date.now() / 1000) : 120;
-    for (const el of [ask, ask.querySelector(".sheet"), timer]) { el.style.animation = "none"; void el.offsetWidth; el.style.animation = ""; }
+    for (const el of fresh ? [ask, ask.querySelector(".sheet"), timer] : [timer]) { el.style.animation = "none"; void el.offsetWidth; el.style.animation = ""; }
     timer.style.animationDuration = `${secs}s`;
   }
 }

@@ -630,13 +630,32 @@ class SessionRequests:
         threading.Thread(target=self.sync_gate, daemon=True).start()
 
     def _request_started(self, r):
-        self.broadcast({"type": "session-request", "id": r["id"], "action": r["action"], "mode": r["mode"],
-                        "deadline": r["deadline"]})
-        if self.companion:
+        self._broadcast_request(r)
+        phone = bool(self.companion and self.companion.has_devices())
+        if phone:
             asyncio.get_running_loop().run_in_executor(None, self.companion.push_session, r["id"], r["action"])
         asyncio.ensure_future(self._notify(r))
-        log("an agent wants the phone; " + (f"it takes control in {round(r['deadline'] - time.time())} s unless "
-                                           "the owner cancels" if r["deadline"] else "waiting for the owner"))
+        if r["mode"] != "countdown":
+            log("an agent wants the phone; waiting for the owner")
+        elif phone:
+            log(f"an agent wants the phone; its {r['seconds']} s countdown starts once the phone has the request")
+        else:
+            self.countdown_started(r["id"])
+
+    def _broadcast_request(self, r):
+        self.broadcast({"type": "session-request", "id": r["id"], "action": r["action"], "mode": r["mode"],
+                        "deadline": r["deadline"]})
+
+    def countdown_started(self, rid, at=None):
+        """The owner has been told about request `rid` (the phone took the push at `at`, or
+        there is no phone): its countdown runs from then. Safe from any thread."""
+        if not self.session.start_countdown(rid, at):
+            return
+        r = dict(self.session.request)
+        log(f"the owner has the request; the agent takes control in {round(r['deadline'] - time.time())} s "
+            "unless the owner cancels")
+        if self.mirror.loop:
+            self.mirror.loop.call_soon_threadsafe(self._broadcast_request, r)
 
     def _request_over(self, rid):
         self.broadcast({"type": "session-done"})
@@ -735,9 +754,9 @@ class SessionRequests:
         try:
             self.notices[p["id"]] = notice = await asyncio.create_subprocess_exec(
                 *(["notify-send", "-a", "phoneuse", "-u", "critical", "--wait", "-A", "deny=Cancel",
-                   "-A", "allow=Allow now", f"Agent taking control in {round(p['deadline'] - time.time())} s",
+                   "-A", "allow=Allow now", f"Agent taking control in {p['seconds']} s",
                    f"{p['action'] or 'Using the phone'}. Cancel here or at http://localhost:{PORT}"]
-                  if p["deadline"] else
+                  if p["mode"] == "countdown" else
                   ["notify-send", "-a", "phoneuse", "-u", "critical", "--wait", "-A", "allow=Allow", "-A", "deny=Deny",
                    "Agent requests control",
                    f"{p['action'] or 'Using the phone'}. Answer here or at http://localhost:{PORT}"]),
