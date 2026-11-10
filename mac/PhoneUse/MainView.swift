@@ -119,6 +119,9 @@ struct HeroView: View {
                 .frame(height: 64)
                 .symbolEffect(.pulse, isActive: h.step == "starting")
             Text(h.title).font(.title2.weight(.semibold)).multilineTextAlignment(.center)
+            if h.guide == "mirroring" {
+                MirroringGuide(name: h.bold, alt: h.alt)
+            }
             if let d = h.detail, !d.isEmpty {
                 Text(detail(d, bold: h.bold))
                     .foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -165,6 +168,7 @@ struct HeroView: View {
         case "keyboard": "keyboard"
         case "offline": "wifi.exclamationmark"
         case "bluetooth": "iphone.radiowaves.left.and.right"
+        case "mirroring": "rectangle.on.rectangle"  // the nearest to Control Center's Screen Mirroring glyph
         default: core.running ? "iphone" : "iphone.slash"
         }
     }
@@ -376,9 +380,25 @@ struct BridgeTab: View {
             BridgeSetupSheet(change: $0.change)
         }
         .confirmationDialog("Forget the bridge?", isPresented: $confirmForget) {
-            Button("Forget", role: .destructive) { core.change("/api/bridge", nil, method: "DELETE") }
+            Button("Forget", role: .destructive) { forget() }
         } message: {
-            Text("Phone Use stops sending input through it. To use it again, set it up again.")
+            Text("Phone Use stops sending input through it. To use it again, set it up again. The bridge also "
+                 + "forgets its iPhone pairing and Wi-Fi, and stays hidden until you hold its button for 3 seconds.")
+        }
+    }
+
+    /// DELETE /api/bridge resets the bridge too when it answers ("reset"); otherwise only this Mac forgets it.
+    private func forget() {
+        Task {
+            do {
+                let j = try await core.send("/api/bridge", nil, method: "DELETE")
+                core.message = j["reset"] as? Bool == true
+                    ? "Bridge reset. On the iPhone, also forget PhoneUse Bridge in Bluetooth settings"
+                    : "Forgotten here. The bridge didn't answer: remove PhoneUse Bridge in the iPhone's Bluetooth settings"
+            } catch {
+                core.message = "Couldn't forget the bridge: \(error.localizedDescription)"
+            }
+            await core.refresh()
         }
     }
 
@@ -396,4 +416,37 @@ struct BridgeTab: View {
 struct SetupMode: Identifiable {
     var change: Bool
     var id: Bool { change }
+}
+
+/// How to start Screen Mirroring, drawn by the core (GET /api/mirroring-guide.svg), in the window's appearance.
+struct MirroringGuide: View {
+    var name: String?
+    var alt: String?
+    @Environment(\.colorScheme) private var scheme
+    @State private var image: NSImage?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(nsImage: image).resizable().aspectRatio(contentMode: .fit)
+            } else {
+                Color.clear.aspectRatio(540.0 / 200.0, contentMode: .fit)
+            }
+        }
+        .frame(maxWidth: 540)
+        .padding(.top, 6)
+        .accessibilityElement()
+        .accessibilityLabel(alt ?? "")
+        .accessibilityAddTraits(.isImage)
+        .task(id: "\(scheme == .dark)\(name ?? "")") { await load() }
+    }
+
+    private func load() async {
+        var url = URLComponents(url: Core.shared.base.appendingPathComponent("/api/mirroring-guide.svg"),
+                                resolvingAgainstBaseURL: false)!
+        url.queryItems = [URLQueryItem(name: "dark", value: scheme == .dark ? "1" : "0")]
+        guard let u = url.url, let (data, _) = try? await URLSession.shared.data(from: u),
+              let img = NSImage(data: data) else { return }
+        image = img
+    }
 }

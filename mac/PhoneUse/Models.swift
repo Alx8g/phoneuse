@@ -87,6 +87,8 @@ struct Hero: Decodable, Equatable {
     var good: Bool?
     var quiet: Bool?
     var bold: String?
+    var guide: String?   // a picture to show under the title: "mirroring" (GET /api/mirroring-guide.svg)
+    var alt: String?     // the picture in words
 
     /// overview.stopped(): the API can't say this itself.
     static let stopped = Hero(step: "stopped", title: "Phone Use is stopped",
