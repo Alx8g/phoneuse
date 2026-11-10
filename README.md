@@ -2,275 +2,85 @@
 
 # Phone Use
 
-> [!WARNING]
-> **Under heavy construction.** This is a technology demo, and I have tested it on
-> one setup: an iPhone 17 Pro, Arch Linux, Hyprland and an NVIDIA GPU. Other setups
-> will likely need fixes.
+**[phoneuse.tech](https://phoneuse.tech)** · **[Download](https://github.com/lxe/phoneuse/releases/latest)**
 
-Phone Use lets your computer see and operate an unmodified iPhone. The iPhone sends its
-screen to the computer over AirPlay, and the computer sends taps and keystrokes to the
-iPhone as a Bluetooth mouse and keyboard, either through its own Bluetooth adapter or
-through the bridge: a small puck that sits near the phone and joins your Wi-Fi. You can
-use the phone from your computer yourself, or let an agent operate it from the command
-line or over MCP. The Phone Use app on the iPhone is where you allow and stop agents.
-It runs on Linux and macOS, and on Windows from source ([On Windows](#on-windows)).
+Phone Use lets an AI agent, or you, see and operate a real iPhone from your computer.
+The iPhone mirrors its screen to the computer over AirPlay, and the computer taps and
+types on it as a Bluetooth mouse and keyboard. Claude Code, Codex and other agents use
+it from the command line or over MCP, and the Phone Use iPhone app is where you allow
+and stop them.
 
-You don't need a jailbreak, a developer account or a cable. Phone Use relies on two
-features every iPhone has: Screen Mirroring and AssistiveTouch.
+No jailbreak, no developer account, no cable: Phone Use relies on Screen Mirroring and
+AssistiveTouch, which every iPhone has.
+
+> [!NOTE]
+> Phone Use is alpha software. Expect rough edges, and please
+> [report what breaks](https://github.com/lxe/phoneuse/issues).
 
 ## Download
 
-**[Latest release](https://github.com/lxe/phoneuse/releases/latest)**
+Get the files from the **[latest release](https://github.com/lxe/phoneuse/releases/latest)**.
 
-| File | What it is |
+| | |
 |---|---|
-| `PhoneUse-<version>-x86_64.flatpak` | Phone Use for Linux |
-| `PhoneUse-<version>-mac.dmg` | Phone Use for macOS 15 or later, signed and notarized |
-| `phoneuse-bridge-<version>.bin` | Firmware for the bridge (a [LilyGO T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display)) |
+| **Linux** | `PhoneUse-<version>-x86_64.flatpak` |
+| **macOS** 15 or later | `PhoneUse-<version>-mac.dmg`, signed and notarized; uses the bridge for input |
+| **Windows** | from source for now: [docs/WINDOWS.md](docs/WINDOWS.md) |
+| **iPhone app** | not in the App Store yet; build it from [`ios/`](ios/README.md) with Xcode |
+| **Bridge firmware** | `phoneuse-bridge-<version>.bin` |
 
-The iPhone app isn't in the App Store yet. To install it, build it from [`ios/`](ios/README.md)
-with Xcode onto your phone.
-
-### Linux
+**Linux:**
 
 ```sh
-flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install --user ./PhoneUse-0.1.2-x86_64.flatpak
+flatpak install --user ./PhoneUse-<version>-x86_64.flatpak
 flatpak run co.lxe.PhoneUse
 ```
 
-The window walks you through the rest: set up the bridge or turn on this PC's
-Bluetooth, pair the iPhone app, and start Screen Mirroring to "Phone Use on <your
-computer>". If a firewall blocks the iPhone, the window offers to open the ports.
+**macOS:** open the DMG, drag Phone Use to Applications and open it. It lives in the
+menu bar.
 
-### macOS
+The app walks you through the rest: connect the keyboard and mouse (this computer's
+Bluetooth or the bridge), pair the iPhone app, and start Screen Mirroring to
+"Phone Use on <your computer>". Your iPhone and computer need to be on the same Wi-Fi.
 
-Open the DMG, drag Phone Use to Applications, and open it. It lives in the menu bar and
-uses the bridge for input.
+## Agents
 
-### The bridge
+In the Phone Use app, click **Connect Claude Code**. It adds the MCP server and the
+Phone Use skill, and puts a `phoneuse` command on your path. Other MCP clients can run
+the server themselves (`flatpak run --command=phoneuse-mcp co.lxe.PhoneUse` on Linux).
 
-The bridge is a [LilyGO T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display): an ESP32
-board with a 1.14-inch screen, two buttons and USB-C. Get the original ESP32 T-Display, not the
-T-Display S3, which has a different chip. Nothing needs soldering.
+Every action is also a command: `phoneuse open Settings`, `phoneuse text`,
+`phoneuse tap-on "Wi-Fi"`, `phoneuse done`. Run `phoneuse --help` for the rest.
 
-The Linux app flashes the firmware for you: plug the board in with a USB cable and open
-Bridge › Flash LilyGO T-Display. Flashing erases the board. You can also flash it yourself with
-[esptool](https://github.com/espressif/esptool):
+## The bridge
+
+The bridge is a small board that the iPhone pairs with as its keyboard and mouse. It
+joins your Wi-Fi, so it can sit anywhere in the room with the phone while your
+computer's Bluetooth stays free. The Mac app needs one.
+
+Use a [LilyGO T-Display](https://lilygo.cc/products/t-display): the original ESP32
+version, not the T-Display S3. Nothing needs soldering. To flash it, plug it in over
+USB and open Bridge › Flash LilyGO T-Display in the Linux app, or use
+[esptool](https://github.com/espressif/esptool) with the release's firmware:
 
 ```sh
 pip install esptool
-esptool --chip esp32 write-flash 0x0 phoneuse-bridge-0.2.6.bin
+esptool --chip esp32 write-flash 0x0 phoneuse-bridge-<version>.bin
 ```
 
 Then click Set Up Bridge in Phone Use, check that the bridge's screen shows the same
-code, and choose your Wi-Fi network (2.4 GHz, the same one as your computer). On the
-iPhone, open Settings › Bluetooth and tap **Phone Use Bridge**.
-
-## From source
-
-The rest of this page covers running Phone Use from a checkout on Linux, with the
-`phoneuse` command instead of the app.
-
-| | Tested with |
-|---|---|
-| iPhone | iPhone 17 Pro, iOS 26 (Phone Use takes the screen size from the model) |
-| Linux with BlueZ | Arch Linux, BlueZ 5.87 |
-| Hyprland | 0.56 |
-| UxPlay | 1.73.7 |
-| GStreamer, GTK 4, `gtk4paintablesink` | 1.28, 4.24 |
-| Python 3.11+ | `python-dbus`, `python-gobject`, `numpy`, `pillow`, `aiohttp` |
-| `grim` | takes screenshots for agents |
-| `uv` (optional) | runs the models that read the screen |
-| For the bridge (optional) | [LilyGO T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display) (ESP32), ESP-IDF v6.1, `python-bleak`, `python-cryptography`, `python-pyserial` |
-
-The phone and the PC must be on the same network. If you run a firewall, open TCP
-ports 7000, 7001 and 7100 and UDP ports 6000, 6001 and 7011 for AirPlay, and UDP
-port 47700 for the bridge. The iPhone app needs TCP port 8778.
-
-1. **Install:**
-   ```sh
-   git clone https://github.com/lxe/phoneuse.git ~/phoneuse
-   ln -s ~/phoneuse/bin/phoneuse ~/.local/bin/phoneuse
-   phoneuse install   # needs sudo
-   ```
-   `phoneuse install` sets up the HID daemon as the `phoneuse-hid` service. It also
-   turns off bluetoothd's input plugin, so the PC stops accepting Bluetooth keyboards
-   and mice for itself. To undo the install, run `sudo scripts/install.sh --uninstall`.
-
-2. **Start Phone Use:**
-   ```sh
-   phoneuse up
-   ```
-   Then pair the iPhone app (step 4): the AirPlay receiver appears only once an
-   iPhone is paired. On the iPhone, open Control Center, tap Screen Mirroring and
-   choose **Phone Use on <your computer>** (`phoneuse status` shows the name).
-
-3. **Connect the mouse and keyboard**, in one of two ways:
-   - **With this PC's Bluetooth:** on the iPhone, open Settings › Bluetooth and tap
-     **Phone Use**.
-   - **With the bridge:** follow [The Bluetooth bridge](#the-bluetooth-bridge) below.
-
-4. **Pair the iPhone app:** run `phoneuse app pair` and open the link on the phone.
-   Agents are refused until an app is paired.
-
-5. **Turn on the pointer** (AssistiveTouch), in one of two ways:
-   - Run `phoneuse cursor on`. Phone Use plays a spoken request through this PC's
-     speakers and asks Siri to turn it on.
-   - On the iPhone, open Settings › Accessibility › Touch › AssistiveTouch.
-
-   Keep Dwell Control off: when it is on, iOS taps wherever the pointer stops. The
-   first time you turn on a phone's pointer, Phone Use spends about 13 seconds
-   measuring how far that phone moves the pointer for each mouse report, and it uses
-   that measurement for drags. To measure again, run `phoneuse calibrate`.
-
-## The Bluetooth bridge
-
-The bridge is a small puck (a [LilyGO T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display),
-an ESP32) that the iPhone pairs with as its Bluetooth keyboard and mouse. Phone Use sends commands to the bridge over Wi-Fi, so you can leave the bridge
-next to the phone on a battery or a charger, and the PC's own Bluetooth adapter stays
-unused.
-
-1. **Flash the bridge** once, over USB, with the release's firmware (see
-   [The bridge](#the-bridge)) or from source. To build it, install ESP-IDF, then:
-   ```sh
-   git clone -b v6.1 --recursive https://github.com/espressif/esp-idf.git ~/esp/esp-idf-v6.1
-   ~/esp/esp-idf-v6.1/install.sh esp32
-   phoneuse bridge flash
-   ```
-2. **Set it up** in the browser mirror: open Settings › Bluetooth bridge › Set Up
-   Bridge. Check that the bridge's screen shows the same code as the page, then pick
-   a 2.4 GHz Wi-Fi network and type its password. This step doesn't need the USB
-   cable.
-3. **Pair the iPhone** with the bridge: on the iPhone, open Settings › Bluetooth and
-   tap **Phone Use Bridge**.
-
-To use the same bridge from another computer, open Settings › Bluetooth bridge
-there, click Use… next to the bridge, and press either of the bridge's buttons when
-its screen shows the same code.
-
-`phoneuse bridge status` shows the bridge's address, which phone is connected to it,
-and how long a message takes to reach the bridge and come back. When the phone
-disconnects, the bridge reconnects to it by itself. [docs/BRIDGE.md](docs/BRIDGE.md)
-describes the protocol.
-
-## On Windows
-
-Windows can't act as a Bluetooth Classic keyboard, so on Windows Phone Use is a
-Bluetooth LE keyboard and mouse instead (HID over GATT, through the Windows
-Runtime). It uses the PC's own Bluetooth adapter, needs no driver and no admin
-rights, and Windows keeps using the adapter for everything else. The mirror window is
-the browser mirror in a window of its own.
-
-| | Tested with |
-|---|---|
-| Windows | Windows 11 |
-| iPhone | iPhone 17 Pro Max and iPhone 14 Pro Max, iOS 26 |
-| Python | 3.13, from python.org |
-| UxPlay | 1.74, built in MSYS2 by the installer |
-| Edge or Chrome | the mirror window |
-| NVIDIA GPU (optional) | NVENC for the video hub, CUDA for the models that read the screen |
-
-1. **Install**, from the checkout, in PowerShell:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File scripts\windows\install.ps1
-   ```
-   The installer makes `.venv`, installs MSYS2 to `C:\msys64` and builds UxPlay there,
-   adds a Windows Firewall rule for UxPlay (it asks for admin rights once; the rule
-   allows the local network only), puts `bin` on your PATH and downloads the models
-   that read the screen (`-NoVision` skips them). It ends with `phoneuse doctor`,
-   which checks each part and says how to fix what is missing.
-2. **Start Phone Use:** run `phoneuse up`. The mirror window opens. Then, on the
-   iPhone, open Control Center, tap Screen Mirroring and choose **Phone Use on <your computer>**.
-3. **Pair**, once: on the iPhone, open Settings › Bluetooth and tap this PC's Windows
-   name, such as `DESKTOP-…` (Windows doesn't let Phone Use choose its Bluetooth LE
-   name). Confirm on the phone, and on Windows if it asks.
-4. **Turn on the pointer** as on Linux. The first time, Phone Use measures the phone's
-   pointer: over Bluetooth LE every phone needs that measurement.
-
-How it differs from Linux:
-
-- In the mirror window, Ctrl works as Cmd: the Windows key belongs to the Start menu.
-- The Bluetooth keyboard and mouse run as a background service that keeps running
-  when `phoneuse up` stops, and the next `phoneuse up` uses it again. Each time the
-  service starts, the iPhone sees its Bluetooth services disappear and come back, and
-  one iPhone stopped using them until it was paired again. `phoneuse down` stops it.
-- Pair only the phone that Phone Use should control. Over Bluetooth LE, iOS may give
-  its name as just "iPhone", so when two paired phones are connected Phone Use can't
-  tell which one is mirroring, and it sends nothing.
-- A motherboard's Wi-Fi and Bluetooth card needs its antennas, even if the PC uses
-  Ethernet. Without them the phone was heard at about -90 dBm next to the PC, the
-  link dropped several times an hour, and keys and taps sent during a drop were lost.
-- The phone takes a report every 15 ms over Bluetooth LE instead of every 8 ms, and
-  the mirror trails the phone by about 0.1 s, so by hand it feels slower than on
-  Linux. Agents don't notice.
-- The bridge hasn't been tried on Windows.
-
-Logs are in `%LOCALAPPDATA%\phoneuse\run`. For agents, `bin\phoneuse-mcp.exe` is the
-MCP server: `claude mcp add --scope user phoneuse C:\path\to\phoneuse\bin\phoneuse-mcp.exe`.
-
-## Using it
-
-**The mirror window:** the phone's pointer follows your mouse. Click to tap, drag to
-swipe, and use the scroll wheel to scroll. To swipe in from an edge of the screen,
-press on the bezel and drag; dragging up from the bottom bezel goes to the home
-screen. While the window has focus, your keyboard types on the phone, and the Super
-key works as Cmd.
-
-**The browser mirror:** http://localhost:8777 shows the same mirror, and only this
-computer can open it. In its settings you can set up the bridge and keep the phone's
-screen awake.
-
-**Unlocking:** Phone Use doesn't save or type your passcode. When the phone is locked,
-an agent asks you to unlock it.
-
-**Agents:** each action is a subcommand, and `phoneuse --help` lists them all:
-
-```sh
-phoneuse open Settings
-phoneuse text                 # print the screen as text, with positions
-phoneuse tap-on "Wi-Fi"       # tap the on-screen text that matches
-phoneuse screenshot shot.png
-phoneuse done                 # hand the phone back to you
-```
-
-**MCP:** the MCP server offers the same actions. After each action, it returns the
-screen once the screen has stopped changing.
-
-```sh
-scripts/setup-mcp.sh
-claude mcp add --scope user phoneuse ~/phoneuse/bin/phoneuse-mcp
-```
-
-[skill/SKILL.md](skill/SKILL.md) is a skill for Claude Code. To use it, link it into
-`~/.claude/skills/phoneuse`.
-
-## Configuration
-
-These settings are optional and go in `~/.config/phoneuse/config.toml`
-(on Windows, `%APPDATA%\phoneuse\config.toml`):
-
-```toml
-name = "Phone Use"            # the Bluetooth and AirPlay name; rerun phoneuse install after changing it
-screen_points = "auto"        # the iPhone's screen size in points, such as [402, 874];
-                              # auto: from the model of the phone that last mirrored
-decoder = "auto"              # the GStreamer H.264 decoder
-mirror_width = 498            # the mirror window's width
-web_port = 8777               # the browser mirror's port
-# Windows only:
-encoder = "auto"              # the video hub's encoder: h264_nvenc, libx264 or h264_mf
-uxplay = "auto"               # path to uxplay.exe (auto: C:\msys64\ucrt64\bin)
-app_window = true             # phoneuse up opens the mirror in a window of its own
-service_port = 47810          # the first of four local ports phoneuse's services use
-```
+code, and pick a 2.4 GHz Wi-Fi network. On the iPhone, open Settings › Bluetooth and
+tap **Phone Use Bridge**.
 
 ## More
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) explains how the parts of Phone Use work together, and which iOS behaviours Phone Use depends on.
-- [docs/RECIPES.md](docs/RECIPES.md) lists which gestures work on iOS, and why.
-- [docs/BRIDGE.md](docs/BRIDGE.md) covers the ESP32 bridge's setup and protocol.
-- [docs/COMPANION.md](docs/COMPANION.md) describes the iPhone app and its API.
-- [mac/README.md](mac/README.md) and [ios/README.md](ios/README.md) cover building the Mac and iPhone apps.
+- [docs/SOURCE.md](docs/SOURCE.md): running Phone Use from a checkout on Linux, using the mirror, and configuration.
+- [docs/WINDOWS.md](docs/WINDOWS.md): Phone Use on Windows.
+- [ARCHITECTURE.md](ARCHITECTURE.md): how the parts fit together, and which iOS behaviours Phone Use depends on.
+- [docs/BRIDGE.md](docs/BRIDGE.md), [docs/COMPANION.md](docs/COMPANION.md), [docs/RECIPES.md](docs/RECIPES.md): the bridge, the iPhone app and its API, and which gestures work.
+- [mac/README.md](mac/README.md), [ios/README.md](ios/README.md): building the Mac and iPhone apps.
+- [site/](site/README.md): the phoneuse.tech website.
+- [docs/PRIVACY.md](docs/PRIVACY.md): the privacy policy.
 
 ## License
 
