@@ -66,7 +66,8 @@ and privacy policy, not by Phone Use.
 
 ## Children
 
-Phone Use isn't directed at children, and it collects no information from anyone.
+Phone Use isn't directed at children. It collects no personal information from anyone; the push tokens above
+identify a device's app, not a person.
 
 ## Changes and contact
 
