@@ -209,7 +209,7 @@ class BridgeRoutes:
         try:
             await asyncio.get_running_loop().run_in_executor(None, lambda: bridge.Link(cfg).open_setup())
         except Exception as e:
-            return web.json_response({"error": f"the bridge didn't answer: {e}. Hold its lower button for 3 s."})
+            return web.json_response({"error": f"the bridge didn't answer: {e}. Hold its lower button for 3 seconds, then try again."})
         return web.json_response({"ok": True})
 
     def add(self, app):
