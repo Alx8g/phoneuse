@@ -113,7 +113,7 @@ struct HeroView: View {
     var body: some View {
         let h = core.hero
         VStack(spacing: 8) {
-            Image(systemName: symbol(h.icon))
+            heroIcon(h.icon)
                 .font(.system(size: 52, weight: .regular))
                 .foregroundStyle(h.good == true ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
                 .frame(height: 64)
@@ -163,12 +163,29 @@ struct HeroView: View {
         }
     }
 
+    @ViewBuilder private func heroIcon(_ icon: String?) -> some View {
+        if icon == "mirroring", let img = Self.mirroringGlyph {
+            Image(nsImage: img).renderingMode(.template).resizable().aspectRatio(contentMode: .fit)
+                .frame(width: 52, height: 52)
+        } else {
+            Image(systemName: symbol(icon))
+        }
+    }
+
+    /// Control Center's Screen Mirroring glyph: an outlined screen at the top left behind a solid one at the
+    /// bottom right (SF Symbols' rectangle.on.rectangle outlines both).
+    static let mirroringGlyph: NSImage? = {
+        guard let url = Bundle.main.url(forResource: "co.lxe.PhoneUse-mirroring-symbolic", withExtension: "svg"),
+              let img = NSImage(contentsOf: url) else { return nil }
+        img.isTemplate = true
+        return img
+    }()
+
     private func symbol(_ icon: String?) -> String {
         switch icon {
         case "keyboard": "keyboard"
         case "offline": "wifi.exclamationmark"
         case "bluetooth": "iphone.radiowaves.left.and.right"
-        case "mirroring": "rectangle.on.rectangle"  // the nearest to Control Center's Screen Mirroring glyph
         default: core.running ? "iphone" : "iphone.slash"
         }
     }
@@ -430,7 +447,7 @@ struct MirroringGuide: View {
             if let image {
                 Image(nsImage: image).resizable().aspectRatio(contentMode: .fit)
             } else {
-                Color.clear.aspectRatio(540.0 / 200.0, contentMode: .fit)
+                Color.clear.aspectRatio(540.0 / 172.0, contentMode: .fit)  // until the picture loads
             }
         }
         .frame(maxWidth: 540)

@@ -16,6 +16,9 @@ targets:
     platform: macOS
     sources:
       - path: PhoneUse
+      # Control Center's Screen Mirroring glyph, shared with the Linux app (no SF Symbol draws it this way)
+      - path: ../packaging/icons/hicolor/symbolic/apps/co.lxe.PhoneUse-mirroring-symbolic.svg
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: co.lxe.phoneuse.mac
