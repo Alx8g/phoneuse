@@ -83,6 +83,12 @@ struct PCState: Decodable, Equatable {
     var pcBluetooth: PCBluetooth?
     struct PCBluetooth: Decodable, Equatable { var on: Bool }
 
+    /// No bridge: the PC's own Bluetooth is the iPhone's keyboard and mouse (it's on, or it carries the input).
+    /// (An older PC doesn't say whether it's on: then a connection without a bridge means the PC's Bluetooth.)
+    var usesPCBluetooth: Bool { bridge == nil && (pcBluetooth.map(\.on) ?? bluetooth.connected) }
+    /// What the input tab is called: the bridge, or the PC itself when there is no bridge.
+    var inputTitle: String { usesPCBluetooth ? "PC" : "Bridge" }
+
     enum CodingKeys: String, CodingKey {
         case pc, mirroring, phone, bluetooth, agent, awake, audio, session, unlock, bridge
         case pcBluetooth = "pc_bluetooth"
