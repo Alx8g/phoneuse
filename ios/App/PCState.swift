@@ -74,6 +74,14 @@ struct PCState: Decodable, Equatable {
     var session: Session?
     var unlock: Unlock
     var bridge: Bridge?
+    /// This PC's own Bluetooth as the iPhone's keyboard and mouse ("Use This PC's Bluetooth"). Older PCs don't send it.
+    var pcBluetooth: PCBluetooth?
+    struct PCBluetooth: Decodable, Equatable { var on: Bool }
+
+    enum CodingKeys: String, CodingKey {
+        case pc, mirroring, phone, bluetooth, agent, awake, audio, session, unlock, bridge
+        case pcBluetooth = "pc_bluetooth"
+    }
 }
 
 struct BridgeNetwork: Decodable, Identifiable, Hashable {
