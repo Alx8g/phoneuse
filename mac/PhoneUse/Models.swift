@@ -67,7 +67,9 @@ struct Session: Decodable {
 }
 
 struct OnOff: Decodable { var on: Bool? }
-struct Passcode: Decodable { var saved: Bool? }
+/// GET /api/passcode. `enabled`: whether the PC offers Unlock at all (off for now, phoneuse/unlock.py ENABLED);
+/// the passcode settings show only while it's true.
+struct Passcode: Decodable { var saved: Bool?; var enabled: Bool? }
 
 struct Claude: Decodable {
     var claude: Bool?

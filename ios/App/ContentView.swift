@@ -182,7 +182,9 @@ struct PhoneTab: View {
             if model.notificationsOff {
                 Section {
                     Button { Task { await model.turnOnNotifications() } } label: {
-                        RowTitle("Turn On Notifications", "So you can allow agents and Unlock while the iPhone mirrors")
+                        RowTitle("Turn On Notifications", model.state?.unlock.on == true
+                                 ? "So you can allow agents and Unlock while the iPhone mirrors"
+                                 : "So you can allow agents while the iPhone mirrors")
                     }
                     .accessibilityIdentifier("turnOnNotifications")
                 }
@@ -355,7 +357,7 @@ struct AgentsTab: View {
                     if let session = s.session {
                         Section { StartModeRow(session: session) }
                     }
-                    unlockSection(s)
+                    if s.unlock.on { unlockSection(s) }  // Unlock is off on the PC for now: no passcode settings
                 }
                 .disabled(offline)
             }
