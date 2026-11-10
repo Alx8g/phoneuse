@@ -5,6 +5,18 @@
 import Foundation
 import Vision
 
+/// Recognition is English-only, yet Vision still returns Cyrillic or Greek letters that look like Latin ones
+/// ("3AM" came back as "ЗАМ" on the Weather app). Any such letter in the output is a misread: map it back.
+let latin: [Character: Character] = [
+    "А": "A", "В": "B", "Е": "E", "З": "3", "К": "K", "М": "M", "Н": "H", "О": "O", "Р": "P", "С": "C",
+    "Т": "T", "Х": "X", "У": "Y", "І": "I", "Ј": "J", "Ѕ": "S", "Ԛ": "Q", "Ԝ": "W",
+    "а": "a", "е": "e", "о": "o", "р": "p", "с": "c", "у": "y", "х": "x", "і": "i", "ј": "j", "ѕ": "s",
+    "Α": "A", "Β": "B", "Ε": "E", "Ζ": "Z", "Η": "H", "Ι": "I", "Κ": "K", "Μ": "M", "Ν": "N", "Ο": "O",
+    "Ρ": "P", "Τ": "T", "Υ": "Y", "Χ": "X", "ο": "o", "ν": "v",
+]
+
+func toLatin(_ s: String) -> String { String(s.map { latin[$0] ?? $0 }) }
+
 func recognize(_ path: String) -> [String: Any] {
     let url = URL(fileURLWithPath: path)
     let request = VNRecognizeTextRequest()
@@ -25,7 +37,7 @@ func recognize(_ path: String) -> [String: Any] {
         guard let top = obs.topCandidates(1).first else { continue }
         let b = obs.boundingBox  // normalized, origin at the bottom left
         func r(_ v: CGFloat) -> Double { (Double(v) * 10000).rounded() / 10000 }
-        lines.append(["text": top.string, "x": r(b.midX), "y": r(1 - b.midY), "w": r(b.width), "h": r(b.height),
+        lines.append(["text": toLatin(top.string), "x": r(b.midX), "y": r(1 - b.midY), "w": r(b.width), "h": r(b.height),
                       "conf": (Double(top.confidence) * 1000).rounded() / 1000])
     }
     return ["lines": lines]
