@@ -12,13 +12,16 @@
 		1962873010AB7C3AE9CDC0A2 /* CompanionCryptoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02BE5A480CB6C53141CE49E /* CompanionCryptoTests.swift */; };
 		1AE4AB7D7977E3FCF9497534 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C9BF14BBA1D93B1F0B7F5E /* AppLog.swift */; };
 		1C865C00A7DB1B1B284A2A2D /* CompanionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12BEBE4E61C3043D7067FA9 /* CompanionClient.swift */; };
+		2FA0BCACFAA0AC7B0CEB6A8F /* CompanionCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0E5981525F6136B8126827 /* CompanionCrypto.swift */; };
 		3C9D7E4CADD14F488F528A78 /* AgentActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 992E0EB26E0506F60C17C190 /* AgentActivity.swift */; };
 		46AA681DC3973F5565050BC9 /* QRScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E35C0D206E5BEEDBFCDF58E /* QRScanner.swift */; };
+		4D5EC802EE7F8F3395B6A761 /* PushRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65CC4EE4E0F6F13550D18E6 /* PushRelay.swift */; };
 		54F84D6EAD821BC46DE11E37 /* Robot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B7F69CB00BCF929B6820427 /* Robot.swift */; };
 		577720DFA56A5CB657C35710 /* CompanionCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0E5981525F6136B8126827 /* CompanionCrypto.swift */; };
 		57CF17221301F264356C37A8 /* PhoneUseWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E1FCAFAAC1696A3028D1A7ED /* PhoneUseWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		63569514AB93D32847E343D3 /* Push.swift in Sources */ = {isa = PBXBuildFile; fileRef = 489D23D034BD4EAB6BC03865 /* Push.swift */; };
 		6AC45EAC53B4BF8008594BBF /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = CACC8810B2D9D61FA55FC6A0 /* Demo.swift */; };
+		7715872AF82F2D1553C057AA /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FEC1C0D0D3358D7E6513E5 /* NotificationService.swift */; };
 		777B2BDF8A70679A4531AC90 /* CompanionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12BEBE4E61C3043D7067FA9 /* CompanionClient.swift */; };
 		92C0E3AB29D71C0A6E6B4745 /* Pairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F02074B048620193B3B9E23 /* Pairing.swift */; };
 		957F742942E56EAC59E1A6E6 /* CompanionCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0E5981525F6136B8126827 /* CompanionCrypto.swift */; };
@@ -27,11 +30,15 @@
 		AC9562814ABC8703F71C1268 /* LiveActivityLayoutUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C9DF6BE95D65505CCC4A3A6 /* LiveActivityLayoutUITests.swift */; };
 		AE63A531A8BDDD39302D47AA /* RealPCUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A8B93AD27F070C1C7A9AA5 /* RealPCUITests.swift */; };
 		BBCBBBB49D5679FEDA066BB0 /* Pairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F02074B048620193B3B9E23 /* Pairing.swift */; };
+		C2A0F254C9580BA878BB563F /* PhoneUseNotifications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 261FE6B5E721D62E021BF5F8 /* PhoneUseNotifications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D1A24F1294BE1B45AB6CAAF8 /* SettingsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E202887850995274A649144 /* SettingsUITests.swift */; };
+		D494C9FA987F67E65C1DF472 /* PushRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65CC4EE4E0F6F13550D18E6 /* PushRelay.swift */; };
 		E20762EE8C9B49CEFCDB75FE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF6503FBA88C4C609778B5EB /* Assets.xcassets */; };
+		E4B1A6142E282E9811D1CF2B /* Pairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F02074B048620193B3B9E23 /* Pairing.swift */; };
 		EF510DABF80DFC3E9DA6BA5E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDD5C1D42C5084700766D23 /* ContentView.swift */; };
 		F33AF0BF92ED29908127339F /* Robot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B7F69CB00BCF929B6820427 /* Robot.swift */; };
 		FABAADBB9E65BD54B2DEE5D1 /* AgentActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 992E0EB26E0506F60C17C190 /* AgentActivity.swift */; };
+		FC18ABFCECA435D201928425 /* PushRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65CC4EE4E0F6F13550D18E6 /* PushRelay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +63,13 @@
 			remoteGlobalIDString = A2FBCF8ADD9B89727802BF4C;
 			remoteInfo = PhoneUse;
 		};
+		FA7AF224D7E542C18D295A87 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0D0847F37B58F5462409A1D3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 441828FD6B6A508A305B3722;
+			remoteInfo = PhoneUseNotifications;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -66,6 +80,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				57CF17221301F264356C37A8 /* PhoneUseWidgets.appex in Embed Foundation Extensions */,
+				C2A0F254C9580BA878BB563F /* PhoneUseNotifications.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -75,6 +90,7 @@
 /* Begin PBXFileReference section */
 		1C9DF6BE95D65505CCC4A3A6 /* LiveActivityLayoutUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityLayoutUITests.swift; sourceTree = "<group>"; };
 		21CB2894AC2FE090100445FB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		261FE6B5E721D62E021BF5F8 /* PhoneUseNotifications.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PhoneUseNotifications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		27C9BF14BBA1D93B1F0B7F5E /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		2EDD5C1D42C5084700766D23 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3402AB9623B6B53ABF712269 /* PhoneUseWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneUseWidgets.entitlements; sourceTree = "<group>"; };
@@ -85,6 +101,7 @@
 		67E207141EF63DC24D4C6176 /* PhoneUseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneUseApp.swift; sourceTree = "<group>"; };
 		6E35C0D206E5BEEDBFCDF58E /* QRScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScanner.swift; sourceTree = "<group>"; };
 		7E67D7D720A78ABB19E838A3 /* PhoneUse.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneUse.entitlements; sourceTree = "<group>"; };
+		84FEC1C0D0D3358D7E6513E5 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		8B7F69CB00BCF929B6820427 /* Robot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Robot.swift; sourceTree = "<group>"; };
 		8E0E5981525F6136B8126827 /* CompanionCrypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionCrypto.swift; sourceTree = "<group>"; };
 		8E202887850995274A649144 /* SettingsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsUITests.swift; sourceTree = "<group>"; };
@@ -95,11 +112,13 @@
 		ABC78A689A6D939A8431C06B /* PhoneUseTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PhoneUseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7C6BC6CCEBD2C719D28978F /* PhoneUse.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PhoneUse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF6503FBA88C4C609778B5EB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C89532863EC205C77DC7B2C5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		CACC8810B2D9D61FA55FC6A0 /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
 		DE125BEF83809A7A3AAFD4FE /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		E02BE5A480CB6C53141CE49E /* CompanionCryptoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionCryptoTests.swift; sourceTree = "<group>"; };
 		E12BEBE4E61C3043D7067FA9 /* CompanionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionClient.swift; sourceTree = "<group>"; };
 		E1FCAFAAC1696A3028D1A7ED /* PhoneUseWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PhoneUseWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F65CC4EE4E0F6F13550D18E6 /* PushRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushRelay.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -111,6 +130,7 @@
 				E12BEBE4E61C3043D7067FA9 /* CompanionClient.swift */,
 				8E0E5981525F6136B8126827 /* CompanionCrypto.swift */,
 				4F02074B048620193B3B9E23 /* Pairing.swift */,
+				F65CC4EE4E0F6F13550D18E6 /* PushRelay.swift */,
 				8B7F69CB00BCF929B6820427 /* Robot.swift */,
 			);
 			path = Shared;
@@ -128,6 +148,7 @@
 			isa = PBXGroup;
 			children = (
 				8C374614DB67CF1640B81530 /* App */,
+				D344DF798707E7E3982FC2CA /* NotificationService */,
 				398F5DEA3EB2746DBFAF3A88 /* Shared */,
 				70FBB08AAE5BE2BDEB7189F7 /* Tests */,
 				EC80B1B90B5D9B2E0E27A3E3 /* UITests */,
@@ -163,6 +184,15 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		D344DF798707E7E3982FC2CA /* NotificationService */ = {
+			isa = PBXGroup;
+			children = (
+				C89532863EC205C77DC7B2C5 /* Info.plist */,
+				84FEC1C0D0D3358D7E6513E5 /* NotificationService.swift */,
+			);
+			path = NotificationService;
+			sourceTree = "<group>";
+		};
 		EC80B1B90B5D9B2E0E27A3E3 /* UITests */ = {
 			isa = PBXGroup;
 			children = (
@@ -177,6 +207,7 @@
 			isa = PBXGroup;
 			children = (
 				B7C6BC6CCEBD2C719D28978F /* PhoneUse.app */,
+				261FE6B5E721D62E021BF5F8 /* PhoneUseNotifications.appex */,
 				ABC78A689A6D939A8431C06B /* PhoneUseTests.xctest */,
 				35A63EC9B12C50E6AF1AB29F /* PhoneUseUITests.xctest */,
 				E1FCAFAAC1696A3028D1A7ED /* PhoneUseWidgets.appex */,
@@ -187,6 +218,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		441828FD6B6A508A305B3722 /* PhoneUseNotifications */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9EE7FAF0D0AC04C625E90D2C /* Build configuration list for PBXNativeTarget "PhoneUseNotifications" */;
+			buildPhases = (
+				660B4EE48B7DDA32D48A97D9 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PhoneUseNotifications;
+			packageProductDependencies = (
+			);
+			productName = PhoneUseNotifications;
+			productReference = 261FE6B5E721D62E021BF5F8 /* PhoneUseNotifications.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		9CBA5485E4D90443AF549E1F /* PhoneUseWidgets */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = B5D89AAC8B70189DBC9A6D1C /* Build configuration list for PBXNativeTarget "PhoneUseWidgets" */;
@@ -216,6 +264,7 @@
 			);
 			dependencies = (
 				EC2047A60AD9E1B9310559B0 /* PBXTargetDependency */,
+				965164A4E47FA2C71E8D722C /* PBXTargetDependency */,
 			);
 			name = PhoneUse;
 			packageProductDependencies = (
@@ -269,6 +318,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					441828FD6B6A508A305B3722 = {
+						DevelopmentTeam = 9592R2Q8PP;
+					};
 					9CBA5485E4D90443AF549E1F = {
 						DevelopmentTeam = 9592R2Q8PP;
 					};
@@ -302,6 +354,7 @@
 			targets = (
 				A2FBCF8ADD9B89727802BF4C /* PhoneUse */,
 				9CBA5485E4D90443AF549E1F /* PhoneUseWidgets */,
+				441828FD6B6A508A305B3722 /* PhoneUseNotifications */,
 				F3A403D54CBBF5286A4C7FCF /* PhoneUseTests */,
 				BDED8706616F00F0322E7861 /* PhoneUseUITests */,
 			);
@@ -338,6 +391,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		660B4EE48B7DDA32D48A97D9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2FA0BCACFAA0AC7B0CEB6A8F /* CompanionCrypto.swift in Sources */,
+				7715872AF82F2D1553C057AA /* NotificationService.swift in Sources */,
+				E4B1A6142E282E9811D1CF2B /* Pairing.swift in Sources */,
+				FC18ABFCECA435D201928425 /* PushRelay.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BBD172072BC0721E7670BE6E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -347,6 +411,7 @@
 				1C865C00A7DB1B1B284A2A2D /* CompanionClient.swift in Sources */,
 				577720DFA56A5CB657C35710 /* CompanionCrypto.swift in Sources */,
 				92C0E3AB29D71C0A6E6B4745 /* Pairing.swift in Sources */,
+				4D5EC802EE7F8F3395B6A761 /* PushRelay.swift in Sources */,
 				54F84D6EAD821BC46DE11E37 /* Robot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -366,6 +431,7 @@
 				BBCBBBB49D5679FEDA066BB0 /* Pairing.swift in Sources */,
 				073E7121CBC8AEF6FA0DBE09 /* PhoneUseApp.swift in Sources */,
 				63569514AB93D32847E343D3 /* Push.swift in Sources */,
+				D494C9FA987F67E65C1DF472 /* PushRelay.swift in Sources */,
 				46AA681DC3973F5565050BC9 /* QRScanner.swift in Sources */,
 				F33AF0BF92ED29908127339F /* Robot.swift in Sources */,
 			);
@@ -374,6 +440,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		965164A4E47FA2C71E8D722C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 441828FD6B6A508A305B3722 /* PhoneUseNotifications */;
+			targetProxy = FA7AF224D7E542C18D295A87 /* PBXContainerItemProxy */;
+		};
 		C5CE5090A9A2CBF9C63B5583 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A2FBCF8ADD9B89727802BF4C /* PhoneUse */;
@@ -427,7 +498,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 9592R2Q8PP;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -488,7 +559,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 9592R2Q8PP;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -560,6 +631,23 @@
 			};
 			name = Release;
 		};
+		710D93A949D2CFE5F30537BB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = NotificationService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = co.lxe.phoneuse.notifications;
+				PRODUCT_NAME = PhoneUseNotifications;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 		78936D79CEF9B1616A8B9B9E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -593,6 +681,26 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PhoneUse.app/PhoneUse";
 			};
 			name = Debug;
+		};
+		B0CE387422998F7AEC1F1197 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				INFOPLIST_FILE = NotificationService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = co.lxe.phoneuse.notifications;
+				PRODUCT_NAME = PhoneUseNotifications;
+				PROVISIONING_PROFILE_SPECIFIER = "PhoneUse Notifications AppStore";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
 		};
 		C71B5CA4FD1ACF3C63561F96 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -694,6 +802,15 @@
 			buildConfigurations = (
 				C71B5CA4FD1ACF3C63561F96 /* Debug */,
 				CE5B4750DA6C8B9944F9A1AB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9EE7FAF0D0AC04C625E90D2C /* Build configuration list for PBXNativeTarget "PhoneUseNotifications" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				710D93A949D2CFE5F30537BB /* Debug */,
+				B0CE387422998F7AEC1F1197 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

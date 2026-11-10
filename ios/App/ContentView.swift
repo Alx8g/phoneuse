@@ -161,7 +161,7 @@ struct UnpairedView: View {
                 .accessibilityIdentifier("seeDemo")
             if let error = model.error { Text(error).foregroundStyle(.red).font(.footnote) }
         }
-        .navigationTitle("Phone Use")
+        .toolbar(.hidden, for: .navigationBar)  // no heading over Not Paired
         .fullScreenCover(isPresented: $scanning) {
             QRScannerSheet { url in
                 scanning = false
