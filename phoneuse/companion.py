@@ -21,7 +21,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import apns, bridge, phones, unlock
+from . import apns, bluetooth_setup, bridge, phones, unlock
 from .config import MACOS, NAME, RUNTIME_DIR, config_path
 
 PORT = 8778
@@ -255,6 +255,8 @@ class Companion:
             bridge_state = {"saved": True, "id": b.get("id"), "ip": b.get("ip"), "ssid": s.get("ssid") or b.get("ssid"),
                             "use": b.get("use", True), "online": bool(s.get("online", bool(s))),
                             "rtt_ms": s.get("rtt_ms"),
+                            # whether the bridge reaches the iPhone, and that iPhone's name
+                            "connected": bool(s.get("connected")), "phone": s.get("phone") or None,
                             # signal levels: good / fair / weak, or null when unknown
                             "signal": {"wifi": h["wifi"], "phone": h["phone"]}, "warning": h["warning"]}
         p = self.unlocks.pending
@@ -276,6 +278,8 @@ class Companion:
             "unlock": {"passcode_saved": await self.run(unlock.saved),
                        "pending": {"id": p["id"], "since": int(p.get("since", 0))} if p else None},
             "bridge": bridge_state,
+            # this PC's own Bluetooth as a second way in (bluetooth_setup.py); switched on the PC only
+            "pc_bluetooth": {"on": bluetooth_setup.on()},
         })
 
     def needs_remirror(self):
@@ -374,6 +378,15 @@ class Companion:
         bridge.save(cfg)
         await self.run(use_bridge, cfg)
         return web.json_response({"use": cfg["use"]})
+
+    async def bridge_forget(self, req):
+        # Forget Bridge…: the same as the PC's DELETE /api/bridge (the bridge resets itself)
+        from .bridge_web import _daemon
+        if not bridge.saved():
+            return web.json_response({"error": "No bridge is set up."}, status=409)
+        await self.run(_daemon, "bridge off")
+        why = await self.run(bridge.forget)
+        return web.json_response({"saved": None, "reset": why is None, "why": why})
 
     async def bridge_networks(self, req):
         cfg = bridge.saved()
@@ -803,6 +816,7 @@ class Companion:
         r.add_post("/v1/keyboard", self.keyboard)
         r.add_route("*", "/v1/cursor", self.cursor)
         r.add_post("/v1/bridge/use", self.bridge_use)
+        r.add_delete("/v1/bridge", self.bridge_forget)
         r.add_get("/v1/bridge/networks", self.bridge_networks)
         r.add_post("/v1/bridge/network", self.bridge_network)
         r.add_post("/v1/mirror/audio", self.audio)

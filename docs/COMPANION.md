@@ -66,6 +66,7 @@ Every response is JSON. Errors are `{"error": "<short sentence for the owner>"}`
 | `POST /v1/bridge/use` | `{"on": bool}` | Sends input through the bridge, or through the PC's own Bluetooth |
 | `GET /v1/bridge/networks` | | `{"networks": [{"ssid", "rssi", "secure"}]}` that the bridge sees |
 | `POST /v1/bridge/network` | `{"ssid", "sealed"}` (field `password`) | Moves the bridge to that Wi-Fi network |
+| `DELETE /v1/bridge` | | Forget Bridge…: the bridge resets itself and the PC forgets it. `{"saved": null, "reset": bool, "why"}`; `reset` is false (with `why`) when the bridge didn't answer the reset |
 | `POST /v1/mirror/audio` | `{"on": bool}` | Turns the mirror's audio on or off (see Audio) |
 | `POST /v1/push` | see Push | Registers the app's push tokens |
 | `DELETE /v1/pairing` | | Unpairs this app: the PC forgets its key |
@@ -92,6 +93,12 @@ Every response is JSON. Errors are `{"error": "<short sentence for the owner>"}`
 ```
 
 `session.pending`, `unlock.pending` and `bridge` are `null` when there is no pending request or no bridge.
+
+`bridge.connected` says whether the bridge reaches the iPhone, and `bridge.phone` names that iPhone (or is
+`null`). `pc_bluetooth.on` says whether the PC also uses its own Bluetooth as the iPhone's keyboard and mouse
+(Use This PC's Bluetooth); it is switched only on the PC, since turning it on asks for the PC's administrator
+password. With it on, input goes through the bridge while the bridge reaches the iPhone, and through the PC's
+Bluetooth otherwise.
 
 `bridge.signal` has two levels, each `"good"`, `"fair"`, `"weak"` or `null` (unknown): `wifi`, the bridge's Wi-Fi
 (good from −65 dBm, fair from −76 dBm), and `phone`, the Bluetooth link between the bridge and the iPhone (the
