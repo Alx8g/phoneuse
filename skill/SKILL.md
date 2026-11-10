@@ -37,7 +37,7 @@ the full list.
 ## MCP or CLI
 
 If the phoneuse MCP tools are available (`look`, `tap`, `tap_on`, `scroll`, `scroll_by`, `cursor`, `calibrate`,
-`type_text`, `open_app`, `navigate`, `wait`, `unlock`, `read_notifications`, ...), use them.
+`type_text`, `open_app`, `navigate`, `wait`, `read_notifications`, ...), use them.
 Every action first waits (up to 3 s) for the phone's first visible change, then
 returns frames from it (0.1, 0.4 and 0.8 s; frames that didn't change are
 dropped, so a still screen is one frame) plus the last frame as text lines with
@@ -182,12 +182,9 @@ leftover; close it, or `phoneuse back` until you reach the app's main view.
 
 ## Rules
 
-- **Lock screen:** run `phoneuse unlock`. It asks the owner, who approves on the
-  browser mirror page or in a desktop notification; only then does Phone Use type
-  the passcode they saved (you never see it), once. If it answers anything but
-  "unlocked", stop and ask the owner to unlock the phone. Never type a passcode
-  yourself, never guess one, and never click Unlock on the page yourself: that
-  answer belongs to the owner.
+- **Lock screen:** stop and ask the user to unlock the phone, then continue. Phone
+  Use doesn't save or type the passcode. Never type a passcode yourself and never
+  guess one.
 - **Don't tap the top centre** (the Dynamic Island, roughly x 0.35–0.65, y < 0.06):
   it opens the Screen Mirroring popup, whose Stop Mirroring button cuts the screen
   feed.

@@ -158,12 +158,11 @@ screen. While the window has focus, your keyboard types on the phone, and the Su
 key works as Cmd.
 
 **The browser mirror:** http://localhost:8777 shows the same mirror, and only this
-computer can open it. In its settings you can save the passcode, set up the bridge
-and keep the phone's screen awake.
+computer can open it. In its settings you can set up the bridge and keep the phone's
+screen awake.
 
-**Unlocking:** when an agent runs `phoneuse unlock`, Phone Use asks you first, with a
-banner in the browser mirror and a desktop notification. It types the saved passcode
-only after you approve.
+**Unlocking:** Phone Use doesn't save or type your passcode. When the phone is locked,
+an agent asks you to unlock it.
 
 **Agents:** each action is a subcommand, and `phoneuse --help` lists them all:
 

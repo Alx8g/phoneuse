@@ -461,6 +461,8 @@ class UnlockRequests:
             asyncio.ensure_future(tab.ws.send_str(json.dumps(msg)))
 
     async def ask(self, req):
+        if not unlock.ENABLED:
+            return web.json_response({"result": unlock.OFF}, status=409)
         if self.pending:
             return web.json_response({"result": "another unlock request is waiting for the owner"}, status=409)
         if not await asyncio.get_running_loop().run_in_executor(None, unlock.saved):
@@ -704,6 +706,9 @@ def app(mirror):
         loop = asyncio.get_running_loop()
         if req.method != "GET" and not same_origin(req):
             return web.Response(status=403)
+        if not unlock.ENABLED:
+            return web.json_response({"saved": False, "enabled": False, "error": unlock.OFF},
+                                     status=200 if req.method == "GET" else 410)
         try:
             if req.method == "POST":
                 await loop.run_in_executor(None, unlock.save, (await req.json()).get("code", ""))
@@ -898,6 +903,7 @@ def app(mirror):
 
 
 def main():
+    unlock.purge()  # unlocking is off: a passcode saved earlier doesn't stay on disk
     Gst.init(None)
     mirror = Mirror()
     # GStreamer's bus signals need a GLib main loop; run one beside asyncio.

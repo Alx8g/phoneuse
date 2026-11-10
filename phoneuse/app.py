@@ -253,7 +253,9 @@ class Window(Adw.ApplicationWindow):
         for r in (self.pass_row, self.pass_entry):
             g.add(r)
         self.unlock_group = g
-        self.agents_page.add(g)
+        from . import unlock
+        if unlock.ENABLED:  # unlocking with a saved passcode is turned off for now (unlock.py)
+            self.agents_page.add(g)
 
         # Phone (the tab names it)
         g = Adw.PreferencesGroup()

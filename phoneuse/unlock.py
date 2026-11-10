@@ -17,11 +17,26 @@ from .config import config_path
 from .hidclient import Hid
 
 PASSCODE_FILE = os.path.join(os.path.dirname(config_path()), "passcode")
+
+# Turned off (lxe, 2026-11-09): no passcode is saved or typed, and every Unlock request is
+# refused with OFF. The code stays for when unlocking comes back (see issue #10: the passcode
+# would move from this PC to the bridge). While it's off, purge() deletes a passcode saved earlier.
+ENABLED = False
+OFF = ("Unlocking with a saved passcode is turned off. Ask the user to unlock the iPhone "
+       "themselves, then continue.")
+
+
+def purge():
+    """With unlocking off, remove a passcode saved before it was turned off."""
+    if not ENABLED:
+        forget()
 MAX_ATTEMPTS_PER_HOUR = 3
 _attempts = []
 
 
 def saved():
+    if not ENABLED:
+        return False
     try:
         return os.path.getsize(PASSCODE_FILE) > 0
     except OSError:
@@ -29,6 +44,8 @@ def saved():
 
 
 def save(code):
+    if not ENABLED:
+        raise ValueError(OFF)
     code = code.strip()
     if not (4 <= len(code) <= 32) or not code.isprintable():
         raise ValueError("a passcode is 4 to 32 characters")
@@ -51,6 +68,8 @@ def forget():
 
 
 def _read():
+    if not ENABLED:
+        raise RuntimeError(OFF)
     try:
         st = os.stat(PASSCODE_FILE)
     except FileNotFoundError:

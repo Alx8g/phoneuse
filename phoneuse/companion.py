@@ -278,7 +278,8 @@ class Companion:
                         "pending": ({"id": sp["id"], "since": int(sp["since"]), "action": sp["action"],
                                      "mode": sp.get("mode"), "deadline": sp.get("deadline")}
                                     if (sp := self.mirror.sessions.pending) else None)},
-            "unlock": {"passcode_saved": await self.run(unlock.saved),
+            # enabled: false while unlocking with a saved passcode is turned off (unlock.py); apps hide it
+            "unlock": {"enabled": unlock.ENABLED, "passcode_saved": await self.run(unlock.saved),
                        "pending": {"id": p["id"], "since": int(p.get("since", 0))} if p else None},
             "bridge": bridge_state,
             # this PC's own Bluetooth as a second way in (bluetooth_setup.py); switched on the PC only
@@ -327,6 +328,8 @@ class Companion:
         return web.json_response(self._start())
 
     async def passcode(self, req):
+        if not unlock.ENABLED:
+            return web.json_response({"error": unlock.OFF, "passcode_saved": False}, status=410)
         try:
             if req.method == "DELETE":
                 await self.run(unlock.forget)

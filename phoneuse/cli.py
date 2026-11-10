@@ -1286,6 +1286,9 @@ def unlock_cmd():
     """Ask the owner to unlock the phone with the saved passcode. Waits for their
     answer (up to 2 minutes); the passcode never passes through here."""
     import json
+    from . import unlock
+    if not unlock.ENABLED:
+        die(unlock.OFF)
     req = urllib.request.Request(f"http://127.0.0.1:{CFG['web_port']}/api/unlock", data=b"{}", method="POST",
                                  headers={"Content-Type": "application/json"})
     print("Asked the owner to approve an unlock (browser mirror or notification); waiting...", flush=True)

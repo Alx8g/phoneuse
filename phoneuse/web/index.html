@@ -183,6 +183,7 @@
   <div class="group" id="bridge"></div>
   <p class="foot" id="bridgeFoot" hidden></p>
   <button class="destructive" id="bForget" hidden>Forget Bridge</button>
+  <div id="pcSection" hidden><!-- shown only while unlocking with a saved passcode is on (unlock.py) -->
   <div style="height: 14px"></div>
   <div class="label">Passcode</div>
   <div class="group">
@@ -193,6 +194,7 @@
   </div>
   <button class="destructive" id="pcRemove" hidden>Remove Passcode</button>
   <p class="foot danger" id="pcError" hidden></p>
+  </div>
 </div>
 <div id="ask" hidden role="alertdialog" aria-labelledby="askTitle" aria-describedby="askText">
   <div class="sheet">
@@ -486,13 +488,16 @@ async function passcode(method, body) {
   const r = await fetch("/api/passcode", { method, headers: { "Content-Type": "application/json" },
                                            body: body && JSON.stringify(body) });
   const j = await r.json();
+  const on = j.enabled !== false;  // turned off: no passcode settings at all
+  document.getElementById("pcSection").hidden = !on;
+  if (!on) return;
   if (j.error) { pcError.textContent = j.error; pcError.hidden = false; } else showSaved(j.saved);
 }
 function openSettings(open) {
   settings.hidden = !open;
   gear.setAttribute("aria-expanded", open);
   pcInput.value = ""; pcSave.disabled = true;
-  if (open) { passcode("GET"); bridgeShow(); pcInput.focus(); }
+  if (open) { passcode("GET"); bridgeShow(); }
 }
 gear.onclick = () => openSettings(settings.hidden);
 addEventListener("pointerdown", (e) => { if (!settings.hidden && !settings.contains(e.target) && !gear.contains(e.target)) openSettings(false); });

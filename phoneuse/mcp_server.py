@@ -85,7 +85,7 @@ server = MCPServer(
         "`look` on its own. If the last frame is still mid-transition, call wait. When a result says no "
         "change showed, look before repeating the action. Prefer tap_on for visible text; tap icons by "
         "position. A result starting PAUSED means the user took over: stop until they resume you. "
-        "On the lock screen call unlock (the owner approves each unlock); never type a passcode. "
+        "On the lock screen, ask the user to unlock the phone; never type a passcode. "
         "When your task is done, call end_session to hand the phone back to the user. "
         "This is the user's personal phone: ask before sending, posting, buying, deleting, or changing "
         "account or security settings. Don't tap the top centre (Dynamic Island): it can stop mirroring."),
@@ -354,13 +354,17 @@ def navigate(to: Literal["home", "back", "switcher", "control-center", "notifica
     return _act(fn, look)
 
 
-@tool
 def unlock(look: Look = "text") -> list:
     """On the lock screen: ask the owner to approve an unlock with their saved passcode.
     Waits up to 2 minutes for their answer. You never see the passcode."""
     ok, msg = _quietly(cli.unlock_cmd)
     msg = msg.splitlines()[-1] if msg else msg
     return [msg if ok else f"error: {msg}"] + _screen(look)
+
+
+from . import unlock as _unlock  # noqa: E402
+if _unlock.ENABLED:  # unlocking with a saved passcode is turned off for now (unlock.py)
+    unlock = tool(unlock)
 
 
 @tool
