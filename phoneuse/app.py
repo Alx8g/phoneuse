@@ -127,6 +127,17 @@ def button(label, style=None, on=None):
     return b
 
 
+def qr_texture(link):
+    """A QR code for `link` (shown in a Gtk.Picture with the "qr" class: rounded corners)."""
+    import io
+
+    import qrcode
+    from gi.repository import Gdk
+    buf = io.BytesIO()
+    qrcode.make(link, border=2, box_size=8).save(buf, format="PNG")
+    return Gdk.Texture.new_from_bytes(GLib.Bytes.new(buf.getvalue()))
+
+
 def confirm(parent, heading, body, action, on_yes):
     d = Adw.AlertDialog(heading=heading, body=body)
     d.add_response("cancel", "Cancel")
@@ -197,7 +208,12 @@ class Window(Adw.ApplicationWindow):
         self.hero_steps = Gtk.Grid(halign=Gtk.Align.CENTER, row_spacing=8, column_spacing=10, margin_top=10, margin_bottom=6,
                                    visible=False)
         self._steps_shown = None
-        for w in (self.hero_icon, self.hero_title, self.hero_steps, self.hero_sub, self.hero_btn):
+        # The pairing QR code (overview's "qr"), made here and renewed before its link expires.
+        self.hero_qr = Gtk.Picture(can_shrink=True, content_fit=Gtk.ContentFit.FILL, width_request=220,
+                                   height_request=220, halign=Gtk.Align.CENTER, margin_top=10, margin_bottom=4,
+                                   overflow=Gtk.Overflow.HIDDEN, css_classes=["qr"], visible=False)
+        self._qr_made = 0.0
+        for w in (self.hero_icon, self.hero_title, self.hero_qr, self.hero_steps, self.hero_sub, self.hero_btn):
             box.append(w)
         hero.add(box)
         self.phone_page.add(hero)
@@ -376,9 +392,22 @@ class Window(Adw.ApplicationWindow):
                    "open_ports": self._allow_network, "retry": self.refresh, "open_phone": self.app.open_phone}
         act = h.get("action")
         self._show_steps(h.get("steps"), h.get("bold"))
+        self._show_qr(h.get("qr") == "pair")
         return self._hero(h["title"], detail, self.HERO_BUTTONS.get(act), actions.get(act),
                           icon=self.HERO_ICONS.get(h.get("icon"), "phone-symbolic"), good=h.get("good"),
                           quiet=h.get("quiet"))
+
+    def _show_qr(self, on):
+        self.hero_qr.set_visible(on)
+        self.hero_icon.set_visible(not on)
+        if not on:
+            self._qr_made = 0.0
+            return
+        if time.time() - self._qr_made < 480:  # links last 10 minutes: renew after 8
+            return
+        self._qr_made = time.time()
+        in_thread(lambda: api("/api/companion/pair", {}, timeout=10)["link"],
+                  lambda link, err: err or self.hero_qr.set_paintable(qr_texture(link)))
 
     def _show_steps(self, steps, bold):
         self.hero_steps.set_visible(bool(steps))
@@ -612,17 +641,7 @@ class PairDialog(Adw.Dialog):
             self.box.append(Gtk.Label(label=f"Couldn't make a pairing code: {err}", wrap=True))
             self.box.append(button("Try Again", "pill", self.new_code))
             return
-        import io
-
-        import qrcode
-        from gi.repository import Gdk
-        buf = io.BytesIO()
-        qrcode.make(link, border=2, box_size=8).save(buf, format="PNG")
-        tex = Gdk.Texture.new_from_bytes(GLib.Bytes.new(buf.getvalue()))
-        css = Gtk.CssProvider()
-        css.load_from_string(".qr { border-radius: 12px; }")
-        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css,
-                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        tex = qr_texture(link)
         # A square the size of the code, clipped to rounded corners, so nothing shows around it.
         self.box.append(Gtk.Picture(paintable=tex, can_shrink=True, content_fit=Gtk.ContentFit.FILL,
                                     width_request=260, height_request=260, halign=Gtk.Align.CENTER,
@@ -829,6 +848,11 @@ class App(Adw.Application):
         return 0
 
     def do_activate(self):
+        from gi.repository import Gdk
+        css = Gtk.CssProvider()
+        css.load_from_string(".qr { border-radius: 12px; }")  # QR codes: rounded corners
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css,
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         if not os.environ.get("FLATPAK_ID"):  # a checkout: the app's own icons live in packaging/icons
             from gi.repository import Gdk
             Gtk.IconTheme.get_for_display(Gdk.Display.get_default()).add_search_path(

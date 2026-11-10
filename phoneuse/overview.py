@@ -6,14 +6,16 @@ here, and the shells read it from GET /api/app. A step is
 where `detail` is plain text (a shell may bold `bold` inside it), `action` names what the
 button does (start, setup_bridge, pair_app, open_ports, retry, open_phone), `icon` is one of phone,
 keyboard, offline, bluetooth, `steps` (when present) is a numbered list to show under the title,
-where "{mirroring}" stands for the Screen Mirroring icon inline and `bold` is bolded too, `good` marks a healthy state and `quiet` a button that is a
+where "{mirroring}" stands for the Screen Mirroring icon inline and `bold` is bolded too,
+`qr` "pair" asks for the pairing QR code (POST /api/companion/pair gives the link; it works
+once, for 10 minutes), `good` marks a healthy state and `quiet` a button that is a
 fallback rather than the step itself.
 """
 
 
-def _step(step, title, detail="", action=None, icon="phone", good=False, quiet=False, bold=None, steps=None):
+def _step(step, title, detail="", action=None, icon="phone", good=False, quiet=False, bold=None, steps=None, qr=None):
     return {"step": step, "title": title, "detail": detail, "action": action, "icon": icon,
-            "good": good, "quiet": quiet, "bold": bold, "steps": steps}
+            "good": good, "quiet": quiet, "bold": bold, "steps": steps, "qr": qr}
 
 
 def stopped():
@@ -28,12 +30,12 @@ def hero(s, name):
     st, saved = b.get("status") or {}, b.get("saved")
     if not pic:
         return _step("starting", "Starting…")
+    if not s.get("paired"):  # first: the app is where the owner allows and stops agents
+        return _step("pair_app", "Pair your iPhone", "Open Phone Use on your iPhone, tap Scan QR Code and "
+                     "scan this code.", qr="pair")
     if not saved and not s.get("pc_bluetooth"):
         return _step("setup_bridge", "Set up the bridge", "The bridge is a small puck that taps and types on your "
                      "iPhone over Bluetooth, and connects to this PC over Wi-Fi. Keep it plugged in near your iPhone.", "setup_bridge", icon="keyboard")
-    if not s.get("paired"):
-        return _step("pair_app", "Pair the iPhone app", "Install and pair the Phone Use app. It's where you allow "
-                     "and stop agents.", "pair_app")
     if not pic.get("live"):
         fw = bool(s.get("firewall")) and not s.get("confirmed")
         return _step("start_mirroring", "Start Screen Mirroring",
