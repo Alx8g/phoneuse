@@ -705,16 +705,18 @@ class App(Adw.Application):
         if not self.win:
             self.win = Window(self)
             self.win.connect("close-request", self._on_close)
-            GLib.timeout_add_seconds(2, lambda: (self.win.refresh(), True)[1])
+            self._tick = GLib.timeout_add_seconds(2, lambda: (self.win.refresh(), True)[1])
             if not services_running():
                 self.start_services()
         self.win.present()
         self.win.refresh()
 
     def _on_close(self, *_):
-        if self.proc:  # the services keep running for agents; the window comes back on the next launch
-            self.win.set_visible(False)
-            return True
+        # The window closes for good (a hidden GTK window doesn't map again on some compositors,
+        # Hyprland among them); the services keep running for agents, and the next launch builds
+        # a new window.
+        GLib.source_remove(self._tick)
+        self.win = None
         return False
 
     def start_services(self):
