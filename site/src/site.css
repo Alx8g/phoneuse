@@ -141,6 +141,8 @@ p { margin: 0; }
 /* footer */
 .foot { max-width: var(--max); margin: 0 auto; padding: 32px var(--gutter) 48px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; font-size: 14px; }
 .foot .brand { font-size: 15px; }
+.foot__by { color: var(--ink-3); margin-right: auto; margin-left: 8px; }
+.foot__by a { color: var(--ink-2); }
 .foot nav { display: flex; gap: 24px; }
 .foot nav a { color: var(--ink-2); text-decoration: none; }
 .foot nav a:hover { color: var(--ink); }
