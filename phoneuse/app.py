@@ -964,7 +964,9 @@ class App(Adw.Application):
         return False
 
     def start_services(self):
-        if services_running():
+        # self.proc: started already and still starting up (its ports aren't open yet, so
+        # services_running() can't tell): don't start a second one.
+        if self.proc or services_running():
             return self.win and self.win.refresh()
         self.proc = Gio.Subprocess.new(serve_command(), Gio.SubprocessFlags.NONE)
         self.hold()
