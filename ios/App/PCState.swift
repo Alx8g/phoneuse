@@ -2,7 +2,15 @@ import Foundation
 
 /// GET /v1/state (docs/COMPANION.md, "Endpoints").
 struct PCState: Decodable, Equatable {
-    struct PC: Decodable, Equatable { var id: String; var name: String; var version: String? }
+    struct PC: Decodable, Equatable {
+        var id: String
+        var name: String
+        var version: String?
+        /// The PC's AirPlay receiver name, as Screen Mirroring lists it ("PhoneUse on …").
+        var receiver: String?
+        /// An older PC doesn't send it; its receiver was always "PhoneUse".
+        var receiverName: String { receiver ?? "PhoneUse" }
+    }
     struct Bluetooth: Decodable, Equatable { var connected: Bool; var via: String? }
     struct Agent: Decodable, Equatable {
         var state: String

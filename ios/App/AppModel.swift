@@ -43,7 +43,23 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Unpairs: asks the PC to forget this app's key (DELETE /v1/pairing), then forgets the pairing here
+    /// whether or not the PC answered, since it may be offline. The client keeps a copy of the key, so the
+    /// signed request still goes out after the local pairing is gone.
     func unpair() {
+        if let client {
+            Task { _ = try? await client.send("DELETE", "/v1/pairing", json: nil, timeout: 4) }
+        }
+        forgetPairing()
+    }
+
+    /// The PC no longer knows this app (it unpaired it, or forgot its key): show Not Paired with its reason.
+    private func lostPairing(_ message: String) {
+        forgetPairing()
+        error = message
+    }
+
+    private func forgetPairing() {
         PairingStore.forget()
         pairing = nil
         state = nil
@@ -79,8 +95,7 @@ final class AppModel: ObservableObject {
             Task { await RequestNotifications.prune(session: s.session?.pending?.id, unlock: s.unlock.pending?.id) }
             if let p = PairingStore.load(), p != pairing { pairing = p }
         } catch CompanionError.server(let status, let message) where status == 401 {
-            reachable = false
-            error = message
+            lostPairing(message)
         } catch {
             reachable = false
         }
@@ -98,6 +113,9 @@ final class AppModel: ObservableObject {
             error = nil
             await refresh()
             return data
+        } catch CompanionError.server(let status, let message) where status == 401 {
+            lostPairing(message)
+            return nil
         } catch {
             self.error = error.localizedDescription
             await refresh()

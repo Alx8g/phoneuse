@@ -42,6 +42,8 @@
 	<array>
 		<string>_phoneuse._tcp</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Phone Use scans the pairing code shown on your computer.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Phone Use talks to your Phone Use PC on your network.</string>
 	<key>NSSupportsLiveActivities</key>

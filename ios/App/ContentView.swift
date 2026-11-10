@@ -19,20 +19,30 @@ struct ContentView: View {
         .alert("Mirror again", isPresented: $model.askRemirror) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Open Control Center, tap Screen Mirroring, and choose PhoneUse.")
+            Text("Open Control Center, tap Screen Mirroring, and choose \(model.state?.pc.receiverName ?? "PhoneUse").")
         }
     }
 }
 
 struct UnpairedView: View {
     @EnvironmentObject var model: AppModel
+    @State private var scanning = false
 
     var body: some View {
         ContentUnavailableView {
-            Label("Not Paired", systemImage: "link")
+            Label("Not Paired", systemImage: "qrcode.viewfinder")
         } description: {
-            Text("Run `phoneuse app pair` on the PC.")
+            Text("On your computer, open Phone Use and choose Pair iPhone App. Then scan the code it shows.")
         } actions: {
+            Button {
+                model.error = nil
+                scanning = true
+            } label: {
+                Label("Scan QR Code", systemImage: "qrcode.viewfinder")
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .accessibilityIdentifier("scanQR")
             Button("Paste Pairing Link") {
                 if let text = UIPasteboard.general.string, let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)) {
                     model.pair(from: url)
@@ -40,10 +50,18 @@ struct UnpairedView: View {
                     model.error = "The clipboard has no pairing link."
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
+            .foregroundStyle(.tint)
+            .padding(.top, 4)
             if let error = model.error { Text(error).foregroundStyle(.red).font(.footnote) }
         }
         .navigationTitle("Phone Use")
+        .fullScreenCover(isPresented: $scanning) {
+            QRScannerSheet { url in
+                scanning = false
+                model.pair(from: url)
+            }
+        }
     }
 }
 
@@ -94,7 +112,7 @@ struct SettingsView: View {
                     }
                     .accessibilityIdentifier("audio")
                     if s.audio.needsRemirror == true {
-                        Label("Start Screen Mirroring to PhoneUse again.", systemImage: "airplayvideo")
+                        Label("Start Screen Mirroring to \(s.pc.receiverName) again.", systemImage: "airplayvideo")
                             .foregroundStyle(.orange)
                     }
                 } header: { Text("Mirror") } footer: {
