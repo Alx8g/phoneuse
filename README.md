@@ -48,8 +48,8 @@ uses the bridge for input.
 ### The bridge
 
 The bridge is a [LilyGO T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display): an ESP32
-board with a 1.14-inch screen, two buttons and USB-C. Any T-Display works; nothing needs
-soldering.
+board with a 1.14-inch screen, two buttons and USB-C. Get the original ESP32 T-Display, not the
+T-Display S3, which has a different chip. Nothing needs soldering.
 
 The Linux app installs the firmware for you: plug the bridge in with a USB cable and open
 Bridge › Install Firmware. You can also flash it yourself with
