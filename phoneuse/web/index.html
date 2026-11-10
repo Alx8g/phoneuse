@@ -31,7 +31,7 @@
   #gear:hover, #gear[aria-expanded="true"] { color: #fff; }
   #awake .sw, #bUse .sw, #askSession .sw { width: 34px; height: 20px; border-radius: 99px; background: rgba(120, 120, 128, .4); position: relative;
              transition: background .2s; }
-  #awake .sw::after::after, #bUse .sw::after, #askSession .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  #awake .sw::after, #bUse .sw::after, #askSession .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
                     background: #fff; transition: transform .2s; }
   #awake .sw, #bUse .sw, #askSession .sw { flex: none; }
   #awake[aria-checked="true"] .sw, #bUse[aria-checked="true"] .sw, #askSession[aria-checked="true"] .sw { background: #30d158; }
@@ -539,7 +539,7 @@ async function bridgeShow() {
     : `Pair on the iPhone: Bluetooth › PhoneUse Bridge`;
   bview(`<div class="item"><span class="grow">Bridge ${esc(sv.id.slice(-4))}<span class="sub">${esc(sv.ssid)} · ${esc(sv.ip)}</span>
            <span class="sub">${phone}</span></span></div>
-         <button class="item" id="bUse" role="switch" aria-checked="${!!sv.use}"><span class="grow">Send input through bridge</span><span class="sw"></span></button>
+         <button class="item" id="bUse" role="switch" aria-checked="${!!sv.use}"><span class="grow">Enable input</span><span class="sw"></span></button>
          <button class="item" id="bChange"><span class="grow link">Change Network…</span></button>`,
         st.error ? "!" + esc(st.error) : "");
   const use = bridgeBox.querySelector("#bUse");
