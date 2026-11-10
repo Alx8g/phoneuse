@@ -133,23 +133,33 @@ class Frames:
         return False
 
     def _clock(self, clock, now, moved):
-        """Measure the lag: the first change of the clock's pixels after a minute boundary,
-        on a frame where little else changed (a page sliding in changes the clock area
-        too), and only when the clock area was still for 5 s before the boundary."""
+        """Measure the lag: when the clock's first change after a minute boundary arrives.
+        That first change settles the minute, measured or not: it counts only on a frame
+        where little else changed (a page sliding in changes the clock area too), when the
+        clock area was still for 5 s before the boundary, and when it looks like new digits
+        rather than the whole status bar being redrawn. Counting a later change instead
+        reported 3 s of lag that wasn't there: X redrew its status bar ~3 s after the minute
+        had flipped during an app switch, while the picture was 0.2 s behind (2026-11-10)."""
         prev, self.clock = self.clock, clock
         if prev is None or prev.shape != clock.shape:
             return
-        if float((np.abs(clock - prev) > 40).mean()) < 0.01:
+        changed = float((np.abs(clock - prev) > 40).mean())
+        if changed < 0.01:
             return
         minute = round(now / 60) * 60 if now % 60 > 58 else int(now // 60) * 60  # a phone clock a bit ahead flips early
         quiet_before = self.clock_moved_at < minute - 5
         self.clock_moved_at = now
-        if (now - minute < CLOCK_WINDOW and minute != self.lag_minute and quiet_before and moved < 0.02):
-            self.lags = (self.lags + [max(0.0, now - minute)])[-2:]
-            # one late flip can be a fluke; a lag that holds shows in two minutes in a row
-            self.lag, self.lag_at, self.lag_minute = min(self.lags), now, minute
-            if self.lag > 1.5:
-                log(f"the picture is {self.lag:.1f} s behind the phone")
+        if now - minute >= CLOCK_WINDOW or minute == self.lag_minute:
+            return
+        self.lag_minute = minute  # later changes this minute are redraws, not the time
+        # new digits change a few percent of the area (measured 2%); a redrawn status bar most of it
+        if not quiet_before or moved >= 0.02 or changed > 0.15:
+            return
+        self.lags = (self.lags + [max(0.0, now - minute)])[-2:]
+        # one late flip can be a fluke; a lag that holds shows in two minutes in a row
+        self.lag, self.lag_at = min(self.lags), now
+        if self.lag > 1.5:
+            log(f"the picture is {self.lag:.1f} s behind the phone")
 
     def settle(self, since=None, change=0.6, quiet=0.1, limit=3.0):
         """Wait until the picture is still. Measured (history, PHONEUSE_STEPLOG):
