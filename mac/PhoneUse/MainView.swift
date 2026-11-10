@@ -358,6 +358,16 @@ struct BridgeTab: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    // A row like Claude Code's: what it does, and the button on the right
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Forget Bridge")
+                            Text("Resets the bridge and disconnects it from your iPhone")
+                                .font(.callout).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Forget…", role: .destructive) { confirmForget = true }
+                    }
                 }
                 .disabled(!core.running)
             } else {
@@ -380,15 +390,6 @@ struct BridgeTab: View {
                         Button("Firewall Settings…", action: openFirewallSettings)
                     }
                 }
-            }
-            if b?.saved != nil {  // at the bottom of the tab, as in the Linux window
-                Section {
-                    Button("Forget Bridge…", role: .destructive) { confirmForget = true }
-                        .buttonStyle(.borderedProminent).tint(.red).buttonBorderShape(.capsule)
-                        .frame(maxWidth: .infinity)
-                        .disabled(!core.running)
-                }
-                .listRowBackground(Color.clear)
             }
         }
         .formStyle(.grouped)
