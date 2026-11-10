@@ -111,7 +111,10 @@ modules:
       - mkdir -p /app/share/phoneuse && cp -r skill /app/share/phoneuse/skill
       - install -Dm644 packaging/flatpak/co.lxe.PhoneUse.desktop /app/share/applications/co.lxe.PhoneUse.desktop
       - install -Dm644 packaging/flatpak/co.lxe.PhoneUse.metainfo.xml /app/share/metainfo/co.lxe.PhoneUse.metainfo.xml
-      - install -Dm644 packaging/flatpak/co.lxe.PhoneUse.svg /app/share/icons/hicolor/scalable/apps/co.lxe.PhoneUse.svg
+      - install -Dm644 packaging/icons/hicolor/64x64/apps/co.lxe.PhoneUse.png /app/share/icons/hicolor/64x64/apps/co.lxe.PhoneUse.png
+      - install -Dm644 packaging/icons/hicolor/128x128/apps/co.lxe.PhoneUse.png /app/share/icons/hicolor/128x128/apps/co.lxe.PhoneUse.png
+      - install -Dm644 packaging/icons/hicolor/256x256/apps/co.lxe.PhoneUse.png /app/share/icons/hicolor/256x256/apps/co.lxe.PhoneUse.png
+      - install -Dm644 packaging/icons/hicolor/512x512/apps/co.lxe.PhoneUse.png /app/share/icons/hicolor/512x512/apps/co.lxe.PhoneUse.png
       - install -Dm644 packaging/icons/hicolor/symbolic/apps/co.lxe.PhoneUse-agent-symbolic.svg /app/share/icons/hicolor/symbolic/apps/co.lxe.PhoneUse-agent-symbolic.svg
       - install -Dm644 packaging/icons/hicolor/symbolic/apps/co.lxe.PhoneUse-mirroring-symbolic.svg /app/share/icons/hicolor/symbolic/apps/co.lxe.PhoneUse-mirroring-symbolic.svg
     sources:

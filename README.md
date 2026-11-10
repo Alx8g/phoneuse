@@ -1,4 +1,4 @@
-<img src="packaging/flatpak/co.lxe.PhoneUse.svg" width="128" alt="Phone Use icon: a sleepy cloud hugging a phone">
+<img src="packaging/icons/hicolor/256x256/apps/co.lxe.PhoneUse.png" width="128" alt="Phone Use icon: a sleepy cloud hugging a phone">
 
 # Phone Use
 
