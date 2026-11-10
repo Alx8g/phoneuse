@@ -32,7 +32,7 @@ with Xcode onto your phone.
 
 ```sh
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install --user ./PhoneUse-0.1.0-x86_64.flatpak
+flatpak install --user ./PhoneUse-0.1.1-x86_64.flatpak
 flatpak run co.lxe.PhoneUse
 ```
 
