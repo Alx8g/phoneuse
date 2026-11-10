@@ -37,6 +37,7 @@ targets:
         UIRequiresFullScreen: true
         NSSupportsLiveActivities: true
         NSSupportsLiveActivitiesFrequentUpdates: true
+        NSCameraUsageDescription: Phone Use scans the pairing code shown on your computer.
         NSLocalNetworkUsageDescription: Phone Use talks to your Phone Use PC on your network.
         NSBonjourServices: [_phoneuse._tcp]
         NSAppTransportSecurity:

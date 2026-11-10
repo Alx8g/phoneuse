@@ -13,6 +13,7 @@
 		1AE4AB7D7977E3FCF9497534 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C9BF14BBA1D93B1F0B7F5E /* AppLog.swift */; };
 		1C865C00A7DB1B1B284A2A2D /* CompanionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12BEBE4E61C3043D7067FA9 /* CompanionClient.swift */; };
 		3C9D7E4CADD14F488F528A78 /* AgentActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 992E0EB26E0506F60C17C190 /* AgentActivity.swift */; };
+		46AA681DC3973F5565050BC9 /* QRScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E35C0D206E5BEEDBFCDF58E /* QRScanner.swift */; };
 		54F84D6EAD821BC46DE11E37 /* Robot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B7F69CB00BCF929B6820427 /* Robot.swift */; };
 		577720DFA56A5CB657C35710 /* CompanionCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0E5981525F6136B8126827 /* CompanionCrypto.swift */; };
 		57CF17221301F264356C37A8 /* PhoneUseWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E1FCAFAAC1696A3028D1A7ED /* PhoneUseWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -81,6 +82,7 @@
 		48B4CA3BF3F1C0C4322874A5 /* AgentLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLiveActivity.swift; sourceTree = "<group>"; };
 		4F02074B048620193B3B9E23 /* Pairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pairing.swift; sourceTree = "<group>"; };
 		67E207141EF63DC24D4C6176 /* PhoneUseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneUseApp.swift; sourceTree = "<group>"; };
+		6E35C0D206E5BEEDBFCDF58E /* QRScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScanner.swift; sourceTree = "<group>"; };
 		7E67D7D720A78ABB19E838A3 /* PhoneUse.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneUse.entitlements; sourceTree = "<group>"; };
 		8B7F69CB00BCF929B6820427 /* Robot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Robot.swift; sourceTree = "<group>"; };
 		8E0E5981525F6136B8126827 /* CompanionCrypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionCrypto.swift; sourceTree = "<group>"; };
@@ -153,6 +155,7 @@
 				7E67D7D720A78ABB19E838A3 /* PhoneUse.entitlements */,
 				67E207141EF63DC24D4C6176 /* PhoneUseApp.swift */,
 				489D23D034BD4EAB6BC03865 /* Push.swift */,
+				6E35C0D206E5BEEDBFCDF58E /* QRScanner.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -359,6 +362,7 @@
 				BBCBBBB49D5679FEDA066BB0 /* Pairing.swift in Sources */,
 				073E7121CBC8AEF6FA0DBE09 /* PhoneUseApp.swift in Sources */,
 				63569514AB93D32847E343D3 /* Push.swift in Sources */,
+				46AA681DC3973F5565050BC9 /* QRScanner.swift in Sources */,
 				F33AF0BF92ED29908127339F /* Robot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
