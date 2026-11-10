@@ -25,7 +25,6 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from . import claude_setup, overview, netcheck, screen  # noqa: E402
@@ -189,13 +188,11 @@ class Window(Adw.ApplicationWindow):
         self.hero_btn = Gtk.Button(halign=Gtk.Align.CENTER, margin_top=12, css_classes=["pill", "suggested-action"])
         self.hero_btn.connect("clicked", lambda *_: self.hero_action and self.hero_action())
         self.hero_action = None
-        # A picture of the steps (overview's "guide"), under the title.
-        self.hero_guide = Gtk.Picture(can_shrink=True, content_fit=Gtk.ContentFit.CONTAIN, margin_top=10,
-                                      margin_bottom=4)
-        self.hero_guide_clamp = Adw.Clamp(maximum_size=540, child=self.hero_guide, visible=False)
-        self._guide_key = None
-        Adw.StyleManager.get_default().connect("notify::dark", lambda *_: self.refresh())
-        for w in (self.hero_icon, self.hero_title, self.hero_guide_clamp, self.hero_sub, self.hero_btn):
+        # Numbered steps (overview's "steps"), under the title.
+        self.hero_steps = Gtk.Grid(halign=Gtk.Align.CENTER, row_spacing=8, column_spacing=10, margin_top=10, margin_bottom=6,
+                                   visible=False)
+        self._steps_shown = None
+        for w in (self.hero_icon, self.hero_title, self.hero_steps, self.hero_sub, self.hero_btn):
             box.append(w)
         hero.add(box)
         self.phone_page.add(hero)
@@ -354,26 +351,36 @@ class Window(Adw.ApplicationWindow):
                    "pair_app": lambda: PairDialog(self).present(self),
                    "open_ports": self._allow_network, "retry": self.refresh, "open_phone": self.app.open_phone}
         act = h.get("action")
-        self._show_guide(h.get("guide"), h.get("alt"), h.get("bold") or CFG["name"])
+        self._show_steps(h.get("steps"), h.get("bold"))
         return self._hero(h["title"], detail, self.HERO_BUTTONS.get(act), actions.get(act),
                           icon=self.HERO_ICONS.get(h.get("icon"), "phone-symbolic"), good=h.get("good"),
                           quiet=h.get("quiet"))
 
-    def _show_guide(self, guide, alt, name):
-        self.hero_guide_clamp.set_visible(guide == "mirroring")
-        if guide != "mirroring":
+    def _show_steps(self, steps, bold):
+        self.hero_steps.set_visible(bool(steps))
+        if not steps or (steps, bold) == self._steps_shown:
             return
-        dark = Adw.StyleManager.get_default().get_dark()
-        if self._guide_key != (name, dark):
-            from gi.repository import Gdk, GdkPixbuf
-            from . import mirroring_guide
-            loader = GdkPixbuf.PixbufLoader()
-            loader.set_size(mirroring_guide.W * 2, mirroring_guide.H * 2)  # sharp on HiDPI screens
-            loader.write(mirroring_guide.svg(name, dark).encode())
-            loader.close()
-            self.hero_guide.set_paintable(Gdk.Texture.new_for_pixbuf(loader.get_pixbuf()))
-            self.hero_guide.set_alternative_text(alt or "")
-            self._guide_key = (name, dark)
+        self._steps_shown = (steps, bold)
+        while (c := self.hero_steps.get_first_child()):
+            self.hero_steps.remove(c)
+
+        def text(t):
+            m = GLib.markup_escape_text(t)
+            if bold:
+                b = GLib.markup_escape_text(bold)
+                m = m.replace(b, f"<b>{b}</b>")
+            return Gtk.Label(label=m, use_markup=True, xalign=0)
+
+        for i, step in enumerate(steps):
+            self.hero_steps.attach(Gtk.Label(label=f"{i + 1}.", css_classes=["dim-label", "numeric"], xalign=1,
+                                             valign=Gtk.Align.START), 0, i, 1, 1)
+            line = Gtk.Box(spacing=5)
+            for k, part in enumerate(step.split("{mirroring}")):
+                if k:
+                    line.append(Gtk.Image(icon_name="co.lxe.PhoneUse-mirroring-symbolic", pixel_size=16))
+                if part.strip():
+                    line.append(text(part.strip()))
+            self.hero_steps.attach(line, 1, i, 1, 1)
 
     def _hero(self, title, sub, label, action, icon="phone-symbolic", good=False, quiet=False):
         self.hero_title.set_label(title)

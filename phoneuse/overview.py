@@ -5,16 +5,15 @@ here, and the shells read it from GET /api/app. A step is
   {"step": id, "title", "detail", "action": id or None, "icon": id, "good": bool, "quiet": bool}
 where `detail` is plain text (a shell may bold `bold` inside it), `action` names what the
 button does (start, setup_bridge, pair_app, open_ports, retry, open_phone), `icon` is one of phone,
-keyboard, offline, bluetooth, mirroring, `guide` names a picture to show under the text
-(mirroring: mirroring_guide.svg) and `alt` says it in words, `good` marks a healthy state and `quiet` a button that is a
+keyboard, offline, bluetooth, `steps` (when present) is a numbered list to show under the title,
+where "{mirroring}" stands for the Screen Mirroring icon inline and `bold` is bolded too, `good` marks a healthy state and `quiet` a button that is a
 fallback rather than the step itself.
 """
 
 
-def _step(step, title, detail="", action=None, icon="phone", good=False, quiet=False, bold=None, guide=None,
-          alt=None):
+def _step(step, title, detail="", action=None, icon="phone", good=False, quiet=False, bold=None, steps=None):
     return {"step": step, "title": title, "detail": detail, "action": action, "icon": icon,
-            "good": good, "quiet": quiet, "bold": bold, "guide": guide, "alt": alt}
+            "good": good, "quiet": quiet, "bold": bold, "steps": steps}
 
 
 def stopped():
@@ -36,11 +35,11 @@ def hero(s, name):
                      "on it is paired. You allow and stop them there.", "pair_app")
     if not pic.get("live"):
         fw = bool(s.get("firewall")) and not s.get("confirmed")
-        # The guide shows the steps (alt: the same in words, for shells that can't show it).
         return _step("start_mirroring", "Start Screen Mirroring",
                      f"If {name} isn't listed, open the ports." if fw else "",
-                     "open_ports" if fw else None, icon="mirroring", quiet=True, bold=name, guide="mirroring",
-                     alt=f"On the iPhone, open Control Center, tap Screen Mirroring and choose {name}.")
+                     "open_ports" if fw else None, quiet=True, bold=name,
+                     steps=["On the iPhone, swipe down from the top-right corner.",
+                            "Tap {mirroring} Screen Mirroring.", f"Choose {name}."])
     if st.get("error"):
         return _step("bridge_offline", "The bridge is offline", "Check that it has power and is on the same "
                      "Wi-Fi as this PC.", "retry", icon="offline")
