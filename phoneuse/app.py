@@ -461,8 +461,11 @@ class Window(Adw.ApplicationWindow):
         self.forget_group.set_visible(bool(saved))
         self.forget_group.set_sensitive(running)
         self._pcbt_show(running)
+        firmware = nav_row("Install Firmware", "Over USB, for a new bridge or an update",
+                           lambda: FirmwareDialog(self).present(self))
         if not saved:
             add(nav_row("Set Up Bridge", None, lambda: BridgeSetup(self).present(self)))
+            add(firmware)
             return
         st = b.get("status") or {}
         r = Adw.ActionRow(title=f"Bridge {saved['id'][-4:]}", subtitle=saved.get("ip") or "")
@@ -489,6 +492,7 @@ class Window(Adw.ApplicationWindow):
         net.add_suffix(Gtk.Image(icon_name="go-next-symbolic"))
         net.connect("activated", lambda *_: BridgeSetup(self, change=True).present(self))
         add(net)
+        add(firmware)
 
     # ---- this PC's Bluetooth ----
     def _pcbt_show(self, running):
@@ -660,6 +664,84 @@ class PairDialog(Adw.Dialog):
         return True
 
 
+class FirmwareDialog(Adw.Dialog):
+    """Install the bridge's firmware over USB: wait for a bridge to be plugged in, then write
+    the firmware this copy of Phone Use ships (bridge.install_firmware), with progress. The
+    bridge keeps its settings."""
+
+    def __init__(self, win):
+        super().__init__(title="Install Firmware", content_width=380, content_height=320)
+        self.win, self.poll = win, None
+        tv = Adw.ToolbarView()
+        tv.add_top_bar(Adw.HeaderBar())
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, margin_top=24, margin_bottom=24,
+                           margin_start=24, margin_end=24, valign=Gtk.Align.CENTER, vexpand=True)
+        tv.set_content(self.box)
+        self.set_child(tv)
+        self.connect("closed", lambda *_: self.poll and GLib.source_remove(self.poll))
+        from . import bridge
+        self.firmware = bridge.release_firmware()
+        if not self.firmware:
+            self._show("This copy of Phone Use has no bridge firmware. From a checkout, run "
+                       "phoneuse bridge flash.")
+            return
+        self.wait_for_usb()
+
+    def _show(self, text, spinner=False, bar=None, actions=()):
+        while (c := self.box.get_first_child()):
+            self.box.remove(c)
+        if spinner:
+            self.box.append(Adw.Spinner(height_request=32))
+        if bar is not None:
+            self.box.append(bar)
+        self.box.append(Gtk.Label(label=text, wrap=True, justify=Gtk.Justification.CENTER,
+                                  css_classes=["dim-label"]))
+        for label, style, fn in actions:
+            b = button(label, style, fn)
+            b.set_halign(Gtk.Align.CENTER)
+            self.box.append(b)
+
+    def wait_for_usb(self):
+        self._show("Plug the bridge into this PC with a USB cable.", spinner=True)
+
+        def look():
+            from . import bridge
+            try:
+                port = bridge.usb_port()
+            except Exception:  # noqa: BLE001 - no serial support: keep waiting, nothing to show
+                port = None
+            if port:
+                self.poll = None
+                self.install(port)
+                return False
+            return True
+        self.poll = GLib.timeout_add(1000, look)
+
+    def install(self, port):
+        from . import bridge
+        bar = Gtk.ProgressBar(margin_start=12, margin_end=12)
+        version = self.firmware[1]
+        self._show(f"Installing firmware {version}…" if version else "Installing firmware…", bar=bar)
+
+        def progress(frac):
+            GLib.idle_add(lambda: (bar.set_fraction(frac), False)[1])
+
+        def done(_r, err):
+            if err:
+                return self._show(f"Couldn't install the firmware: {err}",
+                                  actions=[("Try Again", "pill", self.wait_for_usb)])
+            saved = bridge.saved()
+            self._show("Firmware installed. The bridge restarts with its settings." if saved else
+                       "Firmware installed. You can unplug the bridge.",
+                       actions=[("Done", "pill suggested-action", self.close)] if saved else
+                       [("Set Up Bridge", "pill suggested-action", self._setup)])
+        in_thread(lambda: bridge.install_firmware(port, progress), done)
+
+    def _setup(self):
+        self.close()
+        BridgeSetup(self.win).present(self.win)
+
+
 class BridgeSetup(Adw.Dialog):
     """Set up a bridge (find it over Bluetooth, compare the code on its screen, pick a Wi-Fi
     network, type its password, then wait for the iPhone to connect to it), or move a set-up
@@ -718,6 +800,10 @@ class BridgeSetup(Adw.Dialog):
     def _error(self, title, text, retry):
         self._page(title, self._text(text), actions=[("Try Again", "pill", retry)])
 
+    def _firmware(self):
+        self.close()
+        FirmwareDialog(self.win).present(self.win)
+
     def find(self):
         self._wait("Find the Bridge", "Looking for the bridge…")
         in_thread(lambda: api("/api/bridge/find", {}, timeout=30), self._found)
@@ -726,8 +812,10 @@ class BridgeSetup(Adw.Dialog):
         if err or (j or {}).get("error"):
             return self._error("Find the Bridge", str(err or j["error"]), self.find)
         if not j["bridges"]:
-            return self._error("Find the Bridge", "No bridge found. Hold the bridge's lower button for 3 seconds, then try again.",
-                               self.find)
+            return self._page("Find the Bridge", self._text("No bridge found. Hold the bridge's lower button for 3 "
+                                                            "seconds, then try again."),
+                              actions=[("Try Again", "pill", self.find),
+                                       ("Install Firmware", "pill", self._firmware)])
         g = Adw.PreferencesGroup(description="Choose your bridge.")
         for b in j["bridges"]:
             g.add(nav_row(b.get("name") or "PhoneUse Bridge", b["address"], lambda a=b["address"]: self.pair(a)))

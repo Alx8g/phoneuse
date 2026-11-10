@@ -1,0 +1,64 @@
+{
+  "name": "python-esptool",
+  "buildsystem": "simple",
+  "build-commands": [
+    "pip3 install --no-index --no-deps --find-links=. --prefix=/app --no-build-isolation 'esptool-5.6.0.tar.gz' 'reedsolo-1.7.0.tar.gz' 'intelhex-2.3.0.tar.gz' 'esp_pylib-1.2.1-py3-none-any.whl' 'pyserial-3.5-py2.py3-none-any.whl' 'rich-15.0.0-py3-none-any.whl' 'rich_click-1.9.9-py3-none-any.whl' 'markdown_it_py-4.2.0-py3-none-any.whl' 'mdurl-0.1.2-py3-none-any.whl' 'pygments-2.21.0-py3-none-any.whl' 'websockets-17.4-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl'"
+  ],
+  "sources": [
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/96/4c/a949409e527b87f863f237cea9f997d25644607f799293a3d247f1b40e67/esptool-5.6.0.tar.gz",
+      "sha256": "86c7249e9cc3a824e032ede9ba20abad057a2c49e231418cc4f02b177bb36f42"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/f7/61/a67338cbecf370d464e71b10e9a31355f909d6937c3a8d6b17dd5d5beb5e/reedsolo-1.7.0.tar.gz",
+      "sha256": "c1359f02742751afe0f1c0de9f0772cc113835aa2855d2db420ea24393c87732"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/66/37/1e7522494557d342a24cb236e2aec5d078fac8ed03ad4b61372586406b01/intelhex-2.3.0.tar.gz",
+      "sha256": "892b7361a719f4945237da8ccf754e9513db32f5628852785aea108dcd250093"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/73/9b/7ecb4bf9b563431aa9c0b5f3579b57d1f6d2a9903f5c1f2d951d977561bf/esp_pylib-1.2.1-py3-none-any.whl",
+      "sha256": "fb05017676200e38dc182013c994e62d9088d377081c88562e14a2f5aaae6456"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/07/bc/587a445451b253b285629263eb51c2d8e9bcea4fc97826266d186f96f558/pyserial-3.5-py2.py3-none-any.whl",
+      "sha256": "c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl",
+      "sha256": "33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/b5/51/b2b91aec091e86bc961e5164f00207d89f133cc82b5ddad541d2132ea819/rich_click-1.9.9-py3-none-any.whl",
+      "sha256": "365e7a9d0adb42e41ea832a0a12e02c44c079a26536dee688125eb9814f97274"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl",
+      "sha256": "9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl",
+      "sha256": "84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl",
+      "sha256": "2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/ef/75/6a95f93661bba2f1a4ec82eb26c6d30e6ba253569ecabb7a675139db6051/websockets-17.4-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "sha256": "25eb661d8ba7e2b85ebb4e7a1bb9f6a3280910ed10b84330a7abfb5ed32d2764"
+    }
+  ]
+}

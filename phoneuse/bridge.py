@@ -124,6 +124,67 @@ def idf(*args, port=None):
     return subprocess.call(["bash", "-c", cmd], cwd=FIRMWARE)
 
 
+# The released firmware (one merged image, flashed at 0x0): the Flatpak ships it, and a
+# checkout can drop one at bridge/build/phoneuse-bridge.bin.
+RELEASE_FIRMWARE = [os.path.join(p, "phoneuse-bridge.bin") for p in
+                    ("/app/share/phoneuse/firmware", os.path.join(FIRMWARE, "build"))]
+
+
+def release_firmware():
+    """(path, version) of the firmware this copy of Phone Use can install, or None."""
+    for path in RELEASE_FIRMWARE:
+        if os.path.exists(path):
+            try:
+                with open(os.path.join(os.path.dirname(path), "VERSION")) as f:
+                    return path, f.read().strip()
+            except OSError:
+                return path, ""
+    return None
+
+
+def install_firmware(port, progress=None):
+    """Write the released firmware to the bridge on `port` with esptool. Only the bootloader,
+    the partition table and the app are written (from the merged image), so the bridge keeps
+    its settings: its Wi-Fi, its key, and whether it was forgotten. progress(fraction) is
+    called as it writes. Raises RuntimeError with esptool's reason."""
+    import re
+    import tempfile
+    found = release_firmware()
+    if not found:
+        raise RuntimeError("this copy of Phone Use has no bridge firmware")
+    with open(found[0], "rb") as f:
+        image = f.read()
+    regions = [(0x1000, image[0x1000:0x9000]), (0x10000, image[0x10000:])]  # not 0x9000-0x10000: nvs, phy
+    with tempfile.TemporaryDirectory() as d:
+        args = []
+        for i, (at, data) in enumerate(regions):
+            part = os.path.join(d, f"part{i}.bin")
+            with open(part, "wb") as f:
+                f.write(data)
+            args += [hex(at), part]
+        cmd = [sys.executable, "-m", "esptool", "--chip", "esp32", "-p", port, "-b", "921600",
+               "--before", "default-reset", "--after", "hard-reset", "write-flash"] + args
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+        sizes = [len(r[1]) for r in regions]
+        written, last, lines = 0, 0.0, []  # written: regions finished ("Wrote ..." lines)
+        for line in iter(proc.stdout.readline, ""):
+            line = line.strip()
+            lines.append(line)
+            if line.startswith("Wrote"):
+                written += 1
+            m = re.search(r"(\d+(?:\.\d+)?)\s?%", line)
+            if progress and m and line.startswith("Writing") and written < len(regions):
+                frac = (sum(sizes[:written]) + float(m.group(1)) / 100 * sizes[written]) / sum(sizes)
+                if frac > last:
+                    last = frac
+                    progress(frac)
+        if proc.wait():
+            why = next((x for x in reversed(lines) if x and ("rror" in x or "ailed" in x)), lines[-1] if lines else "")
+            raise RuntimeError(why or f"esptool exited with {proc.returncode}")
+    if progress:
+        progress(1.0)
+
+
 def flash(port=None):
     port = port or usb_port()
     if not port:

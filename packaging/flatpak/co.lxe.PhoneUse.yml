@@ -12,7 +12,7 @@ finish-args:
   - --socket=wayland
   - --socket=fallback-x11
   - --socket=pulseaudio        # the phone's mirrored sound; the spoken Siri request for the pointer
-  - --device=dri
+  - --device=all               # the GPU, and the bridge's USB serial port for flashing it
   - --system-talk-name=org.freedesktop.Avahi        # advertise the AirPlay receiver and the companion API
   - --system-talk-name=org.bluez                    # set up a bridge over BLE; this PC's Bluetooth (HID profiles)
   - --allow=bluetooth                               # this PC's Bluetooth: L2CAP sockets to the iPhone
@@ -85,6 +85,19 @@ modules:
         sha256: 57423cf87d09b7d084f420b55b737fe654c33339b06df77945620d97795c6ac4
 
   - python-deps.json
+
+  # Flashing the bridge from the app (Bridge › Install Firmware): esptool, and the
+  # firmware from the release, which the app writes over USB.
+  - python-esptool.json
+  - name: bridge-firmware
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 phoneuse-bridge-0.2.5.bin /app/share/phoneuse/firmware/phoneuse-bridge.bin
+      - echo 0.2.5 > /app/share/phoneuse/firmware/VERSION
+    sources:
+      - type: file
+        url: https://github.com/lxe/phoneuse/releases/download/v0.1.0/phoneuse-bridge-0.2.5.bin
+        sha256: 7c200745bb37f2309bca2fcc7d302f8e3f3c5f3e55883a2338481946a2f9177e
 
   - name: phoneuse
     buildsystem: simple
