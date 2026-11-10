@@ -5,8 +5,11 @@ page covers the Phone Use iPhone app and the Phone Use apps for Mac and Linux. L
 
 ## The short version
 
-The developer of Phone Use collects no data from you. The iPhone app talks only to the computer you paired it with,
-on your own network. There are no accounts, no analytics, no advertising and no third-party tracking code.
+Phone Use has no accounts, analytics, advertising or tracking. The iPhone app talks to the computer you paired it
+with, on your own network. The only thing that leaves your devices for a server run by Phone Use's developer is a
+set of push notification tokens: they let your computer send you notifications through the Phone Use push relay
+(below). The relay can't read what the notifications say beyond fixed wording, and it never learns your name, your
+computer's name or what an agent is doing.
 
 ## What the iPhone app sends, and where
 
@@ -21,7 +24,29 @@ local network:
 - **A bridge Wi-Fi password, if you type one.** When you move the bridge to another network, the password goes to
   your computer encrypted with the key from your pairing, and your computer passes it to the bridge.
 
-Nothing is sent to the developer or to any other server.
+## The push relay
+
+Notifications and the Live Activity reach your iPhone through Apple's push notification service. A computer needs
+an Apple key to use that service, so most computers send them through the Phone Use push relay, a small service the
+developer runs on Cloudflare Workers.
+
+- **What the iPhone app registers with the relay:** an identifier derived from your pairing key, your device's push
+  token, its Live Activity push tokens, the current Live Activity's id, whether it is a production or development
+  build, and the app's bundle id. No names and no account.
+- **What the relay keeps:** one record per registration with those tokens, the time it was last updated, and a key
+  derived from your pairing. It expires after 30 days without a refresh, and Unpair in the app deletes it.
+- **What goes through it:** your computer sends the kind of notification (an agent asking to use your iPhone, an
+  update to the Live Activity, and the like) with its details sealed with a key derived from your pairing, which the
+  relay can't read. The relay fills fixed wording, such as "An agent asks to use your iPhone", and passes it to Apple.
+  Your iPhone opens the sealed details itself.
+- **Logs:** one line per notification with the first characters of the registration identifier, the kind, and
+  Apple's answer. Cloudflare's standard request logs and rate limiting see IP addresses.
+
+The push tokens are used only to deliver these notifications. They aren't linked to your identity, shared with
+anyone except Apple for delivery, or used for tracking or advertising. A computer set up with its own Apple key sends
+notifications straight to Apple instead, and then the relay isn't used for that iPhone.
+
+Nothing else is sent to the developer or to any other server.
 
 ## Permissions the iPhone app asks for
 
