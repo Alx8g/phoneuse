@@ -106,6 +106,14 @@ bridge_link = [None]
 bridge_phone = [False]
 
 
+def through_bridge():
+    """Whether input goes through the bridge: while it reaches the iPhone, or always when this
+    PC's Bluetooth is off (bridge only). Otherwise this PC's own Bluetooth carries it, so with
+    both paired the phone keeps working when the bridge is away or off."""
+    link = bridge_link[0]
+    return bool(link) and (link.phone or BRIDGE_ONLY)
+
+
 class HID:
     def __init__(self):
         self.ctrl = None
@@ -117,7 +125,7 @@ class HID:
 
     @property
     def connected(self):
-        if bridge_link[0]:
+        if through_bridge():
             return bridge_link[0].phone
         return self.intr is not None
 
@@ -131,7 +139,7 @@ class HID:
     def send_skippable(self, report_id, payload):
         """Send a hover or motion report unless earlier ones still wait to go out
         (then the sender keeps the motion for its next report). True if sent."""
-        if bridge_link[0]:
+        if through_bridge():
             link = bridge_link[0]
             if not link.phone:
                 raise RuntimeError("no iPhone connected to the bridge (pair it with PhoneUse Bridge)")
@@ -149,7 +157,7 @@ class HID:
         return True
 
     def send(self, report_id, payload):
-        if bridge_link[0]:
+        if through_bridge():
             self._bridge(report_id, payload)
             return
         with self.lock:
@@ -186,7 +194,7 @@ class HID:
         b = lambda v: v & 0xFF
         payload = [self.buttons, b(dx), b(dy), b(wheel)]
         link = bridge_link[0]
-        if link and link.phone:
+        if link and link.phone and through_bridge():
             # Through the bridge, scripted swipes go pipelined: waiting for each
             # report's answer (14-35 ms over Wi-Fi) would stretch a 0.3 s flick
             # into a slow drag. Every report still goes out, in order: when 5 are
@@ -454,7 +462,7 @@ last_use = [0.0]  # when a command last sent real input (not a hover)
 
 def connect_out():
     """Page each paired iPhone once and open the HID channels."""
-    if bridge_link[0]:
+    if through_bridge():
         bridge_link[0].connect_phone()  # the bridge pages the phone it is paired with
         return "input goes through the bridge; asked it to page the phone"
     if BRIDGE_ONLY:
@@ -853,7 +861,11 @@ def watch_bridge(link):
         if bridge_link[0] is not link:  # replaced or turned off while this slept: its socket is closed
             return
         try:
+            was = link.phone
             bridge_phone[0] = link.phone = bool(link.status().get("connected"))
+            if link.phone and not was and hid.intr:  # back with the phone: one keyboard is enough
+                released.set()
+                hid.drop("the bridge reaches the iPhone again")
             if failing:
                 log("bridge: answering again")
                 failing = None
@@ -862,7 +874,7 @@ def watch_bridge(link):
         except Exception as e:
             if bridge_link[0] is not link:
                 return
-            bridge_phone[0] = False
+            bridge_phone[0] = link.phone = False  # not answering: this PC's Bluetooth takes over, if on
             if failing is None:
                 log("bridge: no answer:", e)
             failing = str(e)
@@ -891,7 +903,7 @@ def run_command(line):
             return "ok released"
     else:
         last_use[0] = time.time()
-        if released.is_set() and not hid.connected and not bridge_link[0]:
+        if released.is_set() and not hid.connected and not through_bridge():
             try:
                 log("reconnect on use:", connect_out())
             except Exception:
@@ -923,7 +935,7 @@ def run_command(line):
         return f"ok discoverable for {secs}s as '{DEVICE_NAME}'"
     if cmd == "tap":  # tap FX FY HOLD: press, hold HOLD seconds, release, as one unit
         fx, fy, hold = float(args[0]), float(args[1]), float(args[2]) if len(args) > 2 else 0.06
-        if bridge_link[0] and bridge_link[0].can_tap():
+        if through_bridge() and bridge_link[0].can_tap():
             if not bridge_link[0].phone:
                 raise RuntimeError("no iPhone connected to the bridge (pair it with PhoneUse Bridge)")
             bridge_link[0].tap(fx, fy, hold)  # timed on the bridge
