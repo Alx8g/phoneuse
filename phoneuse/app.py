@@ -670,11 +670,21 @@ class BridgeSetup(Adw.Dialog):
 
     def networks(self):
         self._wait("Choose a Network", "Looking for Wi-Fi…")
-        in_thread(lambda: api("/api/bridge/networks", {}, timeout=30), self._networks)
+        def ask():
+            j = api("/api/bridge/networks", {}, timeout=30)
+            if not j.get("error") and not j.get("networks"):  # a scan can come back empty: once more
+                j = api("/api/bridge/networks", {}, timeout=30)
+            return j
+        in_thread(ask, self._networks)
 
     def _networks(self, j, err):
         if err or (j or {}).get("error"):
             return self._error("Choose a Network", str(err or j["error"]), self.networks)
+        if not any(n.get("s") for n in j["networks"]):
+            g = Adw.PreferencesGroup()
+            g.add(nav_row("Other Network…", None, self.other))
+            return self._page("Choose a Network", self._text("No networks found."), g,
+                              actions=[("Try Again", "pill", self.networks)])
         g = Adw.PreferencesGroup(description="Choose the same 2.4 GHz network as this PC.")
         for n in j["networks"]:
             if not n.get("s"):
