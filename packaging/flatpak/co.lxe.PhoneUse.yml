@@ -92,12 +92,12 @@ modules:
   - name: bridge-firmware
     buildsystem: simple
     build-commands:
-      - install -Dm644 phoneuse-bridge-0.2.5.bin /app/share/phoneuse/firmware/phoneuse-bridge.bin
-      - echo 0.2.5 > /app/share/phoneuse/firmware/VERSION
+      - install -Dm644 phoneuse-bridge-0.2.6.bin /app/share/phoneuse/firmware/phoneuse-bridge.bin
+      - echo 0.2.6 > /app/share/phoneuse/firmware/VERSION
     sources:
       - type: file
-        url: https://github.com/lxe/phoneuse/releases/download/v0.1.0/phoneuse-bridge-0.2.5.bin
-        sha256: 7c200745bb37f2309bca2fcc7d302f8e3f3c5f3e55883a2338481946a2f9177e
+        url: https://github.com/lxe/phoneuse/releases/download/bridge-firmware-0.2.6/phoneuse-bridge-0.2.6.bin
+        sha256: 445c5652017ae61b1a150d5ad0fcf2bc68b132cf41d1a37f3f4822860bb332f7
 
   - name: phoneuse
     buildsystem: simple
