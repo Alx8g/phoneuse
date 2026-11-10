@@ -38,7 +38,7 @@ def initial_state():
         "audio": {"on": True, "needs_remirror": False},
         "session": {"ask": False, "mode": "auto", "seconds": 10,
                     "pending": {"id": "s1", "since": now - 3, "action": "Opening Gmail", "mode": "ask", "deadline": None}},
-        "unlock": {"passcode_saved": False, "pending": {"id": "u1", "since": now - 5}},
+        "unlock": {"passcode_saved": False, "enabled": True, "pending": {"id": "u1", "since": now - 5}},
         "bridge": {"saved": True, "id": "bridge-01", "ip": "192.168.0.51", "ssid": "Giraffe IoT", "use": True,
                    "signal": {"wifi": "good", "phone": "fair"},
                    "warning": {"title": "Bridge is too far from your iPhone", "detail": "Move it closer."},

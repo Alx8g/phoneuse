@@ -256,6 +256,7 @@ struct AgentsTab: View {
             }
             .disabled(!core.running)
 
+            if core.state?.passcode?.enabled == true {  // Unlock is off on the PC for now: no passcode settings
             Section {
                 LabeledContent("Passcode", value: saved ? "Saved" : "Not saved")
                 HStack {
@@ -277,6 +278,7 @@ struct AgentsTab: View {
                     .font(.callout).foregroundStyle(.secondary)
             }
             .disabled(!core.running)
+            }
         }
         .formStyle(.grouped)
         .confirmationDialog("Forget the passcode?", isPresented: $confirmForget) {

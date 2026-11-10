@@ -46,7 +46,11 @@ struct PCState: Decodable, Equatable {
     struct Unlock: Decodable, Equatable {
         var passcodeSaved: Bool
         var pending: Pending?
-        enum CodingKeys: String, CodingKey { case passcodeSaved = "passcode_saved", pending }
+        /// Whether the PC offers Unlock (typing a saved passcode) at all. Off for now (phoneuse/unlock.py ENABLED);
+        /// missing from older PCs. The passcode settings show only while it's true.
+        var enabled: Bool?
+        var on: Bool { enabled == true }
+        enum CodingKeys: String, CodingKey { case passcodeSaved = "passcode_saved", pending, enabled }
     }
     struct Bridge: Decodable, Equatable {
         var saved: Bool?
