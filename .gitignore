@@ -15,3 +15,6 @@ bridge/dependencies.lock
 bin/*.exe
 .scratch/
 phoneuse.egg-info/
+
+# Notes from dogfooding on the owner's own phone (private)
+DOGFOOD-NOTES.md
