@@ -205,17 +205,21 @@ struct BridgeSetupSheet: View {
                         }
                         .buttonStyle(.plain)
                     }
-                } footer: { Text("Choose the bridge to set up.").foregroundStyle(.secondary) }
+                } footer: { Text("Choose your bridge.").foregroundStyle(.secondary) }
             }
             .formStyle(.grouped)
         case .code(let code):
             VStack(spacing: 18) {
                 Text(code).font(.system(size: 44, weight: .semibold, design: .rounded).monospacedDigit())
-                Text("Check that the bridge's screen shows the same code.").foregroundStyle(.secondary)
-                Button("The Codes Match") { Task { await networks() } }
-                    .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).controlSize(.large)
-                Button("They Don't Match") { Task { await find() } }
-                    .buttonBorderShape(.capsule)
+                Text("Does the bridge show the same code?").foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    Button { Task { await networks() } } label: { Text("Codes Match").frame(maxWidth: .infinity) }
+                        .tint(.accentColor)
+                    Button { Task { await find() } } label: { Text("Don't Match").frame(maxWidth: .infinity) }
+                        .tint(.red)
+                }
+                .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).controlSize(.large)
+                .fixedSize(horizontal: true, vertical: false)
             }
             .padding(24)
         case .networks(let list):
@@ -234,7 +238,7 @@ struct BridgeSetupSheet: View {
                     }
                     Button { step = .other } label: { NavRow(title: "Other Network…") }.buttonStyle(.plain)
                 } footer: {
-                    Text("The bridge works on 2.4 GHz Wi-Fi. Choose the network this Mac is on.")
+                    Text("Choose the same 2.4 GHz network as this Mac.")
                         .foregroundStyle(.secondary)
                 }
             }
@@ -269,13 +273,12 @@ struct BridgeSetupSheet: View {
     }
 
     private func find() async {
-        step = .waiting("Find the Bridge", "Looking for bridges near this Mac over Bluetooth…")
+        step = .waiting("Find the Bridge", "Looking for the bridge…")
         do {
             let j = try await core.send("/api/bridge/find", timeout: 30)
             let list = j["bridges"] as? [[String: Any]] ?? []
             step = list.isEmpty
-                ? .error("Find the Bridge", "No bridge found. Plug it in and keep it near this Mac. A bridge that's "
-                         + "already set up shows up again after you hold its lower button for 3 seconds.", retry: .find)
+                ? .error("Find the Bridge", "No bridge found. Hold the bridge's lower button for 3 seconds, then try again.", retry: .find)
                 : .bridges(list)
         } catch {
             step = .error("Find the Bridge", error.localizedDescription, retry: .find)
@@ -293,7 +296,7 @@ struct BridgeSetupSheet: View {
     }
 
     private func networks() async {
-        step = .waiting("Choose a Network", "Asking the bridge which networks it sees…")
+        step = .waiting("Choose a Network", "Looking for Wi-Fi…")
         do {
             let j = try await core.send("/api/bridge/networks", timeout: 30)
             let list = (j["networks"] as? [[String: Any]] ?? []).filter { !(($0["s"] as? String) ?? "").isEmpty }
@@ -304,7 +307,7 @@ struct BridgeSetupSheet: View {
     }
 
     private func join(_ ssid: String, _ pw: String) async {
-        step = .waiting("Joining", "The bridge is joining \(ssid)…")
+        step = .waiting("Joining", "Joining \(ssid)…")
         password = ""
         do {
             try await core.send("/api/bridge/join", ["ssid": ssid, "password": pw], timeout: 60)
@@ -318,7 +321,8 @@ struct BridgeSetupSheet: View {
             dismiss()
             return
         }
-        step = .waiting("Connect the iPhone", "On the iPhone, open Settings › Bluetooth and tap PhoneUse Bridge.")
+        step = .waiting("Connect the iPhone", "On the iPhone, open Settings › Bluetooth and tap PhoneUse Bridge. "
+                         + "If it won't connect, forget it there and tap it again.")
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(2))
             await core.refresh()

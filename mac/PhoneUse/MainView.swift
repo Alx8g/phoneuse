@@ -339,8 +339,7 @@ struct BridgeTab: View {
                     }
                     Toggle(isOn: Binding(get: { saved.use ?? true },
                                          set: { core.change("/api/bridge/use", ["on": $0]) })) {
-                        Text("Input Through Bridge")
-                        Text("Off: you and agents can only watch")
+                        Text("Enable Input")
                     }
                     Button { setup = true } label: {
                         HStack {
@@ -352,12 +351,6 @@ struct BridgeTab: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                } header: {
-                    HStack {
-                        Spacer()
-                        Button("Forget…", role: .destructive) { confirmForget = true }
-                            .buttonStyle(.link).foregroundStyle(.red).font(.callout)
-                    }
                 }
                 .disabled(!core.running)
             } else {
@@ -381,6 +374,15 @@ struct BridgeTab: View {
                     }
                 }
             }
+            if b?.saved != nil {  // at the bottom of the tab, as in the Linux window
+                Section {
+                    Button("Forget Bridge…", role: .destructive) { confirmForget = true }
+                        .buttonStyle(.borderedProminent).tint(.red).buttonBorderShape(.capsule)
+                        .frame(maxWidth: .infinity)
+                        .disabled(!core.running)
+                }
+                .listRowBackground(Color.clear)
+            }
         }
         .formStyle(.grouped)
         .sheet(item: Binding(get: { setup.map { SetupMode(change: $0) } }, set: { setup = $0?.change })) {
@@ -389,8 +391,8 @@ struct BridgeTab: View {
         .confirmationDialog("Forget the bridge?", isPresented: $confirmForget) {
             Button("Forget", role: .destructive) { forget() }
         } message: {
-            Text("Phone Use stops sending input through it. To use it again, set it up again. The bridge also "
-                 + "forgets its iPhone pairing and Wi-Fi, and stays hidden until you hold its button for 3 seconds.")
+            Text("The bridge resets and disconnects from your iPhone. To use it again, hold its lower button for "
+                 + "3 seconds and set it up.")
         }
     }
 
