@@ -716,7 +716,7 @@ def app(mirror):
                 await loop.run_in_executor(None, unlock.forget)
         except (ValueError, OSError) as e:
             return web.json_response({"error": str(e)}, status=400)
-        return web.json_response({"saved": await loop.run_in_executor(None, unlock.saved)})
+        return web.json_response({"saved": await loop.run_in_executor(None, unlock.saved), "enabled": True})
 
     async def awake(req):
         # Keep the screen awake: the page's setting and `phoneuse awake on|off`.
