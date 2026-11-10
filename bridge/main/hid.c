@@ -112,6 +112,21 @@ static void set_visible(bool connected) {
 
 static void name_from(const uint8_t *addr) { esp_bt_gap_read_remote_name((uint8_t *)addr); }
 
+// The phone the bridge last paged, and when: a pairing request from it soon after means the
+// owner forgot the bridge on that phone, and the bridge's page started a new pairing.
+static esp_bd_addr_t paged;
+static int64_t paged_at;
+
+static bool bonded(const uint8_t *addr) {
+    int n = esp_bt_gap_get_bond_device_num();
+    esp_bd_addr_t list[8];
+    if (n > 8) n = 8;
+    if (n <= 0 || esp_bt_gap_get_bond_device_list(&n, list) != ESP_OK) return false;
+    for (int i = 0; i < n; i++)
+        if (!memcmp(list[i], addr, sizeof(esp_bd_addr_t))) return true;
+    return false;
+}
+
 static void hidd_cb(esp_hidd_cb_event_t ev, esp_hidd_cb_param_t *p) {
     switch (ev) {
     case ESP_HIDD_INIT_EVT:
@@ -157,7 +172,18 @@ static void hidd_cb(esp_hidd_cb_event_t ev, esp_hidd_cb_param_t *p) {
 
 static void gap_cb(esp_bt_gap_cb_event_t ev, esp_bt_gap_cb_param_t *p) {
     switch (ev) {
-    case ESP_BT_GAP_CFM_REQ_EVT:  // Just Works pairing: accept (the person starts it on the phone)
+    case ESP_BT_GAP_CFM_REQ_EVT:  // Just Works pairing: accept when the person starts it on the phone
+        if (bonded(p->cfm_req.bda) && !memcmp(paged, p->cfm_req.bda, sizeof paged) &&
+            esp_timer_get_time() - paged_at < 15 * 1000000LL) {
+            // The bridge paged a phone it has a key for, and the phone asks to pair: the owner
+            // forgot the bridge there. Refuse, and drop that phone's key, so the bridge stops
+            // paging it; pairing again from the phone's Bluetooth settings works as before.
+            ESP_LOGW(TAG, "the phone forgot the bridge: not pairing again, forgetting it too");
+            esp_bt_gap_ssp_confirm_reply(p->cfm_req.bda, false);
+            esp_bt_gap_remove_bond_device(p->cfm_req.bda);
+            paged_at = 0;
+            break;
+        }
         esp_bt_gap_ssp_confirm_reply(p->cfm_req.bda, true);
         break;
     case ESP_BT_GAP_AUTH_CMPL_EVT:
@@ -269,6 +295,8 @@ void hid_connect_last(void) {
     esp_bd_addr_t list[4];
     if (n > 4) n = 4;
     esp_bt_gap_get_bond_device_list(&n, list);
+    memcpy(paged, list[n - 1], sizeof paged);
+    paged_at = esp_timer_get_time();
     esp_bt_hid_device_connect(list[n - 1]);
 }
 

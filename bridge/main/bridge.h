@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BRIDGE_FW "0.3.0"  // 0.2: TAP (0x0C); 0.2.1: the phone's Bluetooth signal in status; 0.2.2: activity icon; 0.2.3: FORGET (0x0D); 0.2.4: setup advertising waits for its data; 0.2.5: network scan while online; 0.2.6: named Phone Use Bridge; 0.3.0: several PCs, ADOPT (0x11), more in FIND
+#define BRIDGE_FW "0.3.1"  // 0.2: TAP (0x0C); 0.2.1: the phone's Bluetooth signal in status; 0.2.2: activity icon; 0.2.3: FORGET (0x0D); 0.2.4: setup advertising waits for its data; 0.2.5: network scan while online; 0.2.6: named Phone Use Bridge; 0.3.0: several PCs, ADOPT (0x11), more in FIND; 0.3.1: a phone that forgot the bridge stays unpaired
 #define BRIDGE_NAME "Phone Use Bridge"  // the name the iPhone sees in Bluetooth settings
 
 typedef enum {
