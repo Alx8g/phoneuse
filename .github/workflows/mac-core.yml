@@ -12,7 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Homebrew dependencies
-        run: brew install gstreamer pygobject3 libplist openssl@3 cmake pkgconf
+        run: |  # current kegs, so they match the macOS 15 bottles bundle_core.py copies
+          brew update --quiet
+          brew install gstreamer pygobject3 libplist openssl@3 cmake pkgconf
+          brew upgrade --quiet
       - name: UxPlay for macOS 15
         run: |
           git clone --depth 1 https://github.com/FDH2/UxPlay ~/code/UxPlay
