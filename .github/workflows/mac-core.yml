@@ -42,6 +42,7 @@ jobs:
                  GST_REGISTRY_1_0="$RUNNER_TEMP/registry.bin" PYTHONDONTWRITEBYTECODE=1
           sw_vers -productVersion
           cd "$C"
+          find . -name '*.pyc' | sort > "$RUNNER_TEMP/pyc-before"
           python/bin/python3.15 - <<'EOF'
           import gi
           gi.require_version("Gst", "1.0")
@@ -57,7 +58,8 @@ jobs:
           EOF
           bin/uxplay -h | head -3
           test -x bin/phoneuse-ocr
-          find . -name __pycache__ | head -1 | grep . && { echo "wrote .pyc files"; exit 1; } || true
+          find . -name '*.pyc' | sort | comm -13 "$RUNNER_TEMP/pyc-before" - | head -3 | grep . \
+            && { echo "wrote .pyc files into the core"; exit 1; } || true
 
   release-0-1-2-on-15:  # the reported failure, for comparison
     runs-on: macos-15
