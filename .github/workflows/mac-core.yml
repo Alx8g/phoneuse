@@ -1,0 +1,70 @@
+# The Mac app's core (Python, GStreamer, UxPlay) loads on the oldest macOS the app supports. It's built on a
+# newer macOS, as releases are, and then started on macOS 15 (issue #11: libraries built for macOS 27).
+name: mac core on macOS 15
+on:
+  workflow_dispatch:
+  push:
+    paths: [mac/scripts/**, .github/workflows/mac-core.yml]
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Homebrew dependencies
+        run: brew install gstreamer pygobject3 libplist openssl@3 cmake pkgconf
+      - name: UxPlay for macOS 15
+        run: |
+          git clone --depth 1 https://github.com/FDH2/UxPlay ~/code/UxPlay
+          cmake -S ~/code/UxPlay -B ~/code/UxPlay/build -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0
+          cmake --build ~/code/UxPlay/build -j 4
+      - name: Bundle the core
+        run: python3 mac/scripts/bundle_core.py "$RUNNER_TEMP/core"
+      - run: tar -C "$RUNNER_TEMP" -czf core.tgz core
+      - uses: actions/upload-artifact@v4
+        with: {name: core, path: core.tgz}
+
+  run-on-15:
+    needs: build
+    runs-on: macos-15
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {name: core}
+      - run: mkdir -p "$RUNNER_TEMP/x" && tar -C "$RUNNER_TEMP/x" -xzf core.tgz
+      - name: Start what the app starts
+        run: |
+          C="$RUNNER_TEMP/x/core"
+          export GST_PLUGIN_SYSTEM_PATH_1_0="$C/lib/gstreamer-1.0" GST_PLUGIN_PATH_1_0= \
+                 GST_PLUGIN_SCANNER_1_0="$C/libexec/gst-plugin-scanner" GI_TYPELIB_PATH="$C/lib/girepository-1.0" \
+                 GST_REGISTRY_1_0="$RUNNER_TEMP/registry.bin" PYTHONDONTWRITEBYTECODE=1
+          sw_vers -productVersion
+          cd "$C"
+          python/bin/python3.15 - <<'EOF'
+          import gi
+          gi.require_version("Gst", "1.0")
+          from gi.repository import GLib, Gst  # issue #11 failed here: Symbol not found: _pipe2
+          Gst.init(None)
+          need = ["udpsrc", "rtph264depay", "h264parse", "avdec_h264", "vtdec", "x264enc", "appsink", "appsrc",
+                  "multiudpsink", "osxaudiosink", "opusdec", "jpegenc", "pngenc", "videoconvert"]
+          missing = [e for e in need if not Gst.ElementFactory.find(e)]
+          assert not missing, missing
+          Gst.parse_launch("videotestsrc num-buffers=10 ! videoconvert ! x264enc ! h264parse ! avdec_h264 ! fakesink")
+          import phoneuse.hub, phoneuse.frames, phoneuse.web  # noqa: E401,F401
+          print("GLib", GLib.MAJOR_VERSION, GLib.MINOR_VERSION, "GStreamer", Gst.version_string(), "- loads")
+          EOF
+          bin/uxplay -h | head -3
+          test -x bin/phoneuse-ocr
+          find . -name __pycache__ | head -1 | grep . && { echo "wrote .pyc files"; exit 1; } || true
+
+  release-0-1-2-on-15:  # the reported failure, for comparison
+    runs-on: macos-15
+    steps:
+      - name: The 0.1.2 app's Python and GLib
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: |
+          gh release download v0.1.2 -R ${{ github.repository }} -p '*mac.dmg'
+          hdiutil attach -nobrowse -mountpoint /tmp/pu PhoneUse-0.1.2-mac.dmg >/dev/null
+          C="/tmp/pu/Phone Use.app/Contents/Resources/core"
+          vtool -show-build "$C/lib/libglib-2.0.0.dylib" | grep minos
+          GI_TYPELIB_PATH="$C/lib/girepository-1.0" "$C/python/bin/python3.15" -c "from gi.repository import GLib" \
+            && echo "0.1.2 loads GLib" || echo "0.1.2 fails as reported"

@@ -64,6 +64,9 @@ macOS's own dns_sd.
 keyframes on request), in place of NVENC or x264. Audio plays through `osxaudiosink` in place of `pulsesink`.
 
 **UxPlay** isn't in Homebrew; it builds from source with CMake against Homebrew's GStreamer, libplist and OpenSSL.
+For the app, build it with `-DCMAKE_OSX_DEPLOYMENT_TARGET=15.0`. Homebrew's own libraries are built for the
+macOS the build Mac runs, so `bundle_core.py` copies each one from Homebrew's macOS 15 bottle (`arm64_sequoia`)
+instead, and stops if anything in the bundle needs a macOS newer than 15.
 
 **Notifications**: the core calls `notify-send` for agent requests and the unlock prompt. On macOS the shell
 shows them as native notifications with Allow / Deny actions and answers through the local API, so the core

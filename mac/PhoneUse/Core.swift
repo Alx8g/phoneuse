@@ -153,6 +153,7 @@ final class Core: ObservableObject {
             try? FileManager.default.createDirectory(at: caches, withIntermediateDirectories: true)
             env["GST_REGISTRY_1_0"] = caches.appendingPathComponent("gst-registry.bin").path
             env["PATH"] = loc.root.appendingPathComponent("bin").path + ":/usr/bin:/bin:/usr/sbin:/sbin"
+            env["PYTHONDONTWRITEBYTECODE"] = "1"  // a .pyc written into the bundle breaks its signature
         }
         env["PYTHONUNBUFFERED"] = "1"
         p.environment = env

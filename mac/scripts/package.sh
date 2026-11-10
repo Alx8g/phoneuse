@@ -26,6 +26,9 @@ cp -R "build/Build/Products/Release/Phone Use.app" "$APP"
 mkdir -p "$APP/Contents/Resources"
 cp -R build/core "$APP/Contents/Resources/core"
 find "$APP/Contents/Resources/core" -name __pycache__ -prune -exec rm -rf {} +
+# Compile every module now, so it's sealed with the app: the services and the CLI never write .pyc files
+# into the bundle (PYTHONDONTWRITEBYTECODE), which would break its signature
+"$APP/Contents/Resources/core/python/bin/python3.15" -m compileall -q -j 0 "$APP/Contents/Resources/core" >/dev/null
 
 # Sign from the inside out: every library and program in the core, then the app. Python and UxPlay load
 # libraries this team didn't sign, so they get the app's entitlements (library validation off).

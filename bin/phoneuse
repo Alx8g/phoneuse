@@ -13,6 +13,8 @@ exit 1
 import os
 import sys
 
+if ".app/Contents/" in os.path.realpath(__file__):
+    sys.dont_write_bytecode = True  # inside the Mac app: a .pyc written there breaks its signature
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from phoneuse.cli import main  # noqa: E402
 
