@@ -18,7 +18,7 @@ final class AppModel: ObservableObject {
     private var noticeTask: Task<Void, Never>?
     @Published var busy: Set<String> = []
     @Published var askRemirror = false
-    /// Notifications are off (not yet allowed, or denied) for PhoneUse.
+    /// Notifications are off (not yet allowed, or denied) for Phone Use.
     @Published var notificationsOff = false
     /// Whether Phone Use is in front; set from the scene phase.
     @Published var foreground = false
@@ -173,7 +173,7 @@ final class AppModel: ObservableObject {
         guard let data = await run("forgetBridge", "DELETE", "/v1/bridge", nil, timeout: 20) else { return }
         let answer = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         say(answer?["reset"] as? Bool == true
-            ? "Bridge reset. Also forget PhoneUse Bridge in the iPhone's Bluetooth settings"
+            ? "Bridge reset. Also forget Phone Use Bridge in the iPhone's Bluetooth settings"
             : "Bridge removed, but it didn't respond to the reset")
     }
 
@@ -248,7 +248,7 @@ final class AppModel: ObservableObject {
         notificationsOff = !(status == .authorized || status == .provisional || status == .ephemeral)
     }
 
-    /// Asks for notifications, or opens PhoneUse's notification settings if the owner already said no.
+    /// Asks for notifications, or opens Phone Use's notification settings if the owner already said no.
     func turnOnNotifications() async {
         let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
         if status == .notDetermined {

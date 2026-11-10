@@ -217,7 +217,7 @@ struct BridgeSetupSheet: View {
                     ForEach(Array(list.enumerated()), id: \.offset) { _, b in
                         let address = b["address"] as? String ?? ""
                         Button { Task { await pair(address) } } label: {
-                            NavRow(title: b["name"] as? String ?? "PhoneUse Bridge", subtitle: address)
+                            NavRow(title: b["name"] as? String ?? "Phone Use Bridge", subtitle: address)
                         }
                         .buttonStyle(.plain)
                     }
@@ -337,7 +337,7 @@ struct BridgeSetupSheet: View {
             dismiss()
             return
         }
-        step = .waiting("Connect the iPhone", "On the iPhone, open Settings › Bluetooth and tap PhoneUse Bridge. "
+        step = .waiting("Connect the iPhone", "On the iPhone, open Settings › Bluetooth and tap Phone Use Bridge. "
                          + "If it won't connect, forget it there and tap it again.")
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(2))

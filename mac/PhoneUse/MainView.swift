@@ -336,7 +336,7 @@ struct BridgeTab: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Bridge \(String(saved.id.suffix(4)))")
                             let notConnected = b?.status?.error == nil && b?.status?.connected != true
-                            Text(notConnected ? "On the iPhone: Settings › Bluetooth › PhoneUse Bridge" : saved.ip ?? "")
+                            Text(notConnected ? "On the iPhone: Settings › Bluetooth › Phone Use Bridge" : saved.ip ?? "")
                                 .font(.callout).foregroundStyle(.secondary)
                         }
                         Spacer()
@@ -370,7 +370,7 @@ struct BridgeTab: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Firewall")
-                            Text("If \(core.state?.name ?? "PhoneUse") is missing from Screen Mirroring on the iPhone, "
+                            Text("If \(core.state?.name ?? "Phone Use") is missing from Screen Mirroring on the iPhone, "
                                  + (fw == "macos" ? "the Mac's firewall" : fw) + " is blocking it.")
                                 .font(.callout).foregroundStyle(.secondary)
                         }
@@ -407,7 +407,7 @@ struct BridgeTab: View {
             do {
                 let j = try await core.send("/api/bridge", nil, method: "DELETE")
                 core.message = j["reset"] as? Bool == true
-                    ? "Bridge reset. Also forget PhoneUse Bridge in the iPhone's Bluetooth settings"
+                    ? "Bridge reset. Also forget Phone Use Bridge in the iPhone's Bluetooth settings"
                     : "Bridge removed, but it didn't respond to the reset"
             } catch {
                 core.message = "Couldn't forget the bridge: \(error.localizedDescription)"

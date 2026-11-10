@@ -33,7 +33,7 @@ struct ContentView: View {
         .alert("Mirror again", isPresented: $model.askRemirror) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Open Control Center, tap Screen Mirroring, and choose \(model.state?.pc.receiverName ?? "PhoneUse").")
+            Text("Open Control Center, tap Screen Mirroring, and choose \(model.state?.pc.receiverName ?? "Phone Use").")
         }
     }
 
@@ -264,12 +264,12 @@ struct PhoneHero: View {
         }
         if s.bridge == nil, s.usesPCBluetooth, !s.bluetooth.connected {
             return Step(icon: "dot.radiowaves.left.and.right", title: "Connect the iPhone to the PC",
-                        detail: "Open Settings › Bluetooth and tap PhoneUse. If it won't connect, forget it there and "
+                        detail: "Open Settings › Bluetooth and tap Phone Use. If it won't connect, forget it there and "
                             + "tap it again.")
         }
         if let b = s.bridge, !(b.connected ?? s.bluetooth.connected) {
             return Step(icon: "dot.radiowaves.left.and.right", title: "Connect the bridge to the iPhone",
-                        detail: "Open Settings › Bluetooth and tap PhoneUse Bridge. If it won't connect, forget it there "
+                        detail: "Open Settings › Bluetooth and tap Phone Use Bridge. If it won't connect, forget it there "
                             + "and tap it again.")
         }
         if s.agent.state == "paused" {
@@ -550,7 +550,7 @@ struct BridgeTab: View {
         return LabeledContent {
             Text(connected ? "Connected" : "Not connected").foregroundStyle(connected ? Color.green : Color.orange)
         } label: {
-            RowTitle("PC's Bluetooth", connected ? s.pc.name : "Settings › Bluetooth › PhoneUse")
+            RowTitle("PC's Bluetooth", connected ? s.pc.name : "Settings › Bluetooth › Phone Use")
         }
         .accessibilityIdentifier("pcBluetooth")
     }
@@ -576,7 +576,7 @@ struct BridgeTab: View {
                     .foregroundStyle(!b.online ? Color.red : connected ? Color.green : Color.orange)
             } label: {
                 RowTitle("Bridge \(String((b.id ?? "").suffix(4)))",
-                         b.online && !connected ? "Settings › Bluetooth › PhoneUse Bridge" : b.ip)
+                         b.online && !connected ? "Settings › Bluetooth › Phone Use Bridge" : b.ip)
             }
             .accessibilityIdentifier("bridgeStatus")
             if let phone = b.signal?.phone { signalRow("Bridge to iPhone", "cellularbars", phone) }

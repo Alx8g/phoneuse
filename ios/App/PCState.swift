@@ -6,7 +6,7 @@ struct PCState: Decodable, Equatable {
         var id: String
         var name: String
         var version: String?
-        /// The PC's AirPlay receiver name, as Screen Mirroring lists it ("PhoneUse on …").
+        /// The PC's AirPlay receiver name, as Screen Mirroring lists it ("Phone Use on …").
         var receiver: String?
         /// An older PC doesn't send it; its receiver was always "PhoneUse".
         var receiverName: String { receiver ?? "PhoneUse" }
