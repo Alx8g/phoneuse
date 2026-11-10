@@ -53,7 +53,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { n in
-            if let w = n.object as? NSWindow, w.styleMask.contains(.titled) { NSApp.setActivationPolicy(.regular) }
+            if let w = n.object as? NSWindow, w.styleMask.contains(.titled) { AppDelegate.showInDock() }
+        }
+    }
+
+    /// Into the Dock, with the app's icon. An app that starts as a menu bar app (LSUIElement) and turns into a Dock app
+    /// shows a generic icon there unless it sets its own.
+    static func showInDock() {
+        guard NSApp.activationPolicy() != .regular else { return }
+        NSApp.setActivationPolicy(.regular)
+        if let icon = NSImage(named: "AppIcon") ?? NSImage(named: NSImage.applicationIconName) {
+            NSApp.applicationIconImage = icon
         }
     }
 

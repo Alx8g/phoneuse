@@ -37,7 +37,7 @@ struct MenuView: View {
     }
 
     private func showWindow() {
-        NSApp.setActivationPolicy(.regular)
+        AppDelegate.showInDock()
         openWindow(id: "main")
         NSApp.activate()
     }
