@@ -15,7 +15,10 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import tomllib
+
+MACOS = sys.platform == "darwin"
 
 
 def computer_name():
@@ -50,10 +53,15 @@ DEFAULTS = {
     "mirror_width": 498,
     "web_port": 8777,
     # the app (a Flatpak) can only use the bridge; a checkout uses this PC's Bluetooth too
-    "bluetooth": "bridge" if os.path.exists("/.flatpak-info") else "pc",
+    # (a Mac has only the bridge: macOS can't make the Mac a Bluetooth keyboard and mouse)
+    "bluetooth": "bridge" if os.path.exists("/.flatpak-info") or MACOS else "pc",
+    # UxPlay's base port (TCP and UDP n, n+1, n+2); None: its legacy fixed ports (7000, 7001, 7100;
+    # 6000, 6001, 7011). macOS's own AirPlay Receiver holds 7000, so the Mac uses 7200.
+    "airplay_port": 7200 if MACOS else None,
 }
 
-RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
+# macOS has no XDG_RUNTIME_DIR; its per-user temporary directory is private to the user like one
+RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR") or (tempfile.gettempdir() if MACOS else "/tmp")
 if os.environ.get("FLATPAK_ID"):
     # Each `flatpak run` gets its own private runtime directory; only app/<id> is shared between
     # instances, so the service's sockets go there for agents' `phoneuse` commands to reach.

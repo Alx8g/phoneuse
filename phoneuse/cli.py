@@ -71,7 +71,7 @@ import urllib.error
 import urllib.request
 
 from . import calibrate, phones, screen, touch
-from .config import CFG, HID_SOCKET, NAME, RUNTIME_DIR, SCREEN_PT, VISION_SOCKET
+from .config import CFG, HID_SOCKET, MACOS, NAME, RUNTIME_DIR, SCREEN_PT, VISION_SOCKET
 from .hidclient import Hid
 
 PKG = os.path.dirname(os.path.realpath(__file__))
@@ -81,13 +81,17 @@ PT = SCREEN_PT
 LAST_ACTION = os.path.join(RUNTIME_DIR, "phoneuse-last-action")
 # UxPlay receives AirPlay and passes the phone's H.264 stream on as RTP to the
 # video hub (hub.py), which serves the mirror window and the browser mirror.
-MIRROR_ARGS = ["uxplay", "-p", "-n", NAME, "-nh",  # -nh: no "@hostname" after the name
+# PHONEUSE_UXPLAY: the app's own UxPlay (the Mac bundle's); the base port moves UxPlay off ports the
+# system's own AirPlay receiver holds (config.py, airplay_port)
+MIRROR_ARGS = [os.environ.get("PHONEUSE_UXPLAY", "uxplay"), "-p",
+               *([str(CFG["airplay_port"])] if CFG.get("airplay_port") else []),
+               "-n", NAME, "-nh",  # -nh: no "@hostname" after the name
                "-vrtp", f"config-interval=1 pt=96 mtu=60000 ! udpsink host=127.0.0.1 port={screen.HUB_RTP_PORT} sync=false",
                "-vsync", "no", "-s", f"{SCREEN_PT[0] * 3}x{SCREEN_PT[1] * 3}@60", "-fps", "60",
                # audio: mirrored audio already plays unsynced (-vsync no); keep the sink's
                # buffer at 40 ms (pulsesink default is up to 200 ms) and ask the phone to
                # plan for 0.1 s instead of 0.25 s
-               "-as", "pulsesink buffer-time=40000 latency-time=10000", "-al", "0.1"]
+               "-as", ("osxaudiosink" if MACOS else "pulsesink buffer-time=40000 latency-time=10000"), "-al", "0.1"]
 
 
 # UxPlay buffers its output when it goes to a pipe; stdbuf makes it line-buffered.

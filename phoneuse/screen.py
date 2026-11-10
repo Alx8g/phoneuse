@@ -10,18 +10,21 @@ import json
 import os
 import socket
 import subprocess
+import sys
 
 import numpy as np
 from PIL import Image
 
-from .config import FRAMES_SOCKET, HUB_SOCKET, PHONE_ASPECT
+from .config import CFG, FRAMES_SOCKET, HUB_SOCKET, PHONE_ASPECT
 
 MIRROR_CLASS = "phoneuse-mirror"  # window class (Wayland app id) of the mirror window, window.py
 HUB_RTP_PORT = 5590  # UxPlay sends the phone's video here, to the hub (hub.py)
 RTP_PORT = 5600  # the hub sends it on here, for the mirror window (window.py)
 WEB_RTP_PORT = 5602  # ...and here, for the browser mirror (web.py)
 FRAMES_RTP_PORT = 5604  # ...and here, for the frames service (frames.py: settle, screenshots)
-AIRPLAY_MIRROR_PORT = 7100  # UxPlay's mirroring stream port; a connection on it = the phone is mirroring
+# UxPlay's mirroring stream port (its first TCP port: 7100 with `-p`, N with `-p N`); a connection on it means
+# the phone is mirroring
+AIRPLAY_MIRROR_PORT = CFG.get("airplay_port") or 7100
 # The window's title says whether it shows the phone: input is only forwarded
 # to the phone while it does (mirror_input.py, cli.py).
 TITLE_LIVE = "phoneuse mirror"
@@ -85,6 +88,14 @@ def hypr_eval(lua):
 def airplay_mirroring():
     """True while a phone is mirroring to UxPlay (an open connection on its
     mirroring port)."""
+    if sys.platform == "darwin":  # no /proc: netstat lists the established connections
+        try:
+            out = subprocess.run(["netstat", "-an", "-p", "tcp"], capture_output=True, text=True, timeout=2).stdout
+        except (OSError, subprocess.SubprocessError):
+            return False
+        suffix = f".{AIRPLAY_MIRROR_PORT}"
+        return any(f[3].endswith(suffix) and f[5] == "ESTABLISHED"
+                   for f in (line.split() for line in out.splitlines()) if len(f) >= 6)
     port = f":{AIRPLAY_MIRROR_PORT:04X}"
     for path in ("/proc/net/tcp6", "/proc/net/tcp"):
         try:
@@ -115,6 +126,7 @@ def mirror_live(client=None):
         except OSError:  # no Hyprland (the Flatpak, a Mac): no window to ask
             return False
     return bool(client) and client["title"] == TITLE_LIVE
+
 
 
 def _request(path, cmd, timeout):

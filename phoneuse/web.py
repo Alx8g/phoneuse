@@ -19,6 +19,7 @@ import asyncio
 import json
 import os
 import secrets
+import shutil
 import sys
 import threading
 import time
@@ -503,6 +504,9 @@ class UnlockRequests:
 
     async def _notify(self, p):
         # A desktop notification with Unlock / Deny, where the notification daemon supports actions.
+        # (Where there's no notify-send, as on macOS, the app shows its own from the API.)
+        if not shutil.which("notify-send"):
+            return
         try:
             p["notice"] = await asyncio.create_subprocess_exec(
                 "notify-send", "-a", "phoneuse", "-u", "critical", "--wait", "-A", "unlock=Unlock", "-A", "deny=Deny",
@@ -667,6 +671,8 @@ class SessionRequests:
         return web.json_response({"on": st["mode"] != "auto", **st})
 
     async def _notify(self, p):
+        if not shutil.which("notify-send"):  # macOS: the app shows its own notification from the API
+            return
         try:
             self.notices[p["id"]] = notice = await asyncio.create_subprocess_exec(
                 *(["notify-send", "-a", "phoneuse", "-u", "critical", "--wait", "-A", "deny=Cancel",
@@ -878,6 +884,12 @@ def app(mirror):
             netcheck.remember(mirrored=True)  # the iPhone reached this PC: the ports are open
             out["confirmed"] = True
         out["hero"] = overview.hero(out, NAME)
+        # What waits for the owner, for shells that notify natively (the Mac app); each is answered through
+        # /api/session/answer or /api/unlock/answer with its id
+        sp, up = mirror.sessions.pending, mirror.unlocks.pending
+        out["requests"] = {
+            "session": {k: sp.get(k) for k in ("id", "action", "mode", "deadline")} if sp else None,
+            "unlock": {"id": up["id"]} if up else None}
         return web.json_response(out)
     a.router.add_get("/api/app", app_state)
     return a
