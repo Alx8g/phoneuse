@@ -22,6 +22,11 @@ HUB_RTP_PORT = 5590  # UxPlay sends the phone's video here, to the hub (hub.py)
 RTP_PORT = 5600  # the hub sends it on here, for the mirror window (window.py)
 WEB_RTP_PORT = 5602  # ...and here, for the browser mirror (web.py)
 FRAMES_RTP_PORT = 5604  # ...and here, for the frames service (frames.py: settle, screenshots)
+# The largest RTP packet sent between UxPlay, the hub and its viewers, all on this machine. macOS refuses UDP
+# datagrams over 9216 bytes on a default socket ("Message too long", net.inet.udp.maxdgram), and UxPlay's udpsink
+# doesn't raise its buffer: every large packet (each keyframe, each big change) vanished, the browser mirror got
+# broken frames ("Decoding error"), never started playing, and so dropped the mouse. Linux takes 60000.
+RTP_MTU = 9000 if sys.platform == "darwin" else 60000
 # UxPlay's mirroring stream port (its first TCP port: 7100 with `-p`, N with `-p N`); a connection on it means
 # the phone is mirroring
 AIRPLAY_MIRROR_PORT = CFG.get("airplay_port") or 7100
