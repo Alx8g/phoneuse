@@ -333,7 +333,7 @@ class Mirror:
                 self.hub_live = "live=1" in line
             except OSError:
                 joined, self.hub_live = False, False  # the hub is (re)starting
-            mirroring = screen.airplay_mirroring()
+            mirroring = await loop.run_in_executor(None, screen.airplay_mirroring)  # lsof on macOS: not on the loop
             bt = await loop.run_in_executor(None, self.bluetooth_up)
             changed = mirroring != self.mirroring or bt != self.bluetooth
             if bt and not self.bluetooth:  # (re)connected: rest the pointer where it touches nothing

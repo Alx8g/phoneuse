@@ -88,14 +88,15 @@ def hypr_eval(lua):
 def airplay_mirroring():
     """True while a phone is mirroring to UxPlay (an open connection on its
     mirroring port)."""
-    if sys.platform == "darwin":  # no /proc: netstat lists the established connections
+    if sys.platform == "darwin":
+        # No /proc, and netstat no longer lists TCP connections on recent macOS (the phone often connects over
+        # IPv6 link-local too), so ask lsof: our own UxPlay's sockets are visible without root.
         try:
-            out = subprocess.run(["netstat", "-an", "-p", "tcp"], capture_output=True, text=True, timeout=2).stdout
+            out = subprocess.run(["lsof", "-nP", f"-iTCP:{AIRPLAY_MIRROR_PORT}", "-sTCP:ESTABLISHED", "-t"],
+                                 capture_output=True, text=True, timeout=3).stdout
         except (OSError, subprocess.SubprocessError):
             return False
-        suffix = f".{AIRPLAY_MIRROR_PORT}"
-        return any(f[3].endswith(suffix) and f[5] == "ESTABLISHED"
-                   for f in (line.split() for line in out.splitlines()) if len(f) >= 6)
+        return bool(out.strip())
     port = f":{AIRPLAY_MIRROR_PORT:04X}"
     for path in ("/proc/net/tcp6", "/proc/net/tcp"):
         try:
