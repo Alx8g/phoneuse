@@ -1,0 +1,5 @@
+Generate one image with your image generation tool and save it as bridge-a.png in the current directory.
+
+Image: premium product photograph, square 1:1, the largest size you can.
+Subject: a concept for a small, elegant consumer device, the Phone Use Bridge: a thin rounded-square tile, about 6 cm on each side and 9 mm thick, machined from anodized aluminum in a deep plum color (#3a1741) with softly chamfered, polished edges. The top is a single flush black glass panel; in its upper-left corner a tiny, minimal white status line reads "Connected". No buttons, no visible ports, no seams. It lies flat on a pure white (#ffffff) seamless surface, three-quarter view from above, with a soft natural contact shadow.
+Style: Apple product photography, sleek, refined, restrained, lots of white space, photoreal. No other objects, no logos, no other text, no people, no hands, no colored gradients in the background.

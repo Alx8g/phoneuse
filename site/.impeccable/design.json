@@ -1,0 +1,502 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-10T00:00:00Z",
+  "title": "Design System: Phone Use",
+  "extensions": {
+    "colorMeta": {
+      "plum": {
+        "role": "primary",
+        "displayName": "Berry Plum",
+        "canonical": "#9a3c69",
+        "oklch": "oklch(49.9% 0.135 353)",
+        "tonalRamp": [
+          "#1b010d",
+          "#401128",
+          "#692746",
+          "#943f67",
+          "#ba6088",
+          "#d78aaa",
+          "#f3b4cd",
+          "#ffe0f1"
+        ]
+      },
+      "plum-hi": {
+        "role": "primary",
+        "displayName": "Pressed Berry",
+        "canonical": "#7b354e",
+        "oklch": "oklch(43.1% 0.101 360)",
+        "tonalRamp": [
+          "#19040a",
+          "#3b1724",
+          "#622f40",
+          "#8b495f",
+          "#b06a80",
+          "#cd91a3",
+          "#ebbac8",
+          "#ffe3ed"
+        ]
+      },
+      "plum-deep": {
+        "role": "primary",
+        "displayName": "Deep Plum",
+        "canonical": "#712a4d",
+        "oklch": "oklch(39.9% 0.108 352)",
+        "tonalRamp": [
+          "#19030d",
+          "#3b1628",
+          "#622e46",
+          "#8b4867",
+          "#b06988",
+          "#cd90aa",
+          "#ebb9cd",
+          "#ffe3f1"
+        ]
+      },
+      "amber": {
+        "role": "secondary",
+        "displayName": "Icon Amber",
+        "canonical": "#fda55e",
+        "oklch": "oklch(79.6% 0.136 58)",
+        "tonalRamp": [
+          "#1b0300",
+          "#401800",
+          "#683100",
+          "#944b00",
+          "#b96d2a",
+          "#d59563",
+          "#f1bd96",
+          "#ffe6ca"
+        ]
+      },
+      "amber-tint": {
+        "role": "secondary",
+        "displayName": "Amber Tint",
+        "canonical": "#ffe4cc",
+        "oklch": "oklch(93.5% 0.044 64)",
+        "tonalRamp": [
+          "#110904",
+          "#2e2218",
+          "#4f3e30",
+          "#725d4a",
+          "#947e6a",
+          "#b4a190",
+          "#d5c6b8",
+          "#f8ece2"
+        ]
+      },
+      "coral-tint": {
+        "role": "secondary",
+        "displayName": "Coral Tint",
+        "canonical": "#fde0dc",
+        "oklch": "oklch(92.9% 0.033 27)",
+        "tonalRamp": [
+          "#100908",
+          "#2e2220",
+          "#4e3d3b",
+          "#715b58",
+          "#947c79",
+          "#b4a09d",
+          "#d5c5c2",
+          "#f8ebe9"
+        ]
+      },
+      "coral-ink": {
+        "role": "secondary",
+        "displayName": "Coral Ink",
+        "canonical": "#a8433f",
+        "oklch": "oklch(51.8% 0.134 25)",
+        "tonalRamp": [
+          "#1d0102",
+          "#441110",
+          "#6e2825",
+          "#9b403c",
+          "#c1625c",
+          "#dd8c85",
+          "#f8b6af",
+          "#ffe1dc"
+        ]
+      },
+      "plum-tint": {
+        "role": "secondary",
+        "displayName": "Plum Blush",
+        "canonical": "#f6e0ea",
+        "oklch": "oklch(92.7% 0.027 348)",
+        "tonalRamp": [
+          "#0f090c",
+          "#2b2226",
+          "#4b3e44",
+          "#6d5c64",
+          "#8f7d85",
+          "#b0a0a7",
+          "#d2c5cb",
+          "#f5ebf0"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "#fff7f0",
+        "oklch": "oklch(98.0% 0.013 64)",
+        "tonalRamp": [
+          "#0d0b09",
+          "#282421",
+          "#46413d",
+          "#66605b",
+          "#87817b",
+          "#a9a49f",
+          "#cdc8c4",
+          "#f1eeeb"
+        ]
+      },
+      "cream": {
+        "role": "neutral",
+        "displayName": "Cloud Cream",
+        "canonical": "#feead9",
+        "oklch": "oklch(94.9% 0.031 63)",
+        "tonalRamp": [
+          "#0f0a06",
+          "#2c231c",
+          "#4b3f35",
+          "#6d5e51",
+          "#8f7f71",
+          "#b0a296",
+          "#d2c7bd",
+          "#f5ede6"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#f0d9c8",
+        "oklch": "oklch(90.0% 0.034 59)",
+        "tonalRamp": [
+          "#100a06",
+          "#2d231b",
+          "#4d3f35",
+          "#6f5d50",
+          "#917e70",
+          "#b2a295",
+          "#d4c6bd",
+          "#f6ece5"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Plum Ink",
+        "canonical": "#3a1a2e",
+        "oklch": "oklch(27.1% 0.058 343)",
+        "tonalRamp": [
+          "#12070e",
+          "#311e29",
+          "#533948",
+          "#775569",
+          "#9a768b",
+          "#ba9bac",
+          "#dac1cf",
+          "#fbe8f3"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#6b4558",
+        "oklch": "oklch(44.0% 0.059 348)",
+        "tonalRamp": [
+          "#13070d",
+          "#321e28",
+          "#543846",
+          "#795566",
+          "#9c7588",
+          "#bb9aaa",
+          "#dbc1cd",
+          "#fce8f1"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Quiet Ink",
+        "canonical": "#80586a",
+        "oklch": "oklch(50.9% 0.058 351)",
+        "tonalRamp": [
+          "#13070c",
+          "#321e27",
+          "#543845",
+          "#795565",
+          "#9c7586",
+          "#bc9aa8",
+          "#dcc1cc",
+          "#fce8f0"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100.0% 0.000 90)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "error": {
+        "role": "error",
+        "displayName": "Error Red",
+        "canonical": "#b3261e",
+        "oklch": "oklch(50.1% 0.178 29)",
+        "tonalRamp": [
+          "#220000",
+          "#4c0302",
+          "#7a1711",
+          "#ab2d24",
+          "#d25346",
+          "#ed8274",
+          "#ffafa2",
+          "#ffdcd2"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Home hero headline in the left column of the hero split."
+      },
+      "display-page": {
+        "displayName": "Display Page",
+        "purpose": "Titles of legal, 404 and confirmation pages."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings, short sentences."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Download tile platform names (20px), legal subheads (24px)."
+      },
+      "title-small": {
+        "displayName": "Title Small",
+        "purpose": "Use-case tile titles."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "Hero subhead in Muted Ink, 30ch."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Paragraph text in Muted Ink; 17px under 520px."
+      },
+      "tile-text": {
+        "displayName": "Tile Text",
+        "purpose": "Use-case descriptions in Muted Ink."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Notes, dates, version lines, form messages, footer."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Button text; 15px small buttons, 13px status tag."
+      }
+    },
+    "shadows": [
+      {
+        "name": "device-glass",
+        "value": "0 24px 48px -20px rgba(0, 0, 0, .55)",
+        "purpose": "Only on depictions of a device object (the two iOS cards in the control panel)."
+      },
+      {
+        "name": "field-halo",
+        "value": "0 0 0 3px #f6e0ea",
+        "purpose": "Focus halo on the email field, with a Berry Plum border."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "Ease-out for the button press scale."
+      },
+      {
+        "name": "button-color",
+        "value": "background-color .2s",
+        "purpose": "Button hover fill shift."
+      },
+      {
+        "name": "button-press",
+        "value": "transform .3s, scale(.98)",
+        "purpose": "Active press on buttons."
+      },
+      {
+        "name": "scroll",
+        "value": "scroll-behavior: smooth (auto under prefers-reduced-motion)",
+        "purpose": "In-page anchor jumps."
+      }
+    ],
+    "blend": [
+      {
+        "name": "render-multiply",
+        "value": "mix-blend-mode: multiply",
+        "purpose": "Every clay render, so its light ground takes the page colour."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stack",
+        "value": "860px",
+        "purpose": "Splits stack, hero centers, both tile grids go to two columns."
+      },
+      {
+        "name": "phone",
+        "value": "520px",
+        "purpose": "Use-case grid to one column, body 17px, header keeps only Download, hero and signup buttons go full width."
+      }
+    ],
+    "layout": {
+      "maxWidth": "1160px",
+      "docWidth": "720px",
+      "lostWidth": "640px"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Berry Plum pill for downloads and the form submit.",
+      "html": "<a class=\"ds-btn\" href=\"#\">Download for Linux</a>",
+      "css": ":host { --bg:#fff7f0; --cream:#feead9; --amber-tint:#ffe4cc; --coral-tint:#fde0dc; --plum-tint:#f6e0ea; --line:#f0d9c8; --ink:#3a1a2e; --ink-2:#6b4558; --ink-3:#80586a; --plum:#9a3c69; --plum-hi:#7b354e; --plum-deep:#712a4d; --amber:#fda55e; --ease:cubic-bezier(.16,1,.3,1); } .ds-btn { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 24px; border-radius:999px; border:0; cursor:pointer; text-decoration:none; background:var(--plum,#9a3c69); color:#fff; font-family: Geist, system-ui, -apple-system, sans-serif; font-weight:500; font-size:16px; line-height:1; transition:background-color .2s, transform .3s var(--ease,cubic-bezier(.16,1,.3,1)); } .ds-btn:hover { background:var(--plum-hi,#7b354e); color:#fff; } .ds-btn:active { transform:scale(.98); } .ds-btn:focus-visible { outline:2px solid var(--plum,#9a3c69); outline-offset:3px; } "
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Cloud Cream pill with Deep Plum text for the secondary choice beside a primary.",
+      "html": "<a class=\"ds-btn ds-btn--quiet\" href=\"#\">Download for Mac</a>",
+      "css": ":host { --bg:#fff7f0; --cream:#feead9; --amber-tint:#ffe4cc; --coral-tint:#fde0dc; --plum-tint:#f6e0ea; --line:#f0d9c8; --ink:#3a1a2e; --ink-2:#6b4558; --ink-3:#80586a; --plum:#9a3c69; --plum-hi:#7b354e; --plum-deep:#712a4d; --amber:#fda55e; --ease:cubic-bezier(.16,1,.3,1); } .ds-btn { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 24px; border-radius:999px; border:0; cursor:pointer; text-decoration:none; background:var(--plum,#9a3c69); color:#fff; font-family: Geist, system-ui, -apple-system, sans-serif; font-weight:500; font-size:16px; line-height:1; transition:background-color .2s, transform .3s var(--ease,cubic-bezier(.16,1,.3,1)); } .ds-btn:hover { background:var(--plum-hi,#7b354e); color:#fff; } .ds-btn:active { transform:scale(.98); } .ds-btn:focus-visible { outline:2px solid var(--plum,#9a3c69); outline-offset:3px; } .ds-btn--quiet { background:var(--cream,#feead9); color:var(--plum-deep,#712a4d); } .ds-btn--quiet:hover { background:#fbdcc4; color:var(--plum-deep,#712a4d); }"
+    },
+    {
+      "name": "Small Button",
+      "kind": "button",
+      "refersTo": "button-small",
+      "description": "Header Download button.",
+      "html": "<a class=\"ds-btn ds-btn--small\" href=\"#\">Download</a>",
+      "css": ":host { --bg:#fff7f0; --cream:#feead9; --amber-tint:#ffe4cc; --coral-tint:#fde0dc; --plum-tint:#f6e0ea; --line:#f0d9c8; --ink:#3a1a2e; --ink-2:#6b4558; --ink-3:#80586a; --plum:#9a3c69; --plum-hi:#7b354e; --plum-deep:#712a4d; --amber:#fda55e; --ease:cubic-bezier(.16,1,.3,1); } .ds-btn { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 24px; border-radius:999px; border:0; cursor:pointer; text-decoration:none; background:var(--plum,#9a3c69); color:#fff; font-family: Geist, system-ui, -apple-system, sans-serif; font-weight:500; font-size:16px; line-height:1; transition:background-color .2s, transform .3s var(--ease,cubic-bezier(.16,1,.3,1)); } .ds-btn:hover { background:var(--plum-hi,#7b354e); color:#fff; } .ds-btn:active { transform:scale(.98); } .ds-btn:focus-visible { outline:2px solid var(--plum,#9a3c69); outline-offset:3px; } .ds-btn--small { min-height:38px; padding:0 18px; font-size:15px; } "
+    },
+    {
+      "name": "Status Tag",
+      "kind": "chip",
+      "refersTo": "status-tag",
+      "description": "Coral Tint pill with Coral Ink text carrying product status (Alpha); never a section label.",
+      "html": "<span class=\"ds-tag\">Alpha</span>",
+      "css": ":host { --bg:#fff7f0; --cream:#feead9; --amber-tint:#ffe4cc; --coral-tint:#fde0dc; --plum-tint:#f6e0ea; --line:#f0d9c8; --ink:#3a1a2e; --ink-2:#6b4558; --ink-3:#80586a; --plum:#9a3c69; --plum-hi:#7b354e; --plum-deep:#712a4d; --amber:#fda55e; --ease:cubic-bezier(.16,1,.3,1); } .ds-tag { display:inline-block; padding:4px 12px; border-radius:999px; background:var(--coral-tint,#fde0dc); color:#a8433f; font-family: Geist, system-ui, -apple-system, sans-serif; font-size:13px; font-weight:500; }"
+    },
+    {
+      "name": "Use-Case Tiles",
+      "kind": "card",
+      "refersTo": "use-case-tile",
+      "description": "Tiles rotating cream, amber, coral and plum tints, 24px corners, title over a short line.",
+      "html": "<ul class=\"ds-uses\"><li><h3>Test your iOS app</h3><p>Run QA passes on a real device and report what broke.</p></li><li><h3>Check sites on mobile</h3><p>Open pages in Safari and verify they look and work right.</p></li><li><h3>Approve sign-ins</h3><p>Tap the 2FA prompt on your phone when your agent logs in.</p></li><li><h3>Use apps without an API</h3><p>Book, order, reschedule and fill in forms in any app.</p></li></ul>",
+      "css": ":host { --bg:#fff7f0; --cream:#feead9; --amber-tint:#ffe4cc; --coral-tint:#fde0dc; --plum-tint:#f6e0ea; --line:#f0d9c8; --ink:#3a1a2e; --ink-2:#6b4558; --ink-3:#80586a; --plum:#9a3c69; --plum-hi:#7b354e; --plum-deep:#712a4d; --amber:#fda55e; --ease:cubic-bezier(.16,1,.3,1); } .ds-uses { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; font-family: Geist, system-ui, -apple-system, sans-serif; } .ds-uses li { padding:22px 22px 24px; border-radius:24px; background:var(--cream,#feead9); } .ds-uses li:nth-child(4n+2) { background:var(--amber-tint,#ffe4cc); } .ds-uses li:nth-child(4n+3) { background:var(--coral-tint,#fde0dc); } .ds-uses li:nth-child(4n+4) { background:var(--plum-tint,#f6e0ea); } .ds-uses h3 { margin:0; font-size:17px; font-weight:600; letter-spacing:-.015em; color:var(--ink,#3a1a2e); } .ds-uses p { margin:6px 0 0; font-size:15px; line-height:1.45; color:var(--ink-2,#6b4558); }"
+    },
+    {
+      "name": "Email Signup",
+      "kind": "input",
+      "refersTo": "input-email",
+      "description": "White pill field with a primary submit; Berry Plum focus stroke and Plum Blush halo.",
+      "html": "<form class=\"ds-signup\" onsubmit=\"return false\"><input class=\"ds-input\" type=\"email\" placeholder=\"you@example.com\" aria-label=\"Email\"><button class=\"ds-btn\" type=\"submit\">Keep me posted</button><p class=\"ds-note\">Check your inbox for a link to confirm.</p></form>",
+      "css": ":host { --bg:#fff7f0; --cream:#feead9; --amber-tint:#ffe4cc; --coral-tint:#fde0dc; --plum-tint:#f6e0ea; --line:#f0d9c8; --ink:#3a1a2e; --ink-2:#6b4558; --ink-3:#80586a; --plum:#9a3c69; --plum-hi:#7b354e; --plum-deep:#712a4d; --amber:#fda55e; --ease:cubic-bezier(.16,1,.3,1); } .ds-btn { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 24px; border-radius:999px; border:0; cursor:pointer; text-decoration:none; background:var(--plum,#9a3c69); color:#fff; font-family: Geist, system-ui, -apple-system, sans-serif; font-weight:500; font-size:16px; line-height:1; transition:background-color .2s, transform .3s var(--ease,cubic-bezier(.16,1,.3,1)); } .ds-btn:hover { background:var(--plum-hi,#7b354e); color:#fff; } .ds-btn:active { transform:scale(.98); } .ds-btn:focus-visible { outline:2px solid var(--plum,#9a3c69); outline-offset:3px; } .ds-signup { display:flex; flex-wrap:wrap; gap:10px; max-width:460px; } .ds-input { flex:1 1 220px; min-height:48px; padding:0 18px; border-radius:999px; border:1px solid #b0899a; background:#fff; color:var(--ink,#3a1a2e); font-family: Geist, system-ui, -apple-system, sans-serif; font-size:16px; caret-color:var(--plum,#9a3c69); } .ds-input::placeholder { color:var(--ink-3,#80586a); } .ds-input:focus { outline:none; border-color:var(--plum,#9a3c69); box-shadow:0 0 0 3px var(--plum-tint,#f6e0ea); } .ds-note { flex-basis:100%; margin:0; font-family: Geist, system-ui, -apple-system, sans-serif; font-size:14px; color:var(--plum,#9a3c69); }"
+    },
+    {
+      "name": "Download Tile",
+      "kind": "card",
+      "refersTo": "download-tile",
+      "description": "Cloud Cream tile, 24px corners, platform name over its action.",
+      "html": "<div class=\"ds-tile\"><h3 class=\"ds-tile__h\">Linux</h3><a class=\"ds-btn\" href=\"#\">Download</a></div>",
+      "css": ":host { --bg:#fff7f0; --cream:#feead9; --amber-tint:#ffe4cc; --coral-tint:#fde0dc; --plum-tint:#f6e0ea; --line:#f0d9c8; --ink:#3a1a2e; --ink-2:#6b4558; --ink-3:#80586a; --plum:#9a3c69; --plum-hi:#7b354e; --plum-deep:#712a4d; --amber:#fda55e; --ease:cubic-bezier(.16,1,.3,1); } .ds-btn { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 24px; border-radius:999px; border:0; cursor:pointer; text-decoration:none; background:var(--plum,#9a3c69); color:#fff; font-family: Geist, system-ui, -apple-system, sans-serif; font-weight:500; font-size:16px; line-height:1; transition:background-color .2s, transform .3s var(--ease,cubic-bezier(.16,1,.3,1)); } .ds-btn:hover { background:var(--plum-hi,#7b354e); color:#fff; } .ds-btn:active { transform:scale(.98); } .ds-btn:focus-visible { outline:2px solid var(--plum,#9a3c69); outline-offset:3px; } .ds-tile { display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:20px; padding:28px 20px; border-radius:24px; background:var(--cream,#feead9); min-height:150px; width:200px; } .ds-tile__h { margin:0; font-family: Geist, system-ui, -apple-system, sans-serif; font-size:20px; font-weight:600; letter-spacing:-.025em; color:var(--ink,#3a1a2e); }"
+    },
+    {
+      "name": "Header",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Brand on the left; Muted Ink links and a small primary button on the right.",
+      "html": "<header class=\"ds-bar\"><a class=\"ds-brand\" href=\"#\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" aria-hidden=\"true\"><rect width=\"32\" height=\"32\" rx=\"8\" fill=\"#9a3c69\"/><circle cx=\"16\" cy=\"17\" r=\"8\" fill=\"#feead9\"/></svg><span>Phone Use</span></a><nav class=\"ds-nav\"><a href=\"#\">Bridge</a><a href=\"#\">GitHub</a><a class=\"ds-btn ds-btn--small\" href=\"#\">Download</a></nav></header>",
+      "css": ":host { --bg:#fff7f0; --cream:#feead9; --amber-tint:#ffe4cc; --coral-tint:#fde0dc; --plum-tint:#f6e0ea; --line:#f0d9c8; --ink:#3a1a2e; --ink-2:#6b4558; --ink-3:#80586a; --plum:#9a3c69; --plum-hi:#7b354e; --plum-deep:#712a4d; --amber:#fda55e; --ease:cubic-bezier(.16,1,.3,1); } .ds-btn { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 24px; border-radius:999px; border:0; cursor:pointer; text-decoration:none; background:var(--plum,#9a3c69); color:#fff; font-family: Geist, system-ui, -apple-system, sans-serif; font-weight:500; font-size:16px; line-height:1; transition:background-color .2s, transform .3s var(--ease,cubic-bezier(.16,1,.3,1)); } .ds-btn:hover { background:var(--plum-hi,#7b354e); color:#fff; } .ds-btn:active { transform:scale(.98); } .ds-btn:focus-visible { outline:2px solid var(--plum,#9a3c69); outline-offset:3px; } .ds-btn--small { min-height:38px; padding:0 18px; font-size:15px; } .ds-bar { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:20px 24px; background:var(--bg,#fff7f0); font-family: Geist, system-ui, -apple-system, sans-serif; } .ds-brand { display:inline-flex; align-items:center; gap:10px; color:var(--ink,#3a1a2e); text-decoration:none; font-weight:600; font-size:17px; letter-spacing:-.01em; } .ds-nav { display:flex; align-items:center; gap:28px; font-size:15px; } .ds-nav a:not(.ds-btn) { color:var(--ink-2,#6b4558); text-decoration:none; } .ds-nav a:not(.ds-btn):hover { color:var(--ink,#3a1a2e); }"
+    },
+    {
+      "name": "Control Panel",
+      "kind": "custom",
+      "refersTo": "control-panel",
+      "description": "Signature: the one large Berry Plum area, stacking the Allow/Deny request card and the Live Activity card with Take over.",
+      "html": "<div class=\"ds-panel\"><div class=\"ds-la\"><svg class=\"ds-la__icon\" viewBox=\"0 0 44 44\" aria-hidden=\"true\"><rect width=\"44\" height=\"44\" rx=\"10\" fill=\"#9a3c69\"/><circle cx=\"22\" cy=\"24\" r=\"11\" fill=\"#feead9\"/><circle cx=\"16\" cy=\"27\" r=\"2\" fill=\"#f3716f\"/><circle cx=\"28\" cy=\"27\" r=\"2\" fill=\"#f3716f\"/></svg><div class=\"ds-la__t\"><span class=\"ds-la__k\">Phone Use</span><span class=\"ds-la__a\">Agent requests control</span><span class=\"ds-la__m\">Opening Settings</span></div><div class=\"ds-la__btns\"><span class=\"ds-la__btn ds-la__btn--quiet\">Deny</span><span class=\"ds-la__btn\">Allow</span></div></div><div class=\"ds-la\"><svg class=\"ds-la__icon\" viewBox=\"0 0 44 44\" aria-hidden=\"true\"><rect width=\"44\" height=\"44\" rx=\"10\" fill=\"#9a3c69\"/><circle cx=\"22\" cy=\"24\" r=\"11\" fill=\"#feead9\"/><circle cx=\"16\" cy=\"27\" r=\"2\" fill=\"#f3716f\"/><circle cx=\"28\" cy=\"27\" r=\"2\" fill=\"#f3716f\"/></svg><div class=\"ds-la__t\"><span class=\"ds-la__k\">Agent is using your iPhone</span><span class=\"ds-la__a\">Opening Settings</span><span class=\"ds-la__m\">Step 3 · 0:42</span></div><span class=\"ds-la__btn\">Take over</span></div></div>",
+      "css": ":host { --bg:#fff7f0; --cream:#feead9; --amber-tint:#ffe4cc; --coral-tint:#fde0dc; --plum-tint:#f6e0ea; --line:#f0d9c8; --ink:#3a1a2e; --ink-2:#6b4558; --ink-3:#80586a; --plum:#9a3c69; --plum-hi:#7b354e; --plum-deep:#712a4d; --amber:#fda55e; --ease:cubic-bezier(.16,1,.3,1); } .ds-panel { background:var(--plum,#9a3c69); border-radius:32px; padding:56px 32px; display:flex; flex-direction:column; align-items:center; gap:14px; font-family: Geist, system-ui, -apple-system, sans-serif; } .ds-la { width:100%; max-width:420px; display:grid; grid-template-columns:44px 1fr; gap:6px 14px; align-items:center; padding:18px; border-radius:24px; background:rgba(42,14,32,.92); color:#fff; box-shadow:0 24px 48px -20px rgba(0,0,0,.55); } .ds-la__icon { width:44px; height:44px; border-radius:10px; align-self:start; } .ds-la__t { display:grid; gap:2px; } .ds-la__k, .ds-la__m { font-size:13px; color:#c9bccd; font-variant-numeric:tabular-nums; } .ds-la__a { font-size:19px; font-weight:600; } .ds-la__btns { grid-column:1 / -1; margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:8px; } .ds-la__btn { grid-column:1 / -1; margin-top:10px; text-align:center; padding:11px; border-radius:999px; background:#fff; color:var(--plum,#9a3c69); font-weight:600; font-size:15px; } .ds-la__btns .ds-la__btn { grid-column:auto; margin-top:0; } .ds-la__btn--quiet { background:rgba(255,255,255,.14); color:#fff; } "
+    }
+  ],
+  "narrative": {
+    "northStar": "The Calm Shelf Product",
+    "overview": "**Creative North Star: \"The Calm Shelf Product\"**\n\nPhone Use presents itself as a finished consumer product: one plain sentence, two downloads, and a few charming clay renders of the cloud character using a phone. Every colour on the page is sampled from the app icon and the hero render. The ground is a warm paper a shade lighter than the cloud, tiles are cloud cream, and pale amber, coral and plum tints rotate across the use-case tiles. A berry plum marks everything you can press and fills the one large control panel. Text is set in plum-tinted inks, so even the neutrals belong to the icon's world. The renders are multiplied onto the paper, so their white ground disappears and the cloud, laptop and phones sit directly on the page.\n\nDensity is low. Sections are split into two columns or centered, separated by generous vertical space instead of rules or bands. Copy is short: a headline, one supporting sentence, and an action. The owner pinned flat colour with no gradients, minimal copy, Geist, and stylized renders like the app icon; the owner then asked for the palette to come from the icon and the hero render, which replaced the earlier white page and single dark plum.",
+    "keyCharacteristics": [
+      "Warm paper ground (`#fff7f0`) with cream tiles and plum-tinted inks; every hue is sampled from the app icon.",
+      "Berry plum is the one saturated colour in the UI: buttons, links, focus, and the control panel.",
+      "Amber, coral and plum appear on surfaces only as pale tints, rotating across the use-case tiles.",
+      "Flat colour fills everywhere in the UI; depth and modelling come from the renders.",
+      "Geist alone, weight 600 for headings with tight negative tracking.",
+      "Every control is a full pill; containers are large soft rectangles (24px and 32px).",
+      "Clay renders multiplied onto the page ground, unframed."
+    ],
+    "rules": [
+      {
+        "name": "The Icon Palette Rule",
+        "body": "Every colour comes from the app icon or the hero render. Berry plum is the only saturated colour in the interface; amber, coral and plum reach surfaces only as pale tints, and full-strength amber appears only as the selection highlight.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tint Rotation Rule",
+        "body": "Use-case tiles cycle cream, amber tint, coral tint, plum tint in that order, so each row of four shows all four. Text on every tint stays in Plum Ink and Muted Ink.",
+        "section": "colors"
+      },
+      {
+        "name": "The Flat Fill Rule",
+        "body": "UI surfaces are flat colours with no CSS gradients. The shading inside the clay renders is part of the image, not a license for gradient fills.",
+        "section": "colors"
+      },
+      {
+        "name": "The Single Family Rule",
+        "body": "Geist sets everything; headings never go heavier than 600, and hierarchy comes from size and tracking.",
+        "section": "typography"
+      },
+      {
+        "name": "The Short Measure Rule",
+        "body": "Text blocks are capped in ch (30ch lead, 40ch body, 46ch fine print, 68ch legal) and headings use balanced wrapping.",
+        "section": "typography"
+      },
+      {
+        "name": "The Renders Carry Depth Rule",
+        "body": "Cards, tiles and buttons have no drop shadows. Shadows appear only on depictions of a device object or as a focus halo.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep the page on Warm Paper and use Berry Plum for every primary action, link and focus ring.",
+      "**Do** pair a primary Berry Plum button with a Cloud Cream quiet button when two choices are equal in kind (Linux and Mac).",
+      "**Do** rotate cream, amber, coral and plum tints across a set of equal tiles, in that order.",
+      "**Do** make every control a full pill (999px) and every container a 24px or 32px rounded rectangle without border or shadow.",
+      "**Do** set all type in Geist, headings at 600 with -0.025em to -0.04em tracking.",
+      "**Do** keep copy to a heading, one sentence and an action per section.",
+      "**Do** generate new imagery as soft-3D clay renders in the app icon's palette on a light ground, and show it with `mix-blend-mode: multiply` so it sits on the page unframed.",
+      "**Do** keep tertiary text at 4.5:1 or better on every ground it sits on (Quiet Ink is the floor)."
+    ],
+    "donts": [
+      "**Don't** use CSS gradients on any UI surface or text.",
+      "**Don't** fill controls or set text in full-strength amber or coral; those hues reach the interface as pale tints, plus Coral Ink inside the status tag.",
+      "**Don't** add drop shadows to tiles, buttons or sections; shadows belong only to device depictions and the field focus halo.",
+      "**Don't** put a small label or tag above section headings; the status tag is reserved for product status.",
+      "**Don't** use weights above 600 or a second typeface for display.",
+      "**Don't** frame renders in cards or tinted boxes, or show them without the multiply blend; a white rectangle around a render breaks the page."
+    ]
+  }
+}

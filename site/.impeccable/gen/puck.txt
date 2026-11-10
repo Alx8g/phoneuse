@@ -1,0 +1,6 @@
+Generate one image with your image generation tool and save it as puck.png in the current directory.
+
+Image: a premium product photograph, square 1:1, 1600x1600 or the closest size you can.
+Subject: a concept for a small consumer hardware device, the "Phone Use Bridge": a rounded, flat puck about 7 cm across and 2 cm tall, matte deep plum (#3a1741) soft-touch finish, with a small rectangular black status screen on top showing two short lines of white text, a single small round button, and a USB-C port on its side. It sits on a pure white (#ffffff) seamless surface, three-quarter view from slightly above, beside (but not touching) a modern black iPhone lying face down.
+Light: soft diffused studio light, gentle contact shadow, no colored gradients, pure white edges so it blends into a white web page.
+Style: Apple-style product photography, minimal, sleek, photoreal. No logos, no brand names, no people, no hands.

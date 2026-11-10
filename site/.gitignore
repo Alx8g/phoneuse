@@ -1,0 +1,8 @@
+dist/
+node_modules/
+.impeccable/review/
+.impeccable/gen/ref*
+.impeccable/gen/*.log
+.impeccable/gen/done.txt
+.impeccable/gen/[a-z].png
+.impeccable/gen/[a-z][a-z0-9].png

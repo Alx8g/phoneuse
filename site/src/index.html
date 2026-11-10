@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phone Use: let your AI agent use your iPhone</title>
+  <meta name="description" content="Phone Use connects your iPhone to your Linux PC or Mac, so Claude Code and other AI agents can see its screen and tap for you. No jailbreak, no cable. Free and open source.">
+  <link rel="canonical" href="https://phoneuse.tech/">
+  <meta name="theme-color" content="#fff7f0">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Phone Use">
+  <meta property="og:url" content="https://phoneuse.tech/">
+  <meta property="og:title" content="Phone Use: let your AI agent use your iPhone">
+  <meta property="og:description" content="Connect your iPhone to your computer so Claude Code and other agents can see the screen and tap for you. No jailbreak, no cable.">
+  <meta property="og:image" content="https://phoneuse.tech/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Phone Use: a laptop mirroring an iPhone's screen, with the iPhone beside it.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Phone Use: let your AI agent use your iPhone">
+  <meta name="twitter:description" content="Connect your iPhone to your computer so Claude Code and other agents can see the screen and tap for you.">
+  <meta name="twitter:image" content="https://phoneuse.tech/og.png">
+
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <link rel="preload" href="/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/site.css?v={{BUILD}}">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Phone Use",
+    "url": "https://phoneuse.tech/",
+    "description": "Lets an AI agent, or you, see and operate a real, unmodified iPhone from a computer. The iPhone's screen comes in over AirPlay Screen Mirroring, and the computer sends taps and keystrokes as a Bluetooth mouse and keyboard. Agents use it from the command line or over MCP.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Linux, macOS 15 or later",
+    "softwareVersion": "{{VERSION}}",
+    "downloadUrl": "https://github.com/lxe/phoneuse/releases/latest",
+    "license": "https://opensource.org/licenses/MIT",
+    "isAccessibleForFree": true,
+    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+    "image": "https://phoneuse.tech/img/icon-512.png",
+    "codeRepository": "https://github.com/lxe/phoneuse",
+    "author": {"@type": "Person", "name": "Aleksey Smolenchuk", "url": "https://lxe.co"}
+  }
+  </script>
+
+  <!-- Privacy-friendly analytics by Plausible (lxe's own instance, the same setup as pocketmodel.ai) -->
+  <script defer data-domain="phoneuse.tech" data-api="https://stats.pocketmodel.ai/api/event" src="https://stats.pocketmodel.ai/js/script.js"></script>
+  <script>window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)}</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="bar">
+    <a class="brand" href="/" aria-label="Phone Use, home">
+      <img src="/img/icon-128.png" width="32" height="32" alt="">
+      <span>Phone Use</span>
+    </a>
+    <nav class="bar__nav" aria-label="Sections">
+      <a href="#bridge">Bridge</a>
+      <a href="https://github.com/lxe/phoneuse" class="gh" aria-label="Phone Use on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="gh__label">GitHub</span>{{STARS}}</a>
+      <a href="#download" class="btn btn--small">Download</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__copy">
+        <p class="tag">Alpha</p>
+        <h1 id="hero-title">Let your AI agent use your iPhone.</h1>
+        <p class="hero__sub">Any app, any task. Phone Use lets Claude Code, Codex and other agents see your screen and take over, with your permission.</p>
+        <div class="hero__actions">
+          <a class="btn" href="{{LINUX_URL}}" data-dl="linux" data-where="hero">Download for Linux</a>
+          <a class="btn btn--quiet" href="{{MAC_URL}}" data-dl="macos" data-where="hero">Download for Mac</a>
+        </div>
+        <p class="hero__note">Free and open source · No jailbreak · No cable</p>
+      </div>
+      <img class="hero__img" src="/img/hero.webp" width="1287" height="789" alt="The Phone Use cloud hugging an iPhone next to a laptop that shows the same screen.">
+    </section>
+
+    <section class="uses" aria-labelledby="uses-title">
+      <h2 id="uses-title">Automate any workflow.</h2>
+      <p class="uses__sub">Let your agent use any app on your phone. No API needed.</p>
+      <ul class="uses__grid">
+        <li><h3>Test your iOS app</h3><p>Run QA passes on a real device and report what broke.</p></li>
+        <li><h3>Check sites on mobile</h3><p>Open pages in Safari and verify they look and work right.</p></li>
+        <li><h3>Approve sign-ins</h3><p>Tap the 2FA prompt on your phone when your agent logs in.</p></li>
+        <li><h3>Use apps without an API</h3><p>Book, order, reschedule and fill in forms in any app.</p></li>
+        <li><h3>Catch up on notifications</h3><p>Read what came in and summarize what needs you.</p></li>
+        <li><h3>Get data out of apps</h3><p>Copy readings, receipts and order history into your files.</p></li>
+        <li><h3>Change settings</h3><p>Flip toggles and set up a phone the same way every time.</p></li>
+        <li><h3>Capture screenshots</h3><p>Grab every screen of a flow for docs and App Store listings.</p></li>
+      </ul>
+    </section>
+
+    <section class="activity" aria-labelledby="activity-title">
+      <div class="activity__copy">
+        <h2 id="activity-title">You're always in control.</h2>
+        <p>Phone Use asks you before an agent can use your phone. While it works, a Live Activity shows each step, and you can take over at any time.</p>
+      </div>
+      <div class="la-wrap" aria-hidden="true">
+        <div class="la la--ask">
+          <img src="/img/icon-128.png" width="44" height="44" alt="">
+          <div class="la__text">
+            <span class="la__k">Phone Use</span>
+            <span class="la__a">Agent requests control</span>
+            <span class="la__m">Opening Settings</span>
+          </div>
+          <div class="la__btns"><span class="la__btn la__btn--quiet">Deny</span><span class="la__btn">Allow</span></div>
+        </div>
+        <div class="la">
+          <img src="/img/icon-128.png" width="44" height="44" alt="">
+          <div class="la__text">
+            <span class="la__k">Agent is using your iPhone</span>
+            <span class="la__a">Opening Settings</span>
+            <span class="la__m">Step 3 · 0:42</span>
+          </div>
+          <span class="la__btn">Take over</span>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="bridge" id="bridge" aria-labelledby="bridge-title">
+      <img class="bridge__img" src="/img/bridge.webp" width="1254" height="1254" alt="Concept render of the Phone Use Bridge: a small plum case with a screen and two buttons, next to an iPhone.">
+      <div class="bridge__copy">
+        <h2 id="bridge-title">Phone Use Bridge</h2>
+        <p>A small device that sits anywhere in your room and joins your Wi-Fi. Your iPhone connects to it over Bluetooth, so your computer can be anywhere on the network. Coming soon.</p>
+        <form class="signup" id="signup" data-kit="{{KIT_FORM}}" novalidate>
+          <label class="vh" for="signup-email">Email</label>
+          <input id="signup-email" name="email_address" type="email" placeholder="you@example.com" autocomplete="email" required>
+          <button class="btn" type="submit">Keep me posted</button>
+          <p class="signup__note" aria-live="polite"></p>
+        </form>
+        <p class="bridge__small">Make your own! Buy a <a href="https://lilygo.cc/products/t-display" data-out="lilygo">LilyGO T-Display</a> board and flash the firmware using the Phone Use desktop app. <a href="https://github.com/lxe/phoneuse#the-bridge">Instructions</a></p>
+      </div>
+    </section>
+
+    <section class="download" id="download" aria-labelledby="download-title">
+      <h2 id="download-title">Download</h2>
+      <ul class="dls">
+        <li>
+          <h3>Linux</h3>
+          <a class="btn" href="{{LINUX_URL}}" data-dl="linux" data-where="downloads">Download</a>
+        </li>
+        <li>
+          <h3>Mac</h3>
+          <a class="btn" href="{{MAC_URL}}" data-dl="macos" data-where="downloads">Download</a>
+        </li>
+        <li>
+          <h3>iPhone</h3>
+          <!-- PLACEHOLDER: the iPhone app isn't in the App Store yet. Replace href="#" with the App Store URL when it ships. -->
+          <a class="appstore" href="#" data-dl="ios" data-where="downloads" aria-label="Download on the App Store (placeholder: the app isn't listed yet)">
+            <svg viewBox="0 0 120 40" aria-hidden="true"><rect x=".5" y=".5" width="119" height="39" rx="7" fill="#000" stroke="#a6a6a6"/><path fill="#fff" d="M24.8 20.3c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.2-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.6-1-2.6-4zM22.4 13.2c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1 .1 2.1-.6 2.8-1.4z"/><text x="36" y="16" fill="#fff" font-size="7" font-family="Geist, system-ui">Download on the</text><text x="36" y="30" fill="#fff" font-size="13.5" font-weight="600" font-family="Geist, system-ui">App Store</text></svg>
+          </a>
+        </li>
+        <li class="dls__soon">
+          <h3>Windows</h3>
+          <span>Coming soon</span>
+        </li>
+      </ul>
+      <p class="download__more">Version {{VERSION}}. Release notes and bridge firmware are on <a href="https://github.com/lxe/phoneuse/releases/latest">GitHub</a>.</p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <a class="brand" href="/"><img src="/img/icon-128.png" width="24" height="24" alt=""><span>Phone Use</span></a>
+    <nav aria-label="Site">
+      <a href="https://github.com/lxe/phoneuse">GitHub</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+    </nav>
+  </footer>
+
+  <script src="/site.js?v={{BUILD}}" defer></script>
+</body>
+</html>

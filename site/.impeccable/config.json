@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "src/index.html"
+        ],
+        "createdAt": "2026-11-10T07:29:34.330Z",
+        "reason": "Claude: every flagged section/box (.how, .bridge, .agents, .lanes, .puck) is inset by clamp() padding of 24-120px in site.css; verified in desktop and 390px captures"
+      },
+      {
+        "rule": "tiny-text",
+        "value": "*",
+        "files": [
+          "src/index.html"
+        ],
+        "createdAt": "2026-11-10T07:29:34.336Z",
+        "reason": "Claude: 10-11.5px text is only inside the SVG board/phone illustrations (silkscreen labels, drawn phone UI), not body copy"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "src/index.html"
+        ],
+        "createdAt": "2026-11-10T08:19:09.413Z",
+        "reason": "lxe asked (2026-11-10) for a palette extracted from the app icon and hero render; the #fff7f0 ground is a lighter tint of the icon's cloud cream #feead9"
+      }
+    ]
+  }
+}

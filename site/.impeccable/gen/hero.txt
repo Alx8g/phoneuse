@@ -1,0 +1,6 @@
+Generate one image with your image generation tool and save it as hero.png in the current directory.
+
+Image: a clean, premium product photograph for a software landing page, 16:9, 2400x1350 or the closest size you can.
+Scene: a bright white seamless studio surface. On the right, a modern iPhone (no logos visible, black frame) leans upright on a minimal stand; its screen shows the iOS Settings app in dark mode (rows: Airplane Mode, Wi-Fi, Bluetooth, Cellular). On the left, an unbranded silver laptop, open, seen at a slight angle; its screen shows a clean desktop with one window in the middle that mirrors the same iPhone Settings screen (a phone-shaped window). Next to the phone sits a small rounded puck, deep plum colored (#3a1741), matte, about the size of a coaster, with a tiny dark status screen on top.
+Light: soft daylight from the upper left, gentle natural shadows, no gradients in the background, pure white (#ffffff) around the edges so it blends into a white web page.
+Style: Apple-style product photography, calm, sleek, lots of white space, photoreal. No text overlays, no brand logos, no people, no hands.

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy · Phone Use</title>
+  <meta name="description" content="What phoneuse.tech collects when you visit, and what the Phone Use app sends over the network.">
+  <link rel="canonical" href="https://phoneuse.tech/privacy/">
+  <meta name="theme-color" content="#fff7f0">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Phone Use">
+  <meta property="og:title" content="Privacy · Phone Use">
+  <meta property="og:description" content="What phoneuse.tech collects when you visit, and what the Phone Use app sends over the network.">
+  <meta property="og:image" content="https://phoneuse.tech/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preload" href="/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/site.css?v={{BUILD}}">
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script defer data-domain="phoneuse.tech" data-api="https://stats.pocketmodel.ai/api/event" src="https://stats.pocketmodel.ai/js/script.js"></script>
+  <script>window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)}</script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="/" aria-label="Phone Use, home"><img src="/img/icon-128.png" width="32" height="32" alt=""><span>Phone Use</span></a>
+    <nav class="bar__nav" aria-label="Site"><a href="/#download" class="btn btn--small">Download</a></nav>
+  </header>
+  <main class="doc" id="main">
+    <h1>Privacy</h1>
+    <p class="doc__date">Updated November 9, 2026</p>
+    <p class="doc__lede">This page covers two things: what this website collects when you visit it, and what the Phone Use apps send over the network when you use them.</p>
+
+    <h2>This website</h2>
+    <p>phoneuse.tech is a set of static pages on a server we run. It sets no cookies, stores nothing in your browser, and has no ad trackers. The fonts and images come from the same server.</p>
+    <p><strong>Visit counts.</strong> We count visits with <a href="https://plausible.io">Plausible</a>, which we host ourselves. It records the page, the site you came from, your country, browser, operating system and type of device, and which download buttons were clicked. It uses no cookies and doesn't store your IP address, so we see totals, not people.</p>
+    <p><strong>Server logs.</strong> The web server logs each request: your IP address, the time, the file asked for, the page you came from and your browser. We use the logs only to keep the site running, and they're deleted after two weeks.</p>
+    <p><strong>Bridge mailing list.</strong> If you sign up to hear about a finished bridge, your email address goes to <a href="https://kit.com">Kit</a>, which keeps the list for us. Kit emails you a link to confirm, and you're added only once you click it. We use the list only to tell you about the bridge, and never sell or share it. Every email has an unsubscribe link. See Kit's <a href="https://kit.com/privacy">privacy policy</a>.</p>
+
+    <h2>The Phone Use apps</h2>
+    <p>The Phone Use apps have no accounts, analytics, advertising or tracking. The full app privacy policy is <a href="https://github.com/lxe/phoneuse/blob/master/docs/PRIVACY.md">on GitHub</a>; this is a summary that agrees with it.</p>
+    <p><strong>On your network.</strong> Phone Use on your computer receives your iPhone's screen through Screen Mirroring and sends taps and keystrokes to it over Bluetooth, directly or through the bridge. The screen's picture stays on your computer, and reading the screen as text runs on your computer. The iPhone app talks only to the computer you paired it with, over your local network: it sends your settings, your Allow and Deny answers, its notification tokens and, if you move the bridge to another Wi-Fi network, that network's password, encrypted with the key from your pairing.</p>
+    <p><strong>The push relay</strong> is the one thing that leaves your devices for a server we run. Notifications and the Live Activity reach your iPhone through Apple's push notification service, which needs an Apple key, so most computers send them through a small relay on Cloudflare Workers.</p>
+    <ul>
+      <li>The iPhone app registers with the relay an identifier derived from your pairing key, its push tokens, the current Live Activity's id, whether it's a production or development build, and the app's bundle id. No names and no account.</li>
+      <li>The relay keeps one record per registration. It expires after 30 days without a refresh, and Unpair in the app deletes it.</li>
+      <li>Your computer sends the kind of notification with its details sealed by a key from your pairing, which the relay can't read. The relay fills in fixed wording, such as "An agent asks to use your iPhone", and passes it to Apple; your iPhone opens the sealed details itself.</li>
+      <li>The relay logs one line per notification: the first characters of the registration identifier, the kind, and Apple's answer. Cloudflare's standard request logs and rate limiting see IP addresses.</li>
+    </ul>
+    <p>A computer set up with its own Apple key sends notifications straight to Apple instead, and doesn't use the relay.</p>
+    <p><strong>Your agent.</strong> If you connect an AI agent, such as Claude Code, it can see your iPhone's screen and use it, within the controls you set. What the agent does with that information is governed by its provider's terms and privacy policy.</p>
+
+    <h2>Questions</h2>
+    <p>To ask about this policy, or to have your email removed from the mailing list, open an issue on <a href="https://github.com/lxe/phoneuse/issues">GitHub</a> or use the unsubscribe link in any email. If this policy changes, the new version appears here with a new date.</p>
+  </main>
+  <footer class="foot">
+    <a class="brand" href="/"><img src="/img/icon-128.png" width="24" height="24" alt=""><span>Phone Use</span></a>
+    <nav aria-label="Site">
+      <a href="https://github.com/lxe/phoneuse">GitHub</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+    </nav>
+  </footer>
+
+</body>
+</html>

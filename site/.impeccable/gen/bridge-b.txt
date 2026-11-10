@@ -1,0 +1,5 @@
+Generate one image with your image generation tool and save it as bridge-b.png in the current directory.
+
+Image: premium product photograph, square 1:1, the largest size you can.
+Subject: a concept for a small, elegant consumer device, the Phone Use Bridge: a slim pebble-shaped puck, about 5 cm across and 1 cm tall, smooth rounded edges like a polished river stone, in matte soft-touch deep plum (#3a1741). On top, centered, a single small pill-shaped black glass window with a tiny white dot glowing softly inside it. No buttons, no visible ports, no text. It sits on a pure white (#ffffff) seamless surface next to a modern iPhone lying face up with its screen off, both seen from above at a slight angle, soft natural contact shadows.
+Style: Apple product photography, sleek, minimal, refined, lots of white space, photoreal. No logos, no text anywhere, no people, no hands, no colored gradients in the background.
