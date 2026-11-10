@@ -59,7 +59,7 @@ struct PhoneTab: View {
                     Text("Phone Use runs in the background, so agents can use the phone")
                 }
             }
-            Section("iPhone App") {
+            Section("iPhone") {
                 let paired = core.state?.paired ?? 0
                 if paired > 0 {
                     LabeledContent("Paired") {
@@ -70,7 +70,7 @@ struct PhoneTab: View {
                     }
                 }
                 Button { pairing = true } label: {
-                    NavRow(title: paired > 0 ? "Pair Another iPhone" : "Pair iPhone App",
+                    NavRow(title: paired > 0 ? "Pair Another iPhone" : "Pair iPhone",
                            subtitle: "Allow and stop agents from the iPhone, and see what they do")
                 }
                 .buttonStyle(.plain)
@@ -153,7 +153,7 @@ struct HeroView: View {
     }
 
     static let buttons = ["start": "Start Phone Use", "setup_bridge": "Set Up Bridge",
-                          "pair_app": "Pair iPhone App", "open_ports": "Open Ports…",
+                          "pair_app": "Pair iPhone", "open_ports": "Open Ports…",
                           "retry": "Try Again", "open_phone": "Open iPhone"]
 
     private func perform(_ action: String) {

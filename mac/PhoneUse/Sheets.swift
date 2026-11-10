@@ -54,7 +54,7 @@ struct MenuRowStyle: ButtonStyle {
     }
 }
 
-// MARK: Pair iPhone App
+// MARK: Pair iPhone
 
 /// A one-time pairing link as a QR code for the iPhone's camera; closes once the iPhone has paired, and makes a
 /// new code when this one runs out (it lasts 10 minutes).
@@ -65,7 +65,7 @@ struct PairSheet: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Pair iPhone App").font(.headline)
+            Text("Pair iPhone").font(.headline)
             PairingCode(size: 264)
             Text("Point the iPhone's camera at the code and open the link in Phone Use.")
                 .foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 280)
@@ -78,7 +78,7 @@ struct PairSheet: View {
                 try? await Task.sleep(for: .seconds(2))
                 await core.refresh()
                 if (core.state?.paired ?? 0) > before {
-                    core.message = "iPhone App paired"
+                    core.message = "iPhone paired"
                     dismiss()
                     return
                 }
