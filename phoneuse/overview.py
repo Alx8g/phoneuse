@@ -22,12 +22,13 @@ def stopped():
 
 
 def hero(s, name):
-    """s: {"picture", "bridge", "firewall", "confirmed", "paired"} as /api/app gathers them."""
+    """s: {"picture", "bridge", "firewall", "confirmed", "paired", "pc_bluetooth"} as /api/app
+    gathers them."""
     pic, b = s.get("picture"), s.get("bridge") or {}
     st, saved = b.get("status") or {}, b.get("saved")
     if not pic:
         return _step("starting", "Starting…")
-    if not saved:
+    if not saved and not s.get("pc_bluetooth"):
         return _step("setup_bridge", "Set up the bridge", "The bridge is a small puck that taps and types on your "
                      "iPhone over Bluetooth, and connects to this PC over Wi-Fi. Keep it plugged in near your iPhone.", "setup_bridge", icon="keyboard")
     if not s.get("paired"):
@@ -40,10 +41,10 @@ def hero(s, name):
                      "open_ports" if fw else None, quiet=True, bold=name,
                      steps=["On the iPhone, swipe down from the top-right corner.",
                             "Tap {mirroring} Screen Mirroring.", f"Choose {name}."])
-    if st.get("error"):
+    if saved and st.get("error"):
         return _step("bridge_offline", "The bridge is offline", "Check that it has power and is on the same "
                      "Wi-Fi as this PC.", "retry", icon="offline")
-    if not st.get("connected"):
+    if saved and not st.get("connected"):
         return _step("connect_bridge", "Connect the bridge to the iPhone", "On the iPhone, open Settings › "
                      "Bluetooth and tap PhoneUse Bridge. If it won't connect, forget it there and tap it again.", icon="bluetooth")
     if pic.get("paused"):

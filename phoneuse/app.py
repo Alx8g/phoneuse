@@ -87,6 +87,11 @@ def paired_iphones():
         return 0
 
 
+def pc_bluetooth():
+    from . import bluetooth_setup
+    return bluetooth_setup.on()
+
+
 def load_app_state():
     try:
         with open(APP_STATE) as f:
@@ -270,6 +275,24 @@ class Window(Adw.ApplicationWindow):
         self.net_group.add(self.fw_row)
         self.bridge_page.add(self.net_group)
 
+        # This PC's Bluetooth: a second way in, with or without the bridge (bluetooth_setup.py)
+        g = Adw.PreferencesGroup(title="This PC's Bluetooth")
+        self.pcbt_row = Adw.SwitchRow(title="Use This PC's Bluetooth", subtitle="Works with or without the bridge")
+        self._pcbt_quiet = False  # set while the app moves the switch itself
+        self.pcbt_row.connect("notify::active", self._pcbt_toggled)
+        g.add(self.pcbt_row)
+        self.bridge_page.add(g)
+
+        # Forget, at the bottom of the tab, once a bridge is set up
+        self.forget_group = Adw.PreferencesGroup(visible=False)
+        forget = button("Forget Bridge…", "pill destructive-action", lambda: confirm(
+            self, "Forget the bridge?", "The bridge resets and disconnects from your iPhone. To use it again, hold "
+            "its lower button for 3 seconds and set it up.", "Forget",
+            lambda: in_thread(lambda: api("/api/bridge", method="DELETE"), self._bridge_forgotten)))
+        forget.set_halign(Gtk.Align.CENTER)
+        self.forget_group.add(forget)
+        self.bridge_page.add(self.forget_group)
+
     # ---- refresh ----
     def refresh(self):
         if self.busy:
@@ -283,9 +306,9 @@ class Window(Adw.ApplicationWindow):
                 except (OSError, ValueError):
                     pass  # starting up: the page doesn't answer yet
                 return {"running": True, "picture": None, "claude": claude_setup.state(),
-                        "firewall": netcheck.detect(), "confirmed": netcheck.confirmed(), "paired": paired_iphones()}
+                        "firewall": netcheck.detect(), "confirmed": netcheck.confirmed(), "paired": paired_iphones(), "pc_bluetooth": pc_bluetooth()}
             return {"running": False, "claude": claude_setup.state(), "firewall": netcheck.detect(),
-                    "confirmed": netcheck.confirmed(), "paired": paired_iphones()}
+                    "confirmed": netcheck.confirmed(), "paired": paired_iphones(), "pc_bluetooth": pc_bluetooth()}
         in_thread(work, self._show)
 
     def _show(self, s, err):
@@ -405,7 +428,9 @@ class Window(Adw.ApplicationWindow):
             self.bridge_rows.append(r)
         saved = (b or {}).get("saved")
         self.bridge_group.set_sensitive(running)
-        self.bridge_group.set_header_suffix(None)
+        self.forget_group.set_visible(bool(saved))
+        self.forget_group.set_sensitive(running)
+        self._pcbt_show(running)
         if not saved:
             add(nav_row("Set Up Bridge", None, lambda: BridgeSetup(self).present(self)))
             return
@@ -424,7 +449,7 @@ class Window(Adw.ApplicationWindow):
             r.set_subtitle("On the iPhone: Settings › Bluetooth › PhoneUse Bridge")
         r.add_suffix(state)
         add(r)
-        use = Adw.SwitchRow(title="Input Through Bridge", subtitle="Off: you and agents can only watch",
+        use = Adw.SwitchRow(title="Enable Input",
                             active=saved.get("use", True))
         use.connect("notify::active", lambda w, _p: in_thread(lambda: api("/api/bridge/use", {"on": w.get_active()}),
                                                               lambda *_: self.refresh()))
@@ -434,13 +459,45 @@ class Window(Adw.ApplicationWindow):
         net.add_suffix(Gtk.Image(icon_name="go-next-symbolic"))
         net.connect("activated", lambda *_: BridgeSetup(self, change=True).present(self))
         add(net)
-        forget = button("Forget…", "flat", lambda: confirm(
-            self, "Forget the bridge?", "The bridge resets and disconnects from your iPhone. To use it again, hold "
-            "its lower button for 3 seconds and set it up.", "Forget", lambda: in_thread(lambda: api("/api/bridge", method="DELETE"),
-                                                                 self._bridge_forgotten)))
-        forget.add_css_class("error")
-        forget.set_tooltip_text("Forget the bridge")
-        self.bridge_group.set_header_suffix(forget)
+
+    # ---- this PC's Bluetooth ----
+    def _pcbt_show(self, running):
+        from . import bluetooth_setup
+        self.pcbt_row.set_sensitive(running)
+        if self.pcbt_row.get_active() != bluetooth_setup.on():
+            self._pcbt_quiet = True
+            self.pcbt_row.set_active(bluetooth_setup.on())
+            self._pcbt_quiet = False
+
+    def _pcbt_toggled(self, row, _p):
+        if self._pcbt_quiet:
+            return
+        from . import bluetooth_setup
+        if row.get_active():
+            d = Adw.AlertDialog(heading="Use this PC's Bluetooth?",
+                                body="Your iPhone can pair with this PC as its keyboard and mouse. While this is on, "
+                                     "this PC can't use Bluetooth keyboards or mice of its own. Phone Use asks for "
+                                     "your password once.")
+            d.add_response("cancel", "Cancel")
+            d.add_response("yes", "Use Bluetooth")
+            d.set_response_appearance("yes", Adw.ResponseAppearance.SUGGESTED)
+            d.connect("response", lambda _d, r: self._pcbt_apply(bluetooth_setup.enable) if r == "yes"
+                      else self.refresh())
+            d.present(self)
+        else:
+            self._pcbt_apply(bluetooth_setup.disable)
+
+    def _pcbt_apply(self, change):
+        self.pcbt_row.set_sensitive(False)
+        turning_on = change.__name__ == "enable"
+
+        def done(_r, e):
+            if e:
+                self.toast("Cancelled" if str(e) == "cancelled" else f"Couldn't change Bluetooth: {e}")
+            elif turning_on:
+                self.toast("On the iPhone: Settings › Bluetooth › PhoneUse")
+            self.refresh()
+        in_thread(lambda: (change(), api("/api/input/restart", {}, timeout=20)), done)
 
     # ---- actions ----
     def toast(self, text, undo=None):

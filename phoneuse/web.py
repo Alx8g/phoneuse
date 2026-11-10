@@ -866,8 +866,9 @@ def app(mirror):
                 paired = len(companion.load().get("devices") or {})
             except Exception:  # noqa: BLE001
                 paired = 0
+            from . import bluetooth_setup
             return {"claude": claude_setup.state(), "firewall": netcheck.detect(),
-                    "confirmed": netcheck.confirmed(), "paired": paired}
+                    "confirmed": netcheck.confirmed(), "paired": paired, "pc_bluetooth": bluetooth_setup.on()}
         out = {"running": True, "picture": picture_state(), "name": NAME}
         out["bridge"], out["session"], out["awake"], out["passcode"], h = await asyncio.gather(
             get(bridges.state), get(sessions.setting), get(awake), get(passcode),
