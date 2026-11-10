@@ -92,6 +92,11 @@ class HID:
         return self.intr is not None
 
     def _bridge(self, report_id, payload, skippable=False):
+        # The bridge path needs the same guard as the local one (hidproto.AbsoluteNudge):
+        # an agent's tap at the spot of the last absolute report, after the owner's mouse
+        # had moved the pointer, was ignored and the tap landed nowhere (2026-11-10).
+        for extra in self.nudge.before(report_id, payload):
+            bridge_link[0].report(3, extra, False)
         r = bridge_link[0].report(report_id, payload, skippable)
         bridge_phone[0] = r != "no phone"
         if r == "no phone":
@@ -106,9 +111,12 @@ class HID:
             if not link.phone:
                 raise RuntimeError("no iPhone connected to the bridge (pair it with Phone Use Bridge)")
             if report_id == 3:  # a hover: newest wins on the bridge, no answer
+                for extra in self.nudge.before(report_id, payload):  # see _bridge
+                    link.report(3, extra, False)
                 link.send_latest(report_id, payload)
                 return True
             if link.send_async(report_id, payload):  # motion: pipelined, counted
+                self.nudge.before(report_id, payload)
                 return True
             busy.note(0, link.waiting)
             return False
@@ -165,6 +173,7 @@ class HID:
             # into a slow drag. Every report still goes out, in order: when 5 are
             # unanswered, wait for room instead of dropping one.
             end = time.time() + 0.3
+            self.nudge.before(2, payload)  # relative motion: the next absolute report must differ (_bridge)
             while not link.send_async(2, payload):
                 if time.time() > end:
                     self._bridge(2, payload)
@@ -878,6 +887,8 @@ def run_command(line):
         if through_bridge() and bridge_link[0].can_tap():
             if not bridge_link[0].phone:
                 raise RuntimeError("no iPhone connected to the bridge (pair it with Phone Use Bridge)")
+            for extra in hid.nudge.before(3, absolute(fx, fy, 1)):  # the tap is an absolute report (_bridge)
+                bridge_link[0].report(3, extra, False)
             bridge_link[0].tap(fx, fy, hold)  # timed on the bridge
             time.sleep(hold + 0.03)  # answer once the release is out, as the local path does
         else:
