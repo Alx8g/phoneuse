@@ -282,7 +282,7 @@ struct PhoneHero: View {
             return Step(icon: "wifi.exclamationmark", title: "The bridge is offline",
                         detail: "Check that it has power and is on the same Wi-Fi as the PC.", retry: true)
         }
-        if s.bridge != nil, !s.bluetooth.connected {
+        if let b = s.bridge, !(b.connected ?? s.bluetooth.connected) {
             return Step(icon: "dot.radiowaves.left.and.right", title: "Connect the bridge to the iPhone",
                         detail: "Open Settings › Bluetooth and tap PhoneUse Bridge. If it won't connect, forget it there "
                             + "and tap it again.")
@@ -589,7 +589,7 @@ struct BridgeTab: View {
                 .foregroundStyle(.orange)
                 .accessibilityIdentifier("bridgeWarning")
             }
-            let connected = s.bluetooth.connected && s.bluetooth.via == "bridge"
+            let connected = b.connected ?? (s.bluetooth.connected && s.bluetooth.via == "bridge")
             LabeledContent {
                 Text(!b.online ? "Offline" : connected ? "Connected" : "Not connected")
                     .foregroundStyle(!b.online ? Color.red : connected ? Color.green : Color.orange)
