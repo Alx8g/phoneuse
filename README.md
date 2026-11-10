@@ -1,21 +1,67 @@
-# phoneuse
+# Phone Use
 
 > [!WARNING]
 > **Under heavy construction.** This is a technology demo, and I have tested it on
 > one setup: an iPhone 17 Pro, Arch Linux, Hyprland and an NVIDIA GPU. Other setups
 > will likely need fixes.
 
-phoneuse lets a Linux PC see and operate an unmodified iPhone. The iPhone sends its
-screen to the PC over AirPlay, and the PC sends taps and keystrokes to the iPhone as
-a Bluetooth mouse and keyboard. The PC can do that with its own Bluetooth adapter or
-through a small ESP32 bridge that you leave next to the phone. You can use the mirror
-window as you would use the phone, or let an agent operate the phone from the command
-line or over MCP.
+Phone Use lets your computer see and operate an unmodified iPhone. The iPhone sends its
+screen to the computer over AirPlay, and the computer sends taps and keystrokes to the
+iPhone as a Bluetooth mouse and keyboard, either through its own Bluetooth adapter or
+through the bridge: a small puck that sits near the phone and joins your Wi-Fi. You can
+use the phone from your computer yourself, or let an agent operate it from the command
+line or over MCP. The Phone Use app on the iPhone is where you allow and stop agents.
 
-You don't need a jailbreak, a developer account, a cable or an app on the phone.
-phoneuse uses two features that every iPhone has: Screen Mirroring and AssistiveTouch.
+You don't need a jailbreak, a developer account or a cable. Phone Use relies on two
+features every iPhone has: Screen Mirroring and AssistiveTouch.
 
-## What you need
+## Download
+
+**[Latest release](https://github.com/lxe/phoneuse/releases/latest)**
+
+| File | What it is |
+|---|---|
+| `PhoneUse-<version>-x86_64.flatpak` | Phone Use for Linux |
+| `PhoneUse-<version>-mac.dmg` | Phone Use for macOS 15 or later, signed and notarized |
+| `phoneuse-bridge-<version>.bin` | Firmware for the bridge (LilyGO T-Display, ESP32) |
+
+The iPhone app isn't in the App Store yet. To install it, build it from [`ios/`](ios/README.md)
+with Xcode onto your phone.
+
+### Linux
+
+```sh
+flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak install --user ./PhoneUse-0.1.0-x86_64.flatpak
+flatpak run co.lxe.PhoneUse
+```
+
+The window walks you through the rest: set up the bridge or turn on this PC's
+Bluetooth, pair the iPhone app, and start Screen Mirroring to "PhoneUse on <your
+computer>". If a firewall blocks the iPhone, the window offers to open the ports.
+
+### macOS
+
+Open the DMG, drag Phone Use to Applications, and open it. It lives in the menu bar and
+uses the bridge for input.
+
+### The bridge
+
+Flash the firmware once over USB with [esptool](https://github.com/espressif/esptool):
+
+```sh
+pip install esptool
+esptool --chip esp32 write-flash 0x0 phoneuse-bridge-0.2.5.bin
+```
+
+Then click Set Up Bridge in Phone Use, check that the bridge's screen shows the same
+code, and choose your Wi-Fi network (2.4 GHz, the same one as your computer). On the
+iPhone, open Settings › Bluetooth and tap **PhoneUse Bridge**.
+
+## From source
+
+The rest of this page covers running Phone Use from a checkout on Linux, with the
+`phoneuse` command instead of the app.
 
 | | Tested with |
 |---|---|
@@ -31,9 +77,7 @@ phoneuse uses two features that every iPhone has: Screen Mirroring and Assistive
 
 The phone and the PC must be on the same network. If you run a firewall, open TCP
 ports 7000, 7001 and 7100 and UDP ports 6000, 6001 and 7011 for AirPlay, and UDP
-port 47700 for the bridge. The companion app needs TCP port 8778.
-
-## Setup
+port 47700 for the bridge. The iPhone app needs TCP port 8778.
 
 1. **Install:**
    ```sh
@@ -50,14 +94,17 @@ port 47700 for the bridge. The companion app needs TCP port 8778.
    phoneuse up
    ```
    Then, on the iPhone, open Control Center, tap Screen Mirroring and choose
-   **PhoneUse**.
+   **PhoneUse on <your computer>** (`phoneuse status` shows the name).
 
 3. **Connect the mouse and keyboard**, in one of two ways:
    - **With this PC's Bluetooth:** on the iPhone, open Settings › Bluetooth and tap
      **PhoneUse**.
    - **With the bridge:** follow [The Bluetooth bridge](#the-bluetooth-bridge) below.
 
-4. **Turn on the pointer** (AssistiveTouch), in one of two ways:
+4. **Pair the iPhone app:** run `phoneuse app pair` and open the link on the phone.
+   Agents are refused until an app is paired.
+
+5. **Turn on the pointer** (AssistiveTouch), in one of two ways:
    - Run `phoneuse cursor on`. phoneuse plays a spoken request through this PC's
      speakers and asks Siri to turn it on.
    - On the iPhone, open Settings › Accessibility › Touch › AssistiveTouch.
@@ -69,13 +116,13 @@ port 47700 for the bridge. The companion app needs TCP port 8778.
 
 ## The Bluetooth bridge
 
-The bridge is an ESP32 board that the iPhone pairs with as its Bluetooth keyboard and
-mouse. phoneuse sends commands to the bridge over Wi-Fi, so you can leave the bridge
+The bridge is a small puck (an ESP32) that the iPhone pairs with as its Bluetooth
+keyboard and mouse. phoneuse sends commands to the bridge over Wi-Fi, so you can leave the bridge
 next to the phone on a battery or a charger, and the PC's own Bluetooth adapter stays
 unused.
 
-1. **Flash the bridge** once, over USB. Install ESP-IDF, then build and flash the
-   firmware:
+1. **Flash the bridge** once, over USB, with the release's firmware (see
+   [The bridge](#the-bridge)) or from source. To build it, install ESP-IDF, then:
    ```sh
    git clone -b v6.1 --recursive https://github.com/espressif/esp-idf.git ~/esp/esp-idf-v6.1
    ~/esp/esp-idf-v6.1/install.sh esp32
@@ -147,6 +194,8 @@ web_port = 8777               # the browser mirror's port
 - [ARCHITECTURE.md](ARCHITECTURE.md) explains how the parts of phoneuse work together, and which iOS behaviours phoneuse depends on.
 - [docs/RECIPES.md](docs/RECIPES.md) lists which gestures work on iOS, and why.
 - [docs/BRIDGE.md](docs/BRIDGE.md) covers the ESP32 bridge's setup and protocol.
+- [docs/COMPANION.md](docs/COMPANION.md) describes the iPhone app and its API.
+- [mac/README.md](mac/README.md) and [ios/README.md](ios/README.md) cover building the Mac and iPhone apps.
 
 ## License
 
