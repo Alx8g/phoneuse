@@ -793,6 +793,12 @@ def app(mirror):
     a.router.add_get("/ws", ws)
     a.router.add_route("*", "/api/passcode", passcode)
     a.router.add_post("/api/unlock", unlocks.ask)
+    async def mirroring_guide(req):
+        # The "Start Screen Mirroring" picture for shells that don't draw it themselves (the Mac app).
+        from . import mirroring_guide as g
+        return web.Response(text=g.svg(NAME, req.query.get("dark") == "1"), content_type="image/svg+xml")
+
+    a.router.add_get("/api/mirroring-guide.svg", mirroring_guide)
     a.router.add_post("/api/agent/act", agent_act)
     a.router.add_post("/api/agent/phase", agent_phase)
     def picture_state():

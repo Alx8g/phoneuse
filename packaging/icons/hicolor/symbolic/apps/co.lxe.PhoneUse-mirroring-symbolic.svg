@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Screen Mirroring: two overlapping screens, as in the iPhone's Control Center -->
+  <g fill="#2e3436">
+    <path d="M6.8 1.5h6.4A1.8 1.8 0 0 1 15 3.3v4.4a1.8 1.8 0 0 1-1.8 1.8h-1.4V8h1.4a.3.3 0 0 0 .3-.3V3.3a.3.3 0 0 0-.3-.3H6.8a.3.3 0 0 0-.3.3v1.4H5V3.3a1.8 1.8 0 0 1 1.8-1.8z"/>
+    <rect x="1" y="6" width="9.8" height="8" rx="1.8"/>
+  </g>
+</svg>

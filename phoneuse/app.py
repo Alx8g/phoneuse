@@ -25,6 +25,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
+gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from . import claude_setup, overview, netcheck, screen  # noqa: E402
@@ -188,7 +189,13 @@ class Window(Adw.ApplicationWindow):
         self.hero_btn = Gtk.Button(halign=Gtk.Align.CENTER, margin_top=12, css_classes=["pill", "suggested-action"])
         self.hero_btn.connect("clicked", lambda *_: self.hero_action and self.hero_action())
         self.hero_action = None
-        for w in (self.hero_icon, self.hero_title, self.hero_sub, self.hero_btn):
+        # A picture of the steps (overview's "guide"), under the title.
+        self.hero_guide = Gtk.Picture(can_shrink=True, content_fit=Gtk.ContentFit.CONTAIN, margin_top=10,
+                                      margin_bottom=4)
+        self.hero_guide_clamp = Adw.Clamp(maximum_size=540, child=self.hero_guide, visible=False)
+        self._guide_key = None
+        Adw.StyleManager.get_default().connect("notify::dark", lambda *_: self.refresh())
+        for w in (self.hero_icon, self.hero_title, self.hero_guide_clamp, self.hero_sub, self.hero_btn):
             box.append(w)
         hero.add(box)
         self.phone_page.add(hero)
@@ -330,7 +337,8 @@ class Window(Adw.ApplicationWindow):
                                  "blocking it. Open Ports lets the iPhone reach Phone Use on this network.")
 
     HERO_ICONS = {"phone": "phone-symbolic", "keyboard": "input-keyboard-symbolic",
-                  "offline": "network-offline-symbolic", "bluetooth": "bluetooth-symbolic"}
+                  "offline": "network-offline-symbolic", "bluetooth": "bluetooth-symbolic",
+                  "mirroring": "co.lxe.PhoneUse-mirroring-symbolic"}
     HERO_BUTTONS = {"start": "Start Phone Use", "setup_bridge": "Set Up Bridge",
                     "pair_app": "Pair iPhone App", "open_ports": "Open Ports…",
                     "retry": "Try Again", "open_phone": "Open iPhone"}
@@ -346,9 +354,26 @@ class Window(Adw.ApplicationWindow):
                    "pair_app": lambda: PairDialog(self).present(self),
                    "open_ports": self._allow_network, "retry": self.refresh, "open_phone": self.app.open_phone}
         act = h.get("action")
+        self._show_guide(h.get("guide"), h.get("alt"), h.get("bold") or CFG["name"])
         return self._hero(h["title"], detail, self.HERO_BUTTONS.get(act), actions.get(act),
                           icon=self.HERO_ICONS.get(h.get("icon"), "phone-symbolic"), good=h.get("good"),
                           quiet=h.get("quiet"))
+
+    def _show_guide(self, guide, alt, name):
+        self.hero_guide_clamp.set_visible(guide == "mirroring")
+        if guide != "mirroring":
+            return
+        dark = Adw.StyleManager.get_default().get_dark()
+        if self._guide_key != (name, dark):
+            from gi.repository import Gdk, GdkPixbuf
+            from . import mirroring_guide
+            loader = GdkPixbuf.PixbufLoader()
+            loader.set_size(mirroring_guide.W * 2, mirroring_guide.H * 2)  # sharp on HiDPI screens
+            loader.write(mirroring_guide.svg(name, dark).encode())
+            loader.close()
+            self.hero_guide.set_paintable(Gdk.Texture.new_for_pixbuf(loader.get_pixbuf()))
+            self.hero_guide.set_alternative_text(alt or "")
+            self._guide_key = (name, dark)
 
     def _hero(self, title, sub, label, action, icon="phone-symbolic", good=False, quiet=False):
         self.hero_title.set_label(title)
