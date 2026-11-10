@@ -793,6 +793,20 @@ def app(mirror):
     a.router.add_get("/ws", ws)
     a.router.add_route("*", "/api/passcode", passcode)
     a.router.add_post("/api/unlock", unlocks.ask)
+    async def quit_services(req):
+        # The app's Quit, when the services it shows aren't its own child (another launch
+        # started them): stop `phoneuse serve`, this process's parent, which stops the rest.
+        if not same_origin(req):
+            return web.Response(status=403)
+        import signal
+        parent = os.getppid()
+        with open(f"/proc/{parent}/cmdline", "rb") as f:
+            if b"serve" not in f.read().split(b"\0"):
+                return web.json_response({"ok": False, "error": "not started by phoneuse serve"}, status=409)
+        asyncio.get_running_loop().call_later(0.2, os.kill, parent, signal.SIGTERM)
+        return web.json_response({"ok": True})
+
+    a.router.add_post("/api/quit", quit_services)
     a.router.add_post("/api/agent/act", agent_act)
     a.router.add_post("/api/agent/phase", agent_phase)
     def picture_state():

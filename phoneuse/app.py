@@ -798,9 +798,25 @@ class App(Adw.Application):
                 self.win.refresh()
 
     def quit_all(self):
+        """Stop the services, whoever started them, and quit once they're gone, so that the next
+        launch starts fresh rather than finding services that are still shutting down."""
+        if self.win:
+            self.win.set_visible(False)
         if self.proc:
             self.proc.send_signal(15)
-        self.quit()
+        elif services_running():
+            try:
+                api("/api/quit", {})
+            except OSError:
+                pass
+        deadline = time.time() + 15
+
+        def check():
+            if services_running() and time.time() < deadline:
+                return True
+            self.quit()
+            return False
+        GLib.timeout_add(200, check)
 
     def open_phone(self):
         Gtk.UriLauncher.new(f"http://localhost:{PORT}").launch(self.win, None, None)

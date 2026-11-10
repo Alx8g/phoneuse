@@ -65,6 +65,15 @@ class Vision:
 
 
 def serve():
+    # One service at a time: two agents that both find no socket may each start one, and the
+    # second would take the socket from the first, which then runs unreachable forever.
+    import fcntl
+    lock = open(SOCK + ".lock", "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        log("another vision service runs; exiting")
+        return
     v = Vision()
     try:
         os.unlink(SOCK)
