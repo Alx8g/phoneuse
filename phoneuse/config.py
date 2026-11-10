@@ -2,7 +2,7 @@
 
 Example config.toml:
 
-    name = "PhoneUse"                 # AirPlay receiver name (default: "PhoneUse on <this computer>")
+    name = "Phone Use"                 # AirPlay receiver name (default: "Phone Use on <this computer>")
     screen_points = [402, 874]       # your iPhone's screen in points (iPhone 17 Pro)
     decoder = "auto"                 # GStreamer H.264 decoder; auto picks NVDEC if present
     mirror_width = 498               # mirror window width in logical pixels
@@ -46,8 +46,8 @@ def computer_name():
 
 DEFAULTS = {
     # Each computer's receiver gets its own name, so two on one network don't show up in
-    # Screen Mirroring as "PhoneUse" and "PhoneUse (2)".
-    "name": f"PhoneUse on {computer_name()}",
+    # Screen Mirroring as "Phone Use" and "Phone Use (2)".
+    "name": f"Phone Use on {computer_name()}",
     "screen_points": [402, 874],
     "decoder": "auto",
     "mirror_width": 498,

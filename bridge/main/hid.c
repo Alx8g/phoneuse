@@ -1,4 +1,4 @@
-// Bluetooth Classic HID device: the iPhone pairs with "PhoneUse" and gets the same
+// Bluetooth Classic HID device: the iPhone pairs with "Phone Use" and gets the same
 // keyboard, mouse, absolute pointer and consumer keys as phoneuse's PC daemon
 // (hid_daemon.py REPORT_MAP, kept byte-identical).
 #include <stdio.h>

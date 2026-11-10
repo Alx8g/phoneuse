@@ -1255,7 +1255,7 @@ def agent_done():
 
 def app_cmd(args):
     """`phoneuse app pair`: make a one-time pairing link and open it on the phone,
-    which asks to open it in the PhoneUse app. `--print` only prints the link."""
+    which asks to open it in the Phone Use app. `--print` only prints the link."""
     import json
     if args[:1] == ["unpair"]:
         from . import companion
@@ -1278,7 +1278,7 @@ def app_cmd(args):
     step(h, "key l gui")  # the address bar
     h.cmd("type " + link)
     step(h, "key enter", quiet=0.3)
-    print("Opened the pairing link on the phone. If Safari asks, tap Open to open it in PhoneUse. "
+    print("Opened the pairing link on the phone. If Safari asks, tap Open to open it in Phone Use. "
           "The link works once, for 10 minutes.")
 
 

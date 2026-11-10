@@ -1,6 +1,6 @@
-# How phoneuse works
+# How Phone Use works
 
-phoneuse has two independent channels to the phone. The screen comes in over
+Phone Use has two independent channels to the phone. The screen comes in over
 AirPlay, the same way it would go to an Apple TV, and input goes out over
 Bluetooth, with the PC pretending to be a mouse and keyboard. Nothing runs on the
 phone. Everything else in the repository connects these two channels: turning

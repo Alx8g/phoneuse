@@ -37,7 +37,7 @@ flatpak run co.lxe.PhoneUse
 ```
 
 The window walks you through the rest: set up the bridge or turn on this PC's
-Bluetooth, pair the iPhone app, and start Screen Mirroring to "PhoneUse on <your
+Bluetooth, pair the iPhone app, and start Screen Mirroring to "Phone Use on <your
 computer>". If a firewall blocks the iPhone, the window offers to open the ports.
 
 ### macOS
@@ -62,7 +62,7 @@ esptool --chip esp32 write-flash 0x0 phoneuse-bridge-0.2.5.bin
 
 Then click Set Up Bridge in Phone Use, check that the bridge's screen shows the same
 code, and choose your Wi-Fi network (2.4 GHz, the same one as your computer). On the
-iPhone, open Settings › Bluetooth and tap **PhoneUse Bridge**.
+iPhone, open Settings › Bluetooth and tap **Phone Use Bridge**.
 
 ## From source
 
@@ -95,36 +95,36 @@ port 47700 for the bridge. The iPhone app needs TCP port 8778.
    turns off bluetoothd's input plugin, so the PC stops accepting Bluetooth keyboards
    and mice for itself. To undo the install, run `sudo scripts/install.sh --uninstall`.
 
-2. **Start phoneuse:**
+2. **Start Phone Use:**
    ```sh
    phoneuse up
    ```
    Then pair the iPhone app (step 4): the AirPlay receiver appears only once an
    iPhone is paired. On the iPhone, open Control Center, tap Screen Mirroring and
-   choose **PhoneUse on <your computer>** (`phoneuse status` shows the name).
+   choose **Phone Use on <your computer>** (`phoneuse status` shows the name).
 
 3. **Connect the mouse and keyboard**, in one of two ways:
    - **With this PC's Bluetooth:** on the iPhone, open Settings › Bluetooth and tap
-     **PhoneUse**.
+     **Phone Use**.
    - **With the bridge:** follow [The Bluetooth bridge](#the-bluetooth-bridge) below.
 
 4. **Pair the iPhone app:** run `phoneuse app pair` and open the link on the phone.
    Agents are refused until an app is paired.
 
 5. **Turn on the pointer** (AssistiveTouch), in one of two ways:
-   - Run `phoneuse cursor on`. phoneuse plays a spoken request through this PC's
+   - Run `phoneuse cursor on`. Phone Use plays a spoken request through this PC's
      speakers and asks Siri to turn it on.
    - On the iPhone, open Settings › Accessibility › Touch › AssistiveTouch.
 
    Keep Dwell Control off: when it is on, iOS taps wherever the pointer stops. The
-   first time you turn on a phone's pointer, phoneuse spends about 13 seconds
+   first time you turn on a phone's pointer, Phone Use spends about 13 seconds
    measuring how far that phone moves the pointer for each mouse report, and it uses
    that measurement for drags. To measure again, run `phoneuse calibrate`.
 
 ## The Bluetooth bridge
 
 The bridge is a small puck (a [LilyGO T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display),
-an ESP32) that the iPhone pairs with as its Bluetooth keyboard and mouse. phoneuse sends commands to the bridge over Wi-Fi, so you can leave the bridge
+an ESP32) that the iPhone pairs with as its Bluetooth keyboard and mouse. Phone Use sends commands to the bridge over Wi-Fi, so you can leave the bridge
 next to the phone on a battery or a charger, and the PC's own Bluetooth adapter stays
 unused.
 
@@ -140,7 +140,7 @@ unused.
    a 2.4 GHz Wi-Fi network and type its password. This step doesn't need the USB
    cable.
 3. **Pair the iPhone** with the bridge: on the iPhone, open Settings › Bluetooth and
-   tap **PhoneUse Bridge**.
+   tap **Phone Use Bridge**.
 
 `phoneuse bridge status` shows the bridge's address, which phone is connected to it,
 and how long a message takes to reach the bridge and come back. When the phone
@@ -159,7 +159,7 @@ key works as Cmd.
 computer can open it. In its settings you can save the passcode, set up the bridge
 and keep the phone's screen awake.
 
-**Unlocking:** when an agent runs `phoneuse unlock`, phoneuse asks you first, with a
+**Unlocking:** when an agent runs `phoneuse unlock`, Phone Use asks you first, with a
 banner in the browser mirror and a desktop notification. It types the saved passcode
 only after you approve.
 
@@ -189,7 +189,7 @@ claude mcp add --scope user phoneuse ~/phoneuse/bin/phoneuse-mcp
 These settings are optional and go in `~/.config/phoneuse/config.toml`:
 
 ```toml
-name = "PhoneUse"             # the Bluetooth and AirPlay name; rerun phoneuse install after changing it
+name = "Phone Use"             # the Bluetooth and AirPlay name; rerun phoneuse install after changing it
 screen_points = [402, 874]    # the iPhone's screen size in points
 decoder = "auto"              # the GStreamer H.264 decoder
 mirror_width = 498            # the mirror window's width
@@ -198,7 +198,7 @@ web_port = 8777               # the browser mirror's port
 
 ## More
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) explains how the parts of phoneuse work together, and which iOS behaviours phoneuse depends on.
+- [ARCHITECTURE.md](ARCHITECTURE.md) explains how the parts of Phone Use work together, and which iOS behaviours Phone Use depends on.
 - [docs/RECIPES.md](docs/RECIPES.md) lists which gestures work on iOS, and why.
 - [docs/BRIDGE.md](docs/BRIDGE.md) covers the ESP32 bridge's setup and protocol.
 - [docs/COMPANION.md](docs/COMPANION.md) describes the iPhone app and its API.

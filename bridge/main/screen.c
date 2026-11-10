@@ -74,7 +74,7 @@ static void draw(void) {
     int y = 6;
     switch (bridge.state) {
     case ST_SETUP:
-        row(0, 8, y, &font22, "PhoneUse bridge", FG);
+        row(0, 8, y, &font22, "Phone Use Bridge", FG);
         y += font22.h + 10;
         row(1, 8, y, &font16, "Set it up from phoneuse:", DIM);
         y += font16.h + 2;
@@ -84,7 +84,7 @@ static void draw(void) {
         row(3, 8, y, &font16, a, DIM);
         break;
     case ST_OFF:
-        row(0, 8, y, &font22, "PhoneUse bridge", FG);
+        row(0, 8, y, &font22, "Phone Use Bridge", FG);
         y += font22.h + 10;
         row(1, 8, y, &font16, "Forgotten by its PC.", DIM);
         y += font16.h + 2;

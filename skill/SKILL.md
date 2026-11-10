@@ -3,7 +3,7 @@ name: phoneuse
 description: See and operate the user's iPhone from this Linux PC with the `phoneuse` CLI (AirPlay mirror for the screen, Bluetooth mouse/keyboard for input). Use when a task needs the iPhone: open or use an app, read what is on the phone screen, tap, type, swipe, check a notification, change a phone setting, or test something on the device. Also use when the mirror or the Bluetooth link needs starting or fixing.
 ---
 
-# Operating the iPhone with phoneuse
+# Operating the iPhone with Phone Use
 
 The `phoneuse` command drives a real, unmodified iPhone. Its screen arrives over
 AirPlay as a mirror window on this PC and as a live page at
@@ -20,7 +20,7 @@ the full list.
 2. No mirror window: check whether `phoneuse up` is running. If it isn't, start it
    somewhere the user can see it (a terminal or tmux window they use), not hidden in
    the background. "not mirroring" (or no window): ask the user to start Screen
-   Mirroring to this PC's receiver ("PhoneUse on <computer>"; `phoneuse status`
+   Mirroring to this PC's receiver ("Phone Use on <computer>"; `phoneuse status`
    names it) from the iPhone's Control Center. You can't start
    mirroring from the PC, and every input command refuses until it runs.
 3. **Show the user the phone** before your first action, so they can watch what
@@ -31,7 +31,7 @@ the full list.
    is for the user to watch: act through `phoneuse` commands, never by clicking in
    the page.
 4. `connected=False`: run `phoneuse status` again after a few seconds (the daemon
-   reconnects), then ask the user to tap "PhoneUse" in the iPhone's Bluetooth settings.
+   reconnects), then ask the user to tap "Phone Use" in the iPhone's Bluetooth settings.
 5. HID service not active: `phoneuse install` (needs sudo) sets it up.
 
 ## MCP or CLI
@@ -135,7 +135,7 @@ Every round trip with the phone costs you a turn, so make each one count.
 | Control Center / Notification Center | `phoneuse control-center` · `phoneuse notifications` |
 | Close those overlays | `phoneuse dismiss` (Cmd+H does not close them) |
 | Type text / keys | `phoneuse type "hello\n"` · `phoneuse key cmd+space` |
-| Show / hide the iPhone keyboard | `phoneuse keyboard` (Eject; it hides while phoneuse's keyboard is connected) |
+| Show / hide the iPhone keyboard | `phoneuse keyboard` (Eject; it hides while Phone Use's keyboard is connected) |
 | Keep the screen from locking | `phoneuse awake on` / `off` (a few-pixel pointer nudge each second while nobody uses the phone; also the page's settings) |
 | Does the pointer work? | `phoneuse cursor` (on / off / unknown). Taps and drags need AssistiveTouch on |
 | Turn the pointer on | `phoneuse cursor on`: holds the Siri key and asks out loud on this PC's speakers; the phone must be unlocked and in earshot |
@@ -183,7 +183,7 @@ leftover; close it, or `phoneuse back` until you reach the app's main view.
 ## Rules
 
 - **Lock screen:** run `phoneuse unlock`. It asks the owner, who approves on the
-  browser mirror page or in a desktop notification; only then does phoneuse type
+  browser mirror page or in a desktop notification; only then does Phone Use type
   the passcode they saved (you never see it), once. If it answers anything but
   "unlocked", stop and ask the owner to unlock the phone. Never type a passcode
   yourself, never guess one, and never click Unlock on the page yourself: that
@@ -205,7 +205,7 @@ leftover; close it, or `phoneuse back` until you reach the app's main view.
 
 - A tap or swipe seems to miss: take a fresh screenshot first. The mirror trails
   the phone slightly, so an earlier screenshot may be stale.
-- A note says the picture trails the phone by N seconds: phoneuse measures it from
+- A note says the picture trails the phone by N seconds: Phone Use measures it from
   the status-bar clock, and each action already waits that much longer for its
   change. Don't repeat an action that seems to have done nothing; if the lag stays,
   tell the user (a screen recording on the iPhone slows mirroring).

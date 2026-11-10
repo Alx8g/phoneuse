@@ -1,7 +1,7 @@
 # Operating the iPhone with `phoneuse`
 
 `phoneuse up` runs the AirPlay mirror and mouse control together; on the iPhone,
-start Control Center → Screen Mirroring → PhoneUse on <this computer>. Agents then use the commands
+start Control Center → Screen Mirroring → Phone Use on <this computer>. Agents then use the commands
 below and look at `phoneuse screenshot`, which waits for the mirror to catch up
 after the last action, so it always shows the result.
 
@@ -48,8 +48,8 @@ points, which is plenty for scrolling and edge gestures.
   since a shorter press-and-move reads as a tap.
 - iOS hides the iPhone's on-screen keyboard while any Bluetooth keyboard is
   connected, and Eject only toggles it blindly. Dropping the link while idle
-  would bring the keyboard back, but once phoneuse drops it, iOS refuses
-  phoneuse's reconnects ("Connection refused") until the owner taps PhoneUse in
+  would bring the keyboard back, but once Phone Use drops it, iOS refuses
+  Phone Use's reconnects ("Connection refused") until the owner taps Phone Use in
   Bluetooth settings. Links the phone dropped itself reconnect fine. So the
   daemon's `release` command exists (it declines the iPhone's reconnects and
   drops hovers until the next real input), but nothing calls it.
@@ -57,7 +57,7 @@ points, which is plenty for scrolling and edge gestures.
   opens the Screen Mirroring popup with a Stop Mirroring button.
 - Cmd+H doesn't close Control Center or Notification Center; use `phoneuse dismiss`.
 - iOS ignores the mouse wheel and Cmd+Tab. Over the mirror window and in the
-  browser mirror, phoneuse turns the wheel into a drag instead (see pointer.py).
+  browser mirror, Phone Use turns the wheel into a drag instead (see pointer.py).
 - Fast swipes down from the top are ignored; the top-edge recipes are slow on purpose.
 - If the phone locks, the passcode screen appears. The agent must stop and ask the
   owner to unlock it. Never type a passcode.

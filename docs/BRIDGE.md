@@ -1,7 +1,7 @@
 # The Bluetooth bridge
 
 The bridge is an ESP32 board (a LilyGO TTGO T-Display) that the iPhone pairs with
-as its Bluetooth keyboard and mouse, in place of this PC. phoneuse reaches it over
+as its Bluetooth keyboard and mouse, in place of this PC. Phone Use reaches it over
 Wi-Fi, so the board can sit next to the phone on a battery or any USB charger, and
 the PC's own Bluetooth radio is out of the path.
 
@@ -20,7 +20,7 @@ or `phoneuse bridge setup` in a terminal. No USB cable is needed.
 | Code | The PC and the bridge exchange X25519 keys. Both show the same 6-digit code; a different code means something else answered. |
 | Network | The bridge scans and lists the Wi-Fi networks it sees (2.4 GHz only). |
 | Password | Sent to the bridge encrypted (AES-GCM, key from the exchange). The bridge saves the network only once it has joined. |
-| Pair | On the iPhone: Settings › Bluetooth › PhoneUse Bridge. |
+| Pair | On the iPhone: Settings › Bluetooth › Phone Use Bridge. |
 
 The PC saves the bridge's id and control key in `~/.config/phoneuse/bridge.json`
 before the bridge joins, and finds it again by id if its address changes.

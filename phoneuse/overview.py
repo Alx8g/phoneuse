@@ -48,7 +48,7 @@ def hero(s, name):
                      "Wi-Fi as this PC.", "retry", icon="offline")
     if saved and not st.get("connected"):
         return _step("connect_bridge", "Connect the bridge to the iPhone", "On the iPhone, open Settings › "
-                     "Bluetooth and tap PhoneUse Bridge. If it won't connect, forget it there and tap it again.", icon="bluetooth")
+                     "Bluetooth and tap Phone Use Bridge. If it won't connect, forget it there and tap it again.", icon="bluetooth")
     if pic.get("paused"):
         return _step("taken_over", "You're in control", "You took over from the agent.", "open_phone", good=True)
     if pic.get("stale"):

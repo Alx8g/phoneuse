@@ -480,7 +480,7 @@ class Window(Adw.ApplicationWindow):
         else:
             state.set_label("iPhone not connected")
             state.add_css_class("warning")
-            r.set_subtitle("On the iPhone: Settings › Bluetooth › PhoneUse Bridge")
+            r.set_subtitle("On the iPhone: Settings › Bluetooth › Phone Use Bridge")
         r.add_suffix(state)
         add(r)
         use = Adw.SwitchRow(title="Enable Input",
@@ -530,7 +530,7 @@ class Window(Adw.ApplicationWindow):
             if e:
                 self.toast("Cancelled" if str(e) == "cancelled" else f"Couldn't change Bluetooth: {e}")
             elif turning_on:
-                self.toast("On the iPhone: Settings › Bluetooth › PhoneUse")
+                self.toast("On the iPhone: Settings › Bluetooth › Phone Use")
             self.refresh()
         in_thread(lambda: (change(), api("/api/input/restart", {}, timeout=20)), done)
 
@@ -584,7 +584,7 @@ class Window(Adw.ApplicationWindow):
         if err:
             self.toast(f"Couldn't forget the bridge: {err}")
         elif j.get("reset"):
-            self.toast("Bridge reset. Also forget PhoneUse Bridge in the iPhone's Bluetooth settings")
+            self.toast("Bridge reset. Also forget Phone Use Bridge in the iPhone's Bluetooth settings")
         else:  # forgotten here; the bridge itself didn't answer (offline, or older firmware)
             self.toast("Bridge removed, but it didn't respond to the reset")
         self.refresh()
@@ -742,7 +742,7 @@ class FirmwareDialog(Adw.Dialog):
             if bridge.saved():  # its key is gone with the erase
                 api_quiet = lambda: api("/api/bridge", method="DELETE")
                 in_thread(api_quiet)
-            self._show("Flashed. Set the bridge up to use it. On the iPhone, forget PhoneUse Bridge in "
+            self._show("Flashed. Set the bridge up to use it. On the iPhone, forget Phone Use Bridge in "
                        "Bluetooth settings first if it's listed.",
                        actions=[("Set Up Bridge", "pill suggested-action", self._setup)])
         in_thread(lambda: bridge.install_firmware(port, progress), done)
@@ -828,7 +828,7 @@ class BridgeSetup(Adw.Dialog):
                                        ("Flash LilyGO T-Display", "pill", self._firmware)])
         g = Adw.PreferencesGroup(description="Choose your bridge.")
         for b in j["bridges"]:
-            g.add(nav_row(b.get("name") or "PhoneUse Bridge", b["address"], lambda a=b["address"]: self.pair(a)))
+            g.add(nav_row(b.get("name") or "Phone Use Bridge", b["address"], lambda a=b["address"]: self.pair(a)))
         self._page("Find the Bridge", g)
 
     def pair(self, address):
@@ -901,7 +901,7 @@ class BridgeSetup(Adw.Dialog):
         if self.change:
             self.win.toast(f"Bridge connected to {ssid}")
             return self.close()
-        self._wait("Connect the iPhone", "On the iPhone, open Settings › Bluetooth and tap PhoneUse Bridge. If it "
+        self._wait("Connect the iPhone", "On the iPhone, open Settings › Bluetooth and tap Phone Use Bridge. If it "
                    "won't connect, forget it there and tap it again.")
         self.waiting = GLib.timeout_add_seconds(2, self._phone_check)
 

@@ -1,10 +1,10 @@
 # The companion app
 
-The companion app is an optional iOS app. phoneuse works without it, but with it the phone shows a Live Activity
-while an agent uses the phone, the owner can approve unlocks and take over from the phone, and the owner can
-change phoneuse's settings (the bridge, keep-awake, the keyboard, the mirror's audio) without the PC.
+The companion app is the iOS app where the owner allows and stops agents; agents are refused until one is
+paired. With it, the phone shows a Live Activity while an agent uses the phone, the owner can approve unlocks and take over from the phone, and the owner can
+change Phone Use's settings (the bridge, keep-awake, the keyboard, the mirror's audio) without the PC.
 
-The app talks to the phoneuse PC over the local network, through the companion API that this file describes. The
+The app talks to the Phone Use PC over the local network, through the companion API that this file describes. The
 PC starts, updates and ends the Live Activity with Apple push notifications (APNs), so the app doesn't need to run.
 
 ## Finding and pairing
@@ -18,7 +18,7 @@ Pairing gives the app a 32-byte key that it shares with the PC. `phoneuse app pa
 phoneuse://pair?id=<pc id>&name=<pc name, URL-encoded>&host=<LAN IP>&port=8778&key=<key, base64url without padding>
 ```
 
-phoneuse can open the link on the phone by itself (it types the link into Safari's address bar), and the browser
+Phone Use can open the link on the phone by itself (it types the link into Safari's address bar), and the browser
 mirror's settings show the same link as a QR code. The app saves the key in the Keychain, and the PC saves it in
 `~/.config/phoneuse/companion.json` (mode 600). A pairing link works once, for 10 minutes. The app keeps the
 host it was given and falls back to Bonjour (by `id`) when the PC's address changes.
@@ -195,7 +195,7 @@ device had an activity in it: Apple makes every start push an alert, and an acti
 gone until the next session; the app also starts it itself (the same
 attributes and content) when it opens while the PC mirrors and no activity is running.
 
-`phase` says what the agent is doing at the moment: `acting` while phoneuse sends a tap, a swipe or keys to the
+`phase` says what the agent is doing at the moment: `acting` while Phone Use sends a tap, a swipe or keys to the
 phone, `reading` while the agent looks at the screen, and `thinking` between actions, while the agent's model
 works out its next step. The phase changes every few seconds, and the PC sends at most one update per second.
 

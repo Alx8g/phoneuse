@@ -536,7 +536,7 @@ async function bridgeShow() {
   const st = j.status || {}, sv = j.saved;
   const phone = st.error ? `<span class="danger">Not answering</span>`
     : st.connected ? `<span class="ok">${esc(st.phone || "iPhone")}</span>`
-    : `Pair on the iPhone: Bluetooth › PhoneUse Bridge`;
+    : `Pair on the iPhone: Bluetooth › Phone Use Bridge`;
   bview(`<div class="item"><span class="grow">Bridge ${esc(sv.id.slice(-4))}<span class="sub">${esc(sv.ssid)} · ${esc(sv.ip)}</span>
            <span class="sub">${phone}</span></span></div>
          <button class="item" id="bUse" role="switch" aria-checked="${!!sv.use}"><span class="grow">Enable input</span><span class="sw"></span></button>

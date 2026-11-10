@@ -45,7 +45,7 @@ except ImportError:  # the app (bridge-only) ships without dbus-python: BlueZ is
 HERE = os.path.dirname(os.path.abspath(__file__))
 from .config import BRIDGE_ONLY, STATE_DIR, USER_DAEMON
 from .config import HID_SOCKET as SOCK_PATH
-DEVICE_NAME = os.environ.get("PHONEUSE_NAME", "PhoneUse")  # what the phone sees in Bluetooth settings
+DEVICE_NAME = os.environ.get("PHONEUSE_NAME", "Phone Use")  # what the phone sees in Bluetooth settings
 PSM_CTRL, PSM_INTR = 0x11, 0x13
 HID_UUID = "00001124-0000-1000-8000-00805f9b34fb"
 INTR_UUID = "8e9a4f30-6b4c-4d2a-9b1e-70686f6e6575"  # our own: carries only the interrupt PSM (the app)
@@ -134,7 +134,7 @@ class HID:
         r = bridge_link[0].report(report_id, payload, skippable)
         bridge_phone[0] = r != "no phone"
         if r == "no phone":
-            raise RuntimeError("no iPhone connected to the bridge (pair it with PhoneUse Bridge)")
+            raise RuntimeError("no iPhone connected to the bridge (pair it with Phone Use Bridge)")
         return r == "sent"
 
     def send_skippable(self, report_id, payload):
@@ -143,7 +143,7 @@ class HID:
         if through_bridge():
             link = bridge_link[0]
             if not link.phone:
-                raise RuntimeError("no iPhone connected to the bridge (pair it with PhoneUse Bridge)")
+                raise RuntimeError("no iPhone connected to the bridge (pair it with Phone Use Bridge)")
             if report_id == 3:  # a hover: newest wins on the bridge, no answer
                 link.send_latest(report_id, payload)
                 return True
@@ -847,7 +847,7 @@ def _set_bridge(args):
     released.set()  # this PC's own link to the phone would be a second keyboard: drop it
     if hid.intr:
         hid.drop("input goes through the bridge now")
-    disconnect_all()  # the Bluetooth link itself too, or the phone still lists PhoneUse as connected
+    disconnect_all()  # the Bluetooth link itself too, or the phone still lists Phone Use as connected
     log(f"bridge on: {args[0]}, phone {st.get('phone') or 'not paired'}")
     threading.Thread(target=watch_bridge, args=(link,), daemon=True).start()
     return f"bridge {args[0]} phone={st.get('phone')!r} connected={st.get('connected')}"
@@ -930,7 +930,7 @@ def run_command(line):
         return "ok"
     if cmd == "pair":
         if BRIDGE_ONLY:
-            return "ok the iPhone pairs with the bridge: Settings > Bluetooth > PhoneUse Bridge"
+            return "ok the iPhone pairs with the bridge: Settings > Bluetooth > Phone Use Bridge"
         secs = int(args[0]) if args else 120
         GLib.idle_add(open_pairing, secs)
         return f"ok discoverable for {secs}s as '{DEVICE_NAME}'"
@@ -938,7 +938,7 @@ def run_command(line):
         fx, fy, hold = float(args[0]), float(args[1]), float(args[2]) if len(args) > 2 else 0.06
         if through_bridge() and bridge_link[0].can_tap():
             if not bridge_link[0].phone:
-                raise RuntimeError("no iPhone connected to the bridge (pair it with PhoneUse Bridge)")
+                raise RuntimeError("no iPhone connected to the bridge (pair it with Phone Use Bridge)")
             bridge_link[0].tap(fx, fy, hold)  # timed on the bridge
             time.sleep(hold + 0.03)  # answer once the release is out, as the local path does
         else:

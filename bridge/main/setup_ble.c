@@ -202,7 +202,7 @@ void setup_ble_init(void) {
     esp_ble_gatts_app_register(0x42);
     esp_ble_gatt_set_local_mtu(247);
     char name[24];
-    snprintf(name, sizeof name, "PhoneUse Bridge %.4s", bridge.id + 8);
+    snprintf(name, sizeof name, "Phone Use Bridge %.4s", bridge.id + 8);
     esp_ble_adv_data_t ad = {.set_scan_rsp = false, .include_name = true, .flag = ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT};
     esp_ble_gap_set_device_name(name);
     esp_ble_gap_config_adv_data(&ad);

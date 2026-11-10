@@ -297,7 +297,7 @@ async def scan_ble(seconds=5.0):
     found = {}
 
     def seen(d, adv):
-        if SVC in [u.lower() for u in adv.service_uuids] or (adv.local_name or "").startswith("PhoneUse Bridge"):
+        if SVC in [u.lower() for u in adv.service_uuids] or (adv.local_name or "").startswith(("Phone Use Bridge", "PhoneUse Bridge")):  # also firmware < 0.2.6
             found[d.address] = (d.address, adv.local_name or d.name, adv.rssi)
 
     scanner = BleakScanner(seen)

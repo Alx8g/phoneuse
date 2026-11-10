@@ -741,7 +741,7 @@ class Companion:
             group[0] = call("/", "org.freedesktop.Avahi.Server", "EntryGroupNew", None, "(o)")[0]
             txt = [f"id={load()['pc_id']}".encode(), f"name={pc_name()}".encode()]
             call(group[0], "org.freedesktop.Avahi.EntryGroup", "AddService",
-                 GLib.Variant("(iiussssqaay)", (-1, -1, 0, f"PhoneUse on {pc_name()}", "_phoneuse._tcp", "", "",
+                 GLib.Variant("(iiussssqaay)", (-1, -1, 0, f"Phone Use on {pc_name()}", "_phoneuse._tcp", "", "",
                                                  PORT, txt)))
             call(group[0], "org.freedesktop.Avahi.EntryGroup", "Commit")
             return why
@@ -749,7 +749,7 @@ class Companion:
             try:
                 why = await self.run(publish)
                 if why:
-                    log("published over Bonjour as", f"PhoneUse on {pc_name()} ({why})")
+                    log("published over Bonjour as", f"Phone Use on {pc_name()} ({why})")
             except Exception as e:
                 group[0] = None
                 log("can't publish over Bonjour:", e)
@@ -781,7 +781,7 @@ class Companion:
         self._dns_sd_reply = reply(registered)  # both kept for the life of the process
         self._dns_sd = ctypes.c_void_p()
         txt = b"".join(bytes([len(t)]) + t for t in (f"id={load()['pc_id']}".encode(), f"name={pc_name()}".encode()))
-        err = lib.DNSServiceRegister(ctypes.byref(self._dns_sd), 0, 0, f"PhoneUse on {pc_name()}".encode(),
+        err = lib.DNSServiceRegister(ctypes.byref(self._dns_sd), 0, 0, f"Phone Use on {pc_name()}".encode(),
                                      b"_phoneuse._tcp", None, None, socket.htons(PORT), len(txt), txt,
                                      self._dns_sd_reply, None)
         if err:
@@ -794,7 +794,7 @@ class Companion:
     async def _advertise_dns_sd_tool(self):
         """The `dns-sd` tool registers under its own permission. A shell loop ends it once this process is gone,
         so no registration outlives the companion."""
-        name, txt = f"PhoneUse on {pc_name()}", [f"id={load()['pc_id']}", f"name={pc_name()}"]
+        name, txt = f"Phone Use on {pc_name()}", [f"id={load()['pc_id']}", f"name={pc_name()}"]
         script = ('dns-sd -R "$1" _phoneuse._tcp local "$2" "$3" "$4" >/dev/null & child=$!; '
                   f'while kill -0 {os.getpid()} 2>/dev/null; do sleep 2; done; kill $child')
         await asyncio.create_subprocess_exec("/bin/sh", "-c", script, "sh", name, str(PORT), *txt,

@@ -185,7 +185,7 @@ class Mirror:
 
     # Releasing the link while idle (so iOS shows its own keyboard) is off: after
     # phoneuse drops the link, iOS refuses phoneuse's reconnects ("Connection
-    # refused", measured 2026-11-07) until the owner taps PhoneUse in Bluetooth
+    # refused", measured 2026-11-07) until the owner taps Phone Use in Bluetooth
     # settings, so the next input could never reach the phone. The daemon keeps
     # its release command for a better trigger.
     RELEASE_IDLE = None
