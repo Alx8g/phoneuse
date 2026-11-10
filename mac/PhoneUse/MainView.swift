@@ -113,14 +113,14 @@ struct HeroView: View {
     var body: some View {
         let h = core.hero
         VStack(spacing: 8) {
-            heroIcon(h.icon)
+            Image(systemName: symbol(h.icon))
                 .font(.system(size: 52, weight: .regular))
                 .foregroundStyle(h.good == true ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
                 .frame(height: 64)
                 .symbolEffect(.pulse, isActive: h.step == "starting")
             Text(h.title).font(.title2.weight(.semibold)).multilineTextAlignment(.center)
-            if h.guide == "mirroring" {
-                MirroringGuide(name: h.bold, alt: h.alt)
+            if let steps = h.steps, !steps.isEmpty {
+                HeroSteps(steps: steps, bold: h.bold)
             }
             if let d = h.detail, !d.isEmpty {
                 Text(detail(d, bold: h.bold))
@@ -163,21 +163,11 @@ struct HeroView: View {
         }
     }
 
-    @ViewBuilder private func heroIcon(_ icon: String?) -> some View {
-        if icon == "mirroring", let img = Self.mirroringGlyph {
-            Image(nsImage: img).renderingMode(.template).resizable().aspectRatio(contentMode: .fit)
-                .frame(width: 52, height: 52)
-        } else {
-            Image(systemName: symbol(icon))
-        }
-    }
-
-    /// Control Center's Screen Mirroring glyph: an outlined screen at the top left behind a solid one at the
-    /// bottom right (SF Symbols' rectangle.on.rectangle outlines both).
     static let mirroringGlyph: NSImage? = {
         guard let url = Bundle.main.url(forResource: "co.lxe.PhoneUse-mirroring-symbolic", withExtension: "svg"),
               let img = NSImage(contentsOf: url) else { return nil }
         img.isTemplate = true
+        img.size = NSSize(width: 16, height: 16)  // inline, at body text size
         return img
     }()
 
@@ -435,35 +425,48 @@ struct SetupMode: Identifiable {
     var id: Bool { change }
 }
 
-/// How to start Screen Mirroring, drawn by the core (GET /api/mirroring-guide.svg), in the window's appearance.
-struct MirroringGuide: View {
-    var name: String?
-    var alt: String?
-    @Environment(\.colorScheme) private var scheme
-    @State private var image: NSImage?
+/// The hero's numbered steps (overview's "steps"): dim numbers, left-aligned text, the block centered. The
+/// receiver's name ("bold") is bold, and "{mirroring}" is Control Center's Screen Mirroring glyph.
+struct HeroSteps: View {
+    var steps: [String]
+    var bold: String?
 
     var body: some View {
-        Group {
-            if let image {
-                Image(nsImage: image).resizable().aspectRatio(contentMode: .fit)
-            } else {
-                Color.clear.aspectRatio(540.0 / 172.0, contentMode: .fit)  // until the picture loads
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(Array(steps.enumerated()), id: \.offset) { i, step in
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("\(i + 1).").foregroundStyle(.secondary).monospacedDigit()
+                    line(step).fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
-        .frame(maxWidth: 540)
-        .padding(.top, 6)
-        .accessibilityElement()
-        .accessibilityLabel(alt ?? "")
-        .accessibilityAddTraits(.isImage)
-        .task(id: "\(scheme == .dark)\(name ?? "")") { await load() }
+        .multilineTextAlignment(.leading)
+        .frame(maxWidth: 380)
+        .fixedSize(horizontal: true, vertical: false)
+        .padding(.top, 4)
     }
 
-    private func load() async {
-        var url = URLComponents(url: Core.shared.base.appendingPathComponent("/api/mirroring-guide.svg"),
-                                resolvingAgainstBaseURL: false)!
-        url.queryItems = [URLQueryItem(name: "dark", value: scheme == .dark ? "1" : "0")]
-        guard let u = url.url, let (data, _) = try? await URLSession.shared.data(from: u),
-              let img = NSImage(data: data) else { return }
-        image = img
+    private func line(_ step: String) -> Text {
+        let parts = step.components(separatedBy: "{mirroring}")
+        var text = Text(styled(parts[0]))
+        for part in parts.dropFirst() {
+            if let glyph = HeroView.mirroringGlyph {
+                text = text + Text(Image(nsImage: glyph).renderingMode(.template)).baselineOffset(-2)
+            }
+            text = text + Text(styled(part))
+        }
+        return text
+    }
+
+    private func styled(_ s: String) -> AttributedString {
+        var a = AttributedString(s)
+        if let bold, !bold.isEmpty {
+            var from = a.startIndex
+            while from < a.endIndex, let r = a[from...].range(of: bold) {
+                a[r].inlinePresentationIntent = .stronglyEmphasized
+                from = r.upperBound
+            }
+        }
+        return a
     }
 }
