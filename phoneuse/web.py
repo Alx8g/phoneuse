@@ -812,6 +812,7 @@ def app(mirror):
         asyncio.get_running_loop().call_later(0.2, os.kill, parent, signal.SIGTERM)
         return web.json_response({"ok": True})
 
+    a.router.add_get("/favicon.svg", lambda _r: web.FileResponse(os.path.join(os.path.dirname(PAGE), "favicon.svg")))
     a.router.add_post("/api/quit", quit_services)
     a.router.add_post("/api/agent/act", agent_act)
     a.router.add_post("/api/agent/phase", agent_phase)

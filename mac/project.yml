@@ -23,6 +23,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: co.lxe.phoneuse.mac
         PRODUCT_NAME: Phone Use
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon   # PhoneUse/Assets.xcassets, from scripts/make-icons.py
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
         ENABLE_HARDENED_RUNTIME: YES

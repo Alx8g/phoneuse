@@ -1,3 +1,5 @@
+<img src="packaging/flatpak/co.lxe.PhoneUse.svg" width="128" alt="Phone Use icon: a sleepy cloud hugging a phone">
+
 # Phone Use
 
 > [!WARNING]
