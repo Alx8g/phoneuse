@@ -10,6 +10,9 @@ func recognize(_ path: String) -> [String: Any] {
     let request = VNRecognizeTextRequest()
     request.recognitionLevel = .accurate
     request.usesLanguageCorrection = false  // UI labels, names and numbers: read them as written
+    // Latin script: left to guess, Vision read "3AM" as Cyrillic "ЗАМ" on the Weather app
+    request.recognitionLanguages = ["en-US"]
+    request.automaticallyDetectsLanguage = false
     request.minimumTextHeight = 0.006        // the status bar and small captions on a 2622-pixel-tall screen
     let handler = VNImageRequestHandler(url: url, options: [:])
     do {
