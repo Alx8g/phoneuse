@@ -1,19 +1,33 @@
 """A picture of how to start Screen Mirroring on the iPhone, in three steps, with this PC's
 receiver name in the last one. Every shell shows it on the "Start Screen Mirroring" step:
 the GTK window draws svg() itself, other shells load GET /api/mirroring-guide.svg?dark=1.
+
+Layout: three 180-wide columns; each drawing fills the same 120-high box (y 8-128), and the
+captions share two baselines under it.
 """
 from xml.sax.saxutils import escape
 
-W, H = 540, 200
+W, H = 540, 172
+TOP, BOX = 8, 120  # every drawing: y from TOP to TOP + BOX
 
 
 def glyph(x, y, s, fg, bg):
-    """The Screen Mirroring symbol (two overlapping screens) in an s x s box at (x, y)."""
+    """The Screen Mirroring symbol in an s x s box at (x, y): as in Control Center, an outlined
+    screen at the top left behind a solid one at the bottom right."""
     k = s / 16
     return (f'<g transform="translate({x} {y}) scale({k})">'
-            f'<rect x="5" y="1.5" width="9.5" height="7.5" rx="1.8" fill="none" stroke="{fg}" stroke-width="1.5"/>'
-            f'<rect x="1.5" y="6.2" width="9.5" height="7.5" rx="1.8" fill="{fg}" stroke="{bg}" stroke-width="1.4"/>'
+            f'<rect x="1.25" y="2" width="10" height="7.6" rx="1.8" fill="none" stroke="{fg}" stroke-width="1.5"/>'
+            f'<rect x="4.75" y="6.4" width="10" height="7.6" rx="1.8" fill="{fg}" stroke="{bg}" stroke-width="1.5"/>'
             '</g>')
+
+
+def fit(text, width, size, smallest, per_char):
+    """(text, font size) that fits `width`: a smaller size first, then an ellipsis. Text widths are
+    estimates (per_char x size per character), since renderers ignore textLength unevenly."""
+    need = len(text) * per_char
+    size = min(size, max(smallest, width / need)) if need else size
+    keep = int(width / (per_char * size))
+    return (text if len(text) <= keep else text[:keep - 1].rstrip() + "\u2026"), round(size, 1)
 
 
 def svg(name, dark=True):
@@ -21,57 +35,46 @@ def svg(name, dark=True):
     dim = "#aeaeb2" if dark else "#636366"
     line = "#636366" if dark else "#aeaeb2"
     tile = "#3a3a3c" if dark else "#e5e5ea"
+    soft = "#48484a" if dark else "#d1d1d6"
     accent = "#0a84ff" if dark else "#007aff"
     font = 'font-family="Inter, Cantarell, -apple-system, sans-serif"'
-    n = escape(name)
-    fit = ' textLength="94" lengthAdjust="spacingAndGlyphs"' if len(name) * 5.6 > 94 else ""  # fit the row
+    b = TOP + BOX
+    row_name, row_size = fit(name, 100, 10.5, 7.5, 0.52)
+    cap_name, cap_size = fit(name, 172, 12, 10, 0.56)
 
-    def caption(cx, a, b, bold_b=False):
-        w = ' font-weight="700"' if bold_b else ""
-        return (f'<text x="{cx}" y="174" text-anchor="middle" font-size="12.5" fill="{dim}" {font}>{a}</text>'
-                f'<text x="{cx}" y="191" text-anchor="middle" font-size="12.5" fill="{fg if bold_b else dim}"'
-                f'{w} {font}>{b}</text>')
+    def caption(cx, a, second, size=12, strong=False):
+        w = f' font-weight="700" fill="{fg}"' if strong else f' fill="{dim}"'
+        return (f'<text x="{cx}" y="{b + 24}" text-anchor="middle" font-size="12" fill="{dim}" {font}>{a}</text>'
+                f'<text x="{cx}" y="{b + 40}" text-anchor="middle" font-size="{size}"{w} {font}>{second}</text>')
 
-    tap = f'<circle r="9" fill="{accent}" opacity=".35"/><circle r="4.5" fill="{accent}"/>'
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">']
 
-    # 1. The iPhone: swipe down from the top-right corner.
+    # 1. The iPhone, 60 x 120: swipe down from the top-right corner.
     parts += [
-        f'<rect x="55" y="12" width="70" height="138" rx="15" fill="none" stroke="{line}" stroke-width="2.5"/>',
-        f'<rect x="78" y="19" width="24" height="7" rx="3.5" fill="{line}"/>',  # the Dynamic Island
-        f'<path d="M113 34v30" stroke="{accent}" stroke-width="2.5" stroke-linecap="round"/>',
-        f'<path d="M107 58l6 7 6-7" fill="none" stroke="{accent}" stroke-width="2.5" stroke-linecap="round" '
-        'stroke-linejoin="round"/>',
-        f'<g transform="translate(113 30)">{tap}</g>',
+        f'<rect x="61" y="{TOP + 1}" width="58" height="{BOX - 2}" rx="13" fill="none" stroke="{line}" stroke-width="2"/>',
+        f'<rect x="80" y="{TOP + 8}" width="20" height="6" rx="3" fill="{line}"/>',
+        f'<circle cx="108" cy="{TOP + 12}" r="3.5" fill="{accent}"/>',
+        f'<path d="M108 {TOP + 18}v26M103 {TOP + 39}l5 5 5-5" fill="none" stroke="{accent}" stroke-width="2" '
+        'stroke-linecap="round" stroke-linejoin="round"/>',
         caption(90, "1. Swipe down from", "the top-right corner"),
     ]
 
-    # 2. Control Center: the Screen Mirroring tile.
+    # 2. The Screen Mirroring button, as Control Center shows it.
+    cy = TOP + BOX / 2
     parts += [
-        f'<rect x="228" y="14" width="84" height="84" rx="20" fill="{tile}"/>',
-        *(f'<circle cx="{cx}" cy="{cy}" r="12" fill="{line}" opacity=".7"/>'
-          for cx in (251, 289) for cy in (37, 75)),
-        f'<rect x="228" y="106" width="38" height="38" rx="11" fill="{tile}" stroke="{accent}" stroke-width="2.5"/>',
-        glyph(236, 114, 22, fg, tile),
-        f'<rect x="274" y="106" width="38" height="38" rx="11" fill="{tile}"/>',
-        f'<g transform="translate(258 136)">{tap}</g>',
+        f'<circle cx="270" cy="{cy}" r="32" fill="{tile}"/>',
+        glyph(270 - 15, cy - 15, 30, fg, tile),
         caption(270, "2. Tap Screen", "Mirroring"),
     ]
 
-    # 3. The list of receivers: this PC.
+    # 3. This PC, as the list of receivers names it.
+    x0, w, h = 374, 152, 40
     parts += [
-        f'<rect x="368" y="12" width="164" height="132" rx="18" fill="{tile}"/>',
-        glyph(386, 24, 14, fg, tile),
-        f'<text x="406" y="36" font-size="12.5" font-weight="700" fill="{fg}" {font}>Screen Mirroring</text>',
-        f'<rect x="378" y="52" width="144" height="34" rx="10" fill="none" stroke="{accent}" stroke-width="2.5"/>',
-        f'<rect x="388" y="62" width="17" height="12" rx="2.5" fill="none" stroke="{fg}" stroke-width="1.6"/>',
-        f'<path d="M392 78h9" stroke="{fg}" stroke-width="1.6" stroke-linecap="round"/>',
-        f'<text x="412" y="73" font-size="11" fill="{fg}" {font}{fit}>{n}</text>',
-        f'<rect x="388" y="98" width="17" height="12" rx="2.5" fill="none" stroke="{line}" stroke-width="1.6"/>',
-        f'<rect x="412" y="100" width="80" height="8" rx="4" fill="{line}" opacity=".6"/>',
-        f'<rect x="388" y="120" width="17" height="12" rx="2.5" fill="none" stroke="{line}" stroke-width="1.6"/>',
-        f'<rect x="412" y="122" width="60" height="8" rx="4" fill="{line}" opacity=".6"/>',
-        caption(450, "3. Choose", n, bold_b=True),
+        f'<rect x="{x0}" y="{cy - h / 2}" width="{w}" height="{h}" rx="{h / 2}" fill="{tile}"/>',
+        f'<rect x="{x0 + 15}" y="{cy - 6}" width="15" height="11" rx="2" fill="none" stroke="{fg}" stroke-width="1.5"/>',
+        f'<path d="M{x0 + 19} {cy + 8.5}h7" stroke="{fg}" stroke-width="1.5" stroke-linecap="round"/>',
+        f'<text x="{x0 + 38}" y="{cy + 3.5}" font-size="{row_size}" fill="{fg}" {font}>{escape(row_name)}</text>',
+        caption(450, "3. Choose", escape(cap_name), cap_size, strong=True),
         "</svg>",
     ]
     return "".join(parts)
