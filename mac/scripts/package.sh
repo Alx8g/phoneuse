@@ -40,7 +40,22 @@ done < <(find "$APP/Contents/Resources/core" -type f -print0)
 sign --entitlements "$ENT" "$APP"
 codesign --verify --deep --strict "$APP" && echo "signed: $(codesign -dvv "$APP" 2>&1 | grep Authority= | head -1)"
 
-hdiutil create -quiet -fs HFS+ -volname "Phone Use" -srcfolder "$APP" -ov -format UDZO "$OUT/PhoneUse.dmg"
+# The disk image: the app, a shortcut to Applications to drag it into, and the app's icon as the volume's icon
+STAGE="$OUT/dmg"
+rm -rf "$STAGE" "$OUT/rw.dmg" && mkdir -p "$STAGE"
+ditto "$APP" "$STAGE/Phone Use.app"
+ln -s /Applications "$STAGE/Applications"
+hdiutil create -quiet -fs HFS+ -volname "Phone Use" -srcfolder "$STAGE" -ov -format UDRW "$OUT/rw.dmg"
+MNT=$(hdiutil attach -nobrowse -noautoopen "$OUT/rw.dmg" | awk -F'\t' '/Apple_HFS/ {print $NF}')
+ICNS="$APP/Contents/Resources/AppIcon.icns"
+if [[ -f "$ICNS" ]]; then
+  cp "$ICNS" "$MNT/.VolumeIcon.icns"
+  SetFile -c icnC "$MNT/.VolumeIcon.icns"
+  SetFile -a C "$MNT"  # the volume has a custom icon
+fi
+hdiutil detach -quiet "$MNT"
+hdiutil convert -quiet "$OUT/rw.dmg" -format UDZO -ov -o "$OUT/PhoneUse.dmg"
+rm -rf "$STAGE" "$OUT/rw.dmg"
 if [[ "$IDENTITY" == Developer\ ID* ]]; then
   # Notary credentials: `xcrun notarytool store-credentials phoneuse-notary` with the App Store Connect key
   codesign --force --timestamp --sign "$IDENTITY" "$OUT/PhoneUse.dmg"
