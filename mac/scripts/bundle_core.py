@@ -14,7 +14,7 @@ OUT_DIR gets:
   libexec/gst-plugin-scanner
 
 Homebrew's own libraries are built for the macOS the build Mac runs, so the bundle copies each one from the
-bottle Homebrew builds for the oldest macOS the app supports (BOTTLE_TAG, fetched once into the cache) instead.
+bottle Homebrew builds for the oldest macOS the app supports (BOTTLE_TAG, downloaded once into the cache) instead.
 UxPlay must be built for it too (cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0).
 
 Nothing in OUT_DIR points into /opt/homebrew afterwards, and nothing needs a macOS newer than MIN_MACOS; the
@@ -23,6 +23,8 @@ Homebrew's gstreamer, pygobject3 (for Python 3.15), libplist and openssl@3, a Ux
 ~/code/UxPlay/build/uxplay), and the network for the Python download and the Python modules.
 """
 import glob
+import hashlib
+import json
 import os
 import re
 import shutil
@@ -110,19 +112,36 @@ class Bottles:
         return path
 
     def pour(self, name, version):
+        """The formula's BOTTLE_TAG bottle, unpacked into the cache, from the URL and checksum in Homebrew's API."""
         keg = os.path.join(self.root, name, version)
         if os.path.isdir(keg):
             return keg
-        brew = f"{BREW}/bin/brew"
-        run(brew, "fetch", "--quiet", f"--bottle-tag={BOTTLE_TAG}", name)
-        tar = subprocess.run([brew, "--cache", f"--bottle-tag={BOTTLE_TAG}", name],
-                             capture_output=True, text=True, check=True).stdout.strip()
+        with urllib.request.urlopen(f"https://formulae.brew.sh/api/formula/{name}.json") as r:
+            info = json.load(r)
+        latest = info["versions"]["stable"] + (f"_{info['revision']}" if info.get("revision") else "")
+        if latest != version:
+            sys.exit(f"Homebrew's bottles of {name} are {latest}, but {version} is installed: "
+                     f"run brew update && brew upgrade {name}, then build again")
+        files = info["bottle"]["stable"]["files"]
+        bottle = files.get(BOTTLE_TAG) or files.get("all")
+        if not bottle:
+            sys.exit(f"Homebrew has no {BOTTLE_TAG} bottle of {name} {version}")
         os.makedirs(self.root, exist_ok=True)
+        tar = os.path.join(CACHE, "bottles", f"{name}-{version}.{BOTTLE_TAG}.tar.gz")
+        if not os.path.exists(tar):
+            print("downloading", bottle["url"])
+            req = urllib.request.Request(bottle["url"])
+            req.add_unredirected_header("Authorization", "Bearer QQ==")  # ghcr.io's anonymous token
+            with urllib.request.urlopen(req) as r, open(tar + ".part", "wb") as f:
+                shutil.copyfileobj(r, f)
+            with open(tar + ".part", "rb") as f:
+                if hashlib.file_digest(f, "sha256").hexdigest() != bottle["sha256"]:
+                    sys.exit(f"the {BOTTLE_TAG} bottle of {name} doesn't match its checksum")
+            os.rename(tar + ".part", tar)
         with tarfile.open(tar) as t:
             t.extractall(self.root, filter="tar")
         if not os.path.isdir(keg):
-            sys.exit(f"Homebrew's {BOTTLE_TAG} bottle of {name} isn't {version} (the installed one): "
-                     f"run brew update && brew upgrade {name}, then build again")
+            sys.exit(f"the {BOTTLE_TAG} bottle of {name} has no {name}/{version}")
         return keg
 
 
