@@ -716,7 +716,8 @@ class BridgeSetup(Adw.Dialog):
         if self.change:
             self.win.toast(f"Bridge connected to {ssid}")
             return self.close()
-        self._wait("Connect the iPhone", "On the iPhone, open Settings › Bluetooth and tap PhoneUse Bridge.")
+        self._wait("Connect the iPhone", "On the iPhone, open Settings › Bluetooth and tap PhoneUse Bridge. If it "
+                   "won't connect, forget it there and tap it again.")
         self.waiting = GLib.timeout_add_seconds(2, self._phone_check)
 
     def _phone_check(self):
