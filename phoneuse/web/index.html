@@ -81,7 +81,7 @@
               pointer-events: none; transition: left .12s ease-out, top .12s ease-out, transform .1s, opacity .3s; }
   #agentDot.down { transform: scale(.7); box-shadow: 0 0 0 2px #fff, 0 0 20px 8px rgba(10, 132, 255, .95); }
   #agentDot[hidden] { display: block; opacity: 0; }
-  #btDown { position: fixed; z-index: 10; top: 56px; left: 14px; height: 34px; padding: 0 14px; border-radius: 99px;
+  #btDown { position: fixed; z-index: 10; top: 14px; left: 14px; height: 34px; padding: 0 14px; border-radius: 99px;
             font-size: 14px; display: flex; align-items: center; gap: 8px; }
   #btDown[hidden] { display: none; }
   #btDown .dot { width: 7px; height: 7px; border-radius: 50%; background: #ff9f0a; }
@@ -554,7 +554,7 @@ async function bridgeFind() {
   if (!j.bridges.length) {
     bview(`<button class="item" id="bAgain"><span class="grow link">Look Again</span></button>
            <button class="item" id="bBack"><span class="grow link">Cancel</span></button>`,
-          "No bridge is waiting for setup. A new one waits by itself; a set-up one does after you hold its lower button for 3 seconds.");
+          "No bridge is ready to set up. Check that the bridge has power and is near this PC. A new bridge is ready by itself. One that was set up before needs its lower button held for 3 seconds first.");
     on("#bAgain", bridgeFind); on("#bBack", bridgeShow);
     return;
   }
