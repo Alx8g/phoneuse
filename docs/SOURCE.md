@@ -63,7 +63,7 @@ next to the phone on a battery or a charger, and the PC's own Bluetooth adapter 
 unused.
 
 1. **Flash the bridge** once, over USB, with the release's firmware (see
-   [the README](../README.md#the-bridge)) or from source. To build it, install ESP-IDF, then:
+   [BRIDGE.md](BRIDGE.md#flashing)) or from source. To build it, install ESP-IDF, then:
    ```sh
    git clone -b v6.1 --recursive https://github.com/espressif/esp-idf.git ~/esp/esp-idf-v6.1
    ~/esp/esp-idf-v6.1/install.sh esp32

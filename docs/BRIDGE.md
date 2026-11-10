@@ -9,6 +9,20 @@ the PC's own Bluetooth radio is out of the path.
 phoneuse (PC) ── HID daemon ──UDP over Wi-Fi──▶ bridge (ESP32) ──Bluetooth──▶ iPhone
 ```
 
+## Flashing
+
+Use a [LilyGO T-Display](https://lilygo.cc/products/t-display): the original ESP32 version,
+not the T-Display S3, which has a different chip. Nothing needs soldering. Flashing erases
+the board.
+
+- **From the Linux app:** plug the board in over USB and open Bridge › Flash LilyGO T-Display.
+- **With esptool**, using the firmware from the [latest release](https://github.com/lxe/phoneuse/releases/latest):
+  ```sh
+  pip install esptool
+  esptool --chip esp32 write-flash 0x0 phoneuse-bridge-<version>.bin
+  ```
+- **From source:** see [SOURCE.md](SOURCE.md#the-bluetooth-bridge).
+
 ## Setting one up
 
 Everything happens from the browser mirror's settings (Settings › Bluetooth bridge)
