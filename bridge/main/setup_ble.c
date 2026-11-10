@@ -90,6 +90,10 @@ static void new_keys(void) {
 void setup_ble_open(bool open) {
     bridge.setup_open = open;
     if (open) {
+        if (settings.quiet) {  // forgotten until now: visible again
+            settings_set_quiet(false);
+            hid_visible_again();
+        }
         new_keys();
         if (bridge.state != ST_JOINING && bridge.state != ST_ONLINE) bridge.state = ST_SETUP;
         esp_ble_gap_start_advertising(&adv);

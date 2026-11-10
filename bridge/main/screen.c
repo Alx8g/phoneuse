@@ -83,6 +83,15 @@ static void draw(void) {
         snprintf(a, sizeof a, "Bridge %.4s", bridge.id + 8);
         row(3, 8, y, &font16, a, DIM);
         break;
+    case ST_OFF:
+        row(0, 8, y, &font22, "PhoneUse bridge", FG);
+        y += font22.h + 10;
+        row(1, 8, y, &font16, "Forgotten by its PC.", DIM);
+        y += font16.h + 2;
+        row(2, 8, y, &font16, "Hold the button 3 s", FG);
+        y += font16.h + 2;
+        row(3, 8, y, &font16, "to set it up again.", FG);
+        break;
     case ST_CODE:
         row(0, 8, y, &font16, "Check that phoneuse shows", DIM);
         y += font16.h;

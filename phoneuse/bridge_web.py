@@ -45,9 +45,10 @@ class BridgeRoutes:
         cfg = bridge.saved()
         if req.method == "DELETE":
             self._guard(req)
-            await asyncio.get_running_loop().run_in_executor(None, _daemon, "bridge off")
-            bridge.forget()
-            return web.json_response({"saved": None})
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, _daemon, "bridge off")
+            why = await loop.run_in_executor(None, bridge.forget)
+            return web.json_response({"saved": None, "reset": why is None, "why": why})
         out = {"saved": None, "setup": bool(self.session)}
         if cfg:
             out["saved"] = {"id": cfg["id"], "ip": cfg.get("ip") or "", "ssid": cfg.get("ssid"), "use": cfg.get("use", True)}
@@ -132,7 +133,7 @@ class BridgeRoutes:
             except Exception as e:
                 info = {"err": str(e)}
             if info.get("state") == "failed":
-                bridge.save(previous) if previous else bridge.forget()  # it kept its old key
+                bridge.save(previous) if previous else bridge.forget(reset=False)  # it kept its old key
                 return web.json_response({"error": f"couldn't join {ssid}: {info.get('err')}", "retry": True})
             await self._close()
         cfg["ip"] = info.get("ip")

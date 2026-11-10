@@ -404,8 +404,9 @@ class Window(Adw.ApplicationWindow):
         add(net)
         forget = button("Forget…", "flat", lambda: confirm(
             self, "Forget the bridge?", "Phone Use stops sending input through it. To use it again, set it up "
-            "again.", "Forget", lambda: in_thread(lambda: api("/api/bridge", method="DELETE"),
-                                                  lambda *_: self.refresh())))
+            "again. The bridge also forgets its iPhone pairing and Wi-Fi, and stays hidden until you hold its "
+            "button for 3 seconds.", "Forget", lambda: in_thread(lambda: api("/api/bridge", method="DELETE"),
+                                                                 self._bridge_forgotten)))
         forget.add_css_class("error")
         forget.set_tooltip_text("Forget the bridge")
         self.bridge_group.set_header_suffix(forget)
@@ -455,6 +456,16 @@ class Window(Adw.ApplicationWindow):
             in_thread(claude_setup.connect, lambda _r, e: (
                 self.toast(f"Couldn't connect: {e}" if e else "Connected. New Claude Code sessions can use the "
                            "phone."), self.refresh()))
+
+    def _bridge_forgotten(self, j, err):
+        if err:
+            self.toast(f"Couldn't forget the bridge: {err}")
+        elif j.get("reset"):
+            self.toast("Bridge reset. On the iPhone, also forget PhoneUse Bridge in Bluetooth settings")
+        else:  # forgotten here; the bridge itself didn't answer (offline, or older firmware)
+            self.toast("Forgotten here. The bridge didn't answer: remove PhoneUse Bridge in the iPhone's Bluetooth "
+                       "settings")
+        self.refresh()
 
     def _confirm_unpair(self):
         n = paired_iphones()

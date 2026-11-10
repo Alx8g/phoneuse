@@ -83,7 +83,10 @@ void app_main(void) {
     setup_ble_init();
     wifi_init();
     link_start();
-    if (!settings.configured) setup_ble_open(true);
+    if (settings.quiet)
+        bridge.state = ST_OFF;  // forgotten: nothing advertises until the button is held
+    else if (!settings.configured)
+        setup_ble_open(true);
     xTaskCreate(housekeeping, "house", 4096, NULL, 2, NULL);
     ESP_LOGI("main", "bridge %s up, free heap %lu", bridge.id, (unsigned long)esp_get_free_heap_size());
 }

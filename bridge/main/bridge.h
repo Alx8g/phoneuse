@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BRIDGE_FW "0.2.2"  // 0.2: TAP (0x0C); 0.2.1: the phone's Bluetooth signal in status; 0.2.2: activity icon
+#define BRIDGE_FW "0.2.3"  // 0.2: TAP (0x0C); 0.2.1: the phone's Bluetooth signal in status; 0.2.2: activity icon; 0.2.3: FORGET (0x0D)
 #define BRIDGE_NAME "PhoneUse Bridge"  // the name the iPhone sees in Bluetooth settings
 
 typedef enum {
@@ -12,6 +12,7 @@ typedef enum {
     ST_JOINING,  // joining the Wi-Fi network
     ST_ONLINE,   // on the network, taking commands
     ST_FAILED,   // the network didn't take the password, or isn't there
+    ST_OFF,      // forgotten: no Wi-Fi, no pairings, invisible over Bluetooth until the button is held
 } bridge_state_t;
 
 typedef struct {
@@ -69,6 +70,8 @@ void hid_connect_last(void);
 int hid_keys(const uint8_t *pairs, int n);
 int hid_keys_left(void);
 void hid_discoverable(int seconds);
+void hid_visible_again(void);  // after quiet ends
+void hid_forget(void);         // disconnect, remove every pairing, go invisible (settings.quiet)
 void hid_read_signal(void);  // measure the phone's Bluetooth signal (bridge.bt_rssi_delta)
 // A tap at the absolute position (x, y: 0..32767): press, hold hold_ms, release, all on
 // the bridge. 0 queued, -1 not.
