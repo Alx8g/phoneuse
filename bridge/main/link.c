@@ -21,6 +21,8 @@
 //   0x0C TAP x y hold_ms      -> 0x8C err: a whole tap (press, hold, release) done on the bridge
 //   0x09 KEYS (mods, usage)*  -> 0x89 queued(u16) left(u16): typed on the bridge, in order
 //   0x0A KEYSLEFT             -> 0x8A left(u16): keys not typed yet
+//   0x0D FORGET               -> 0x8D, then the bridge removes its iPhone pairings, Wi-Fi and
+//        control key, and restarts invisible (no Bluetooth advertising) until its button is held
 //   0x08 TUNE what value     -> 0x88 esp_err (experiments): what 1 = coexistence
 //        preference (0 Wi-Fi, 1 Bluetooth, 2 balance), 2 = Wi-Fi TX power (0.25 dBm)
 // Packets after HELLO carry its session and a rising seq; an old seq is dropped,
@@ -33,6 +35,7 @@
 #include "crypto.h"
 #include "esp_coexist.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -227,6 +230,13 @@ static void link_task(void *arg) {
         } else if (type == 0x05) {
             setup_ble_open(true);
             m = reply(out, 0x85, sid, seq, "", 0, true);
+        } else if (type == 0x0D) {
+            m = reply(out, 0x8D, sid, seq, "", 0, true);
+            sendto(s, out, m, 0, (struct sockaddr *)&from, fl);  // answer while the key still exists
+            hid_forget();
+            settings_forget();
+            vTaskDelay(pdMS_TO_TICKS(300));
+            esp_restart();
         } else {
             continue;
         }

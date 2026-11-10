@@ -23,6 +23,8 @@ void settings_load(void) {
     n = sizeof settings.key;
     ok = ok && nvs_get_blob(h, "key", settings.key, &n) == ESP_OK && n == sizeof settings.key;
     settings.configured = ok;
+    uint8_t q = 0;
+    settings.quiet = nvs_get_u8(h, "quiet", &q) == ESP_OK && q;
     nvs_close(h);
 }
 
@@ -45,4 +47,21 @@ void settings_erase(void) {
         nvs_close(h);
     }
     memset(&settings, 0, sizeof settings);
+}
+
+void settings_set_quiet(bool q) {
+    settings.quiet = q;
+    nvs_handle_t h;
+    if (nvs_open("bridge", NVS_READWRITE, &h) != ESP_OK) return;
+    if (q)
+        nvs_set_u8(h, "quiet", 1);
+    else
+        nvs_erase_key(h, "quiet");
+    nvs_commit(h);
+    nvs_close(h);
+}
+
+void settings_forget(void) {
+    settings_erase();
+    settings_set_quiet(true);
 }

@@ -83,11 +83,26 @@ def resolve(cfg=None):
     return None
 
 
-def forget():
+def forget(reset=True):
+    """Forget the saved bridge. With reset, first tell the bridge to forget everything too.
+    Returns None once the bridge has reset, else why it couldn't (it stays as it was)."""
+    why = "not asked"
+    cfg = saved() if reset else None
+    if cfg:
+        try:
+            link = Link(resolve(cfg) or cfg)
+            try:
+                link.reset()
+                why = None
+            finally:
+                link.close()
+        except (RuntimeError, OSError) as e:
+            why = str(e)
     try:
         os.remove(SAVED)
     except OSError:
         pass
+    return why
 
 
 # ---------- 1. firmware over USB ----------
@@ -462,6 +477,11 @@ class Link:
     def open_setup(self):
         self._call(0x05)
 
+    def reset(self):
+        """Have the bridge forget everything (firmware 0.2.3+): its iPhone pairings, its Wi-Fi
+        and this PC's key. It restarts invisible over Bluetooth until its button is held."""
+        self._call(0x0D, tries=3)
+
     def networks(self):
         """Wi-Fi networks the bridge sees (it scans while staying online, ~2 s)."""
         return json.loads(self._call(0x06, tries=2, wait=6).decode() or "[]")
@@ -573,6 +593,8 @@ def main(args):
         print("In setup mode nearby:", asyncio.run(scan_ble()) or "none")
         return
     if sub == "forget":
-        forget()
-        return print("forgot the bridge")
+        why = forget()
+        return print("Forgot the bridge, and it reset: no Wi-Fi, no iPhone pairing, hidden until its button is held "
+                     "3 s." if why is None else f"Forgot the bridge here. It didn't reset ({why}); it keeps its "
+                     "pairing and Wi-Fi until it's set up again or flashed.")
     raise SystemExit("usage: phoneuse bridge [status|setup|find|flash|build|log [SECONDS]|forget]")
