@@ -19,8 +19,8 @@ Phone Use is alpha software. Please [report what breaks](https://github.com/lxe/
    - **Mac** (macOS 15 or later): `PhoneUse-<version>-mac.dmg`. Drag Phone Use to Applications.
      The Mac app needs [the bridge](#the-bridge).
    - **Windows:** from source for now, see [docs/WINDOWS.md](docs/WINDOWS.md).
-2. Install the Phone Use iPhone app. It isn't in the App Store yet; build it from
-   [`ios/`](ios/README.md) with Xcode.
+2. Install the Phone Use iPhone app from the
+   [App Store](https://apps.apple.com/us/app/phone-use/id6832337610).
 3. Open Phone Use on your computer. It walks you through the rest: connecting the
    keyboard and mouse, pairing the iPhone app, and starting Screen Mirroring.
 

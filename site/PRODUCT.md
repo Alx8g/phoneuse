@@ -39,8 +39,8 @@ agent's current action, and Take over stops it.
 
 - Downloads (GitHub releases, `releases/latest`): `PhoneUse-<ver>-x86_64.flatpak` (Linux),
   `PhoneUse-<ver>-mac.dmg` (macOS 15 or later, signed and notarized; menu bar app; uses the bridge for input),
-  `phoneuse-bridge-<ver>.bin` (bridge firmware). Windows: coming soon. iPhone app: not in the App Store yet
-  (badge links to `#` as a placeholder).
+  `phoneuse-bridge-<ver>.bin` (bridge firmware). Windows: coming soon. iPhone app: on the App Store
+  (https://apps.apple.com/us/app/phone-use/id6832337610, since 2026-11-10).
 - The bridge: a LilyGO T-Display (the original ESP32 T-Display, not the S3), 1.14-inch screen, two buttons,
   USB-C, no soldering. The Linux app flashes it over USB; setup over BLE with a matching 6-digit code; joins
   2.4 GHz Wi-Fi; the iPhone pairs with "Phone Use Bridge". Signed UDP control (HMAC-SHA256). Can sit next to the
