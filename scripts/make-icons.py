@@ -11,9 +11,12 @@
           a rounded square with GNOME's margin (8 of every 128), transparent around it.
   Web:    phoneuse/web/favicon-32.png, favicon-64.png (the Linux shape) and apple-touch-icon.png
           (180, opaque: iOS rounds it).
+Every PNG is then compressed with pngquant (quality 92-100), if it's installed.
 """
+import glob
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 
@@ -78,6 +81,14 @@ def main():
             sizes(linux_full, os.path.join(web, f"favicon-{px}.png"), px)
         magick(MASTER, "-filter", "Lanczos", "-resize", "180x180", "-alpha", "off",
                os.path.join(web, "apple-touch-icon.png"))
+    outputs = (glob.glob(os.path.join(ROOT, "ios", "App", "Assets.xcassets", "AppIcon.appiconset", "*.png"))
+               + glob.glob(os.path.join(ROOT, "mac", "PhoneUse", "Assets.xcassets", "AppIcon.appiconset", "*.png"))
+               + glob.glob(os.path.join(ROOT, "packaging", "icons", "hicolor", "*", "apps", "co.lxe.PhoneUse.png"))
+               + glob.glob(os.path.join(ROOT, "phoneuse", "web", "favicon-*.png"))
+               + [os.path.join(ROOT, "phoneuse", "web", "apple-touch-icon.png")])
+    if shutil.which("pngquant"):  # the full-size PNGs are ~2 MB each uncompressed
+        subprocess.run(["pngquant", "--quality=92-100", "--speed", "1", "--strip", "--force", "--ext", ".png",
+                        *outputs], check=False)
     print("icons written")
 
 
