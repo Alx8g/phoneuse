@@ -88,5 +88,7 @@ void app_main(void) {
     else if (!settings.configured)
         setup_ble_open(true);
     xTaskCreate(housekeeping, "house", 4096, NULL, 2, NULL);
-    ESP_LOGI("main", "bridge %s up, free heap %lu", bridge.id, (unsigned long)esp_get_free_heap_size());
+    ESP_LOGI("main", "bridge %s up (%s), free heap %lu", bridge.id,
+             settings.quiet ? "forgotten: quiet" : settings.configured ? "set up" : "new: setup open",
+             (unsigned long)esp_get_free_heap_size());
 }
