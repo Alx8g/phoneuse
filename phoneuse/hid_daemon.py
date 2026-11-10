@@ -42,11 +42,12 @@ except ImportError:  # the app (bridge-only) ships without dbus-python: BlueZ is
         Object=object, method=lambda *a, **k: (lambda f: f)), DBusException=Exception)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-from .config import BRIDGE_ONLY, STATE_DIR
+from .config import BRIDGE_ONLY, STATE_DIR, USER_DAEMON
 from .config import HID_SOCKET as SOCK_PATH
 DEVICE_NAME = os.environ.get("PHONEUSE_NAME", "PhoneUse")  # what the phone sees in Bluetooth settings
 PSM_CTRL, PSM_INTR = 0x11, 0x13
 HID_UUID = "00001124-0000-1000-8000-00805f9b34fb"
+INTR_UUID = "8e9a4f30-6b4c-4d2a-9b1e-70686f6e6575"  # our own: carries only the interrupt PSM (the app)
 PROFILE_PATH = "/io/phoneuse/hid/profile"
 AGENT_PATH = "/io/phoneuse/hid/agent"
 
@@ -287,6 +288,8 @@ def acl_handle(addr):
 
 
 def tune_link(addr):
+    if USER_DAEMON:  # raw HCI needs root; the app keeps BlueZ's link settings
+        return None
     try:
         h = acl_handle(addr)
         s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI)
@@ -387,7 +390,7 @@ class InFlight:
     def __init__(self):
         self.n = 0
         self.lock = threading.Lock()
-        if BRIDGE_ONLY:  # nothing goes out on this PC's adapter
+        if USER_DAEMON:  # needs a raw HCI socket (root); the app does without the in-flight count
             return
         try:
             import ctypes
@@ -481,7 +484,7 @@ def connect_out():
                 return "already connected"
             hid.ctrl, hid.intr = socks
             hid.peer = addr
-            log("connected out to", addr, "- link tuned, handle", tune_link(addr))
+            log("connected out to", addr, "" if USER_DAEMON else f"- link tuned, handle {tune_link(addr)}")
             threading.Thread(target=handle_ctrl, args=(hid.ctrl,), daemon=True).start()
             return f"connected to {addr}"
         raise RuntimeError("; ".join(errors) or "no paired iPhone")
@@ -592,14 +595,51 @@ def paired_devices():
     return out
 
 
+pending_ctrl = {}  # device address -> its control channel, until the interrupt channel follows
+
+
+def incoming(addr, kind, sock):
+    """A connection BlueZ accepted for us (the app: bluetoothd owns PSMs 17/19 and hands each
+    one over). The same rules as accept_loop: control first, then interrupt."""
+    if kind == "ctrl":
+        if released.is_set() or not wanted(addr):
+            log("declined HID connection from", addr, "(released, or not the mirroring phone)")
+            sock.close()
+            return
+        log("control from", addr)
+        old = pending_ctrl.pop(addr, None)
+        if old:
+            old.close()
+        pending_ctrl[addr] = sock
+        return
+    c = pending_ctrl.pop(addr, None)
+    if not c:
+        sock.close()
+        return
+    log("interrupt from", addr)
+    if hid.connected:
+        hid.drop("replaced by new connection")
+    hid.ctrl, hid.intr, hid.peer = c, sock, addr
+    threading.Thread(target=handle_ctrl, args=(c,), daemon=True).start()
+
+
 class Profile(dbus.service.Object):
+    def __init__(self, bus, path, kind=None):
+        super().__init__(bus, path)
+        self.kind = kind  # None: SDP only (the root daemon owns the PSMs); "ctrl" / "intr": BlueZ owns them
+
     @dbus.service.method("org.bluez.Profile1", in_signature="", out_signature="")
     def Release(self):
         pass
 
     @dbus.service.method("org.bluez.Profile1", in_signature="oha{sv}", out_signature="")
     def NewConnection(self, path, fd, props):
-        os.close(fd.take())  # we own the PSMs directly
+        fd = fd.take()
+        if not self.kind:
+            os.close(fd)  # the root daemon owns the PSMs directly
+            return
+        addr = str(path).rsplit("dev_", 1)[-1].replace("_", ":")
+        incoming(addr, self.kind, socket.socket(fileno=fd))
 
     @dbus.service.method("org.bluez.Profile1", in_signature="o", out_signature="")
     def RequestDisconnection(self, path):
@@ -662,11 +702,20 @@ def setup_dbus():
     bus = dbus.SystemBus()
     record = (open(os.path.join(HERE, "sdp_record.xml")).read()
               .replace("@REPORT_MAP@", REPORT_MAP.hex()).replace("@NAME@", DEVICE_NAME))
-    Profile(bus, PROFILE_PATH)
     pm = dbus.Interface(bus.get_object("org.bluez", "/org/bluez"), "org.bluez.ProfileManager1")
-    pm.RegisterProfile(PROFILE_PATH, HID_UUID, {
-        "ServiceRecord": record, "Role": "server",
-        "RequireAuthentication": False, "RequireAuthorization": False})
+    opts = {"ServiceRecord": record, "Role": "server", "RequireAuthentication": False, "RequireAuthorization": False}
+    if USER_DAEMON:
+        # No root: bluetoothd listens on the HID PSMs and passes each connection over
+        # (NewConnection). The interrupt channel needs a profile of its own.
+        Profile(bus, PROFILE_PATH, "ctrl")
+        pm.RegisterProfile(PROFILE_PATH, HID_UUID, dict(opts, PSM=dbus.UInt16(PSM_CTRL)))
+        Profile(bus, PROFILE_PATH + "_intr", "intr")
+        pm.RegisterProfile(PROFILE_PATH + "_intr", INTR_UUID, {
+            "Role": "server", "PSM": dbus.UInt16(PSM_INTR),
+            "RequireAuthentication": False, "RequireAuthorization": False})
+    else:
+        Profile(bus, PROFILE_PATH)
+        pm.RegisterProfile(PROFILE_PATH, HID_UUID, opts)
     Agent(bus, AGENT_PATH)
     am = dbus.Interface(bus.get_object("org.bluez", "/org/bluez"), "org.bluez.AgentManager1")
     am.RegisterAgent(AGENT_PATH, "NoInputNoOutput")
@@ -719,7 +768,7 @@ def release(idle):
 
 
 # survives restarts: bridge and mirroring phone
-STATE = os.path.join(STATE_DIR, "daemon.json") if BRIDGE_ONLY else "/var/lib/phoneuse/daemon.json"
+STATE = os.path.join(STATE_DIR, "daemon.json") if USER_DAEMON else "/var/lib/phoneuse/daemon.json"
 
 
 def save_state():
@@ -967,6 +1016,12 @@ def gated(line, owner):
     """None if the command may run; else the refusal."""
     parts = line.strip().split(" ", 1)
     cmd, rest = parts[0].lower(), (parts[1] if len(parts) > 1 else "")
+    if cmd == "restart":  # the app switched this PC's Bluetooth on or off: start again with it
+        if not owner:
+            return "err only the browser mirror may restart the input service"
+        log("restarting for a new input setting")
+        threading.Timer(0.3, os._exit, (0,)).start()  # `phoneuse serve` starts it again
+        return "ok restarting"
     if cmd == "gate":
         if not owner:
             return "err only the browser mirror may change the agent gate"
@@ -1007,7 +1062,7 @@ def command_server():
         pass
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.bind(SOCK_PATH)
-    if BRIDGE_ONLY:  # the user's own daemon: only the user's processes may connect
+    if USER_DAEMON:  # the user's own daemon: only the user's processes may connect
         os.chmod(SOCK_PATH, 0o600)
     else:
         os.chmod(SOCK_PATH, 0o660)
@@ -1020,6 +1075,17 @@ def command_server():
 
 
 def main():
+    if USER_DAEMON and not BRIDGE_ONLY:
+        # The app with this PC's Bluetooth on: BlueZ owns the HID PSMs (setup_dbus), so no root;
+        # no link tuning either (it needs raw HCI). Outgoing connections work as any user.
+        log("this PC's Bluetooth and the bridge, as the user")
+        setup_dbus()
+        threading.Thread(target=command_server, daemon=True).start()
+        threading.Thread(target=restore_state, daemon=True).start()
+        threading.Thread(target=reconnect_loop, daemon=True).start()
+        reconnect_now.set()
+        GLib.MainLoop().run()
+        return
     if BRIDGE_ONLY:
         # Input goes through the bridge alone: no BlueZ, no HID sockets on this PC's
         # adapter, no root. Commands, the gate and the bridge link work as usual.

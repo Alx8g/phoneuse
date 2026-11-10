@@ -817,6 +817,22 @@ def app(mirror):
     a.router.add_post("/api/agent/cursor", agent_cursor)
     a.router.add_post("/api/agent/done", agent_done)
     a.router.add_route("*", "/api/awake", awake)
+
+    async def input_state(req):
+        # This PC's Bluetooth as a second way in (bluetooth_setup.py); the app's Puck tab.
+        from . import bluetooth_setup
+        loop = asyncio.get_running_loop()
+        if req.method == "POST":
+            if not same_origin(req):
+                return web.Response(status=403)
+            try:  # the daemon reads the setting when it starts; `phoneuse serve` restarts it
+                await loop.run_in_executor(None, mirror.get_hid().cmd, "restart")
+            except (OSError, RuntimeError) as e:
+                return web.json_response({"error": str(e)}, status=500)
+        return web.json_response({"pc_bluetooth": bluetooth_setup.on(),
+                                  "prepared": await loop.run_in_executor(None, bluetooth_setup.prepared)})
+    a.router.add_route("*", "/api/input", input_state)
+    a.router.add_post("/api/input/restart", input_state)
     from .bridge_web import BridgeRoutes
     bridges = BridgeRoutes(same_origin)
     bridges.add(a)
