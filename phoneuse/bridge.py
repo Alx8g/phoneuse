@@ -26,6 +26,7 @@ import struct
 import subprocess
 import sys
 import threading
+import weakref
 import time
 
 from .config import config_path
@@ -498,11 +499,25 @@ class Link:
         self.waiters = {}              # seq or ("hello", nonce) -> [event, answer body]
         self.inflight = {}             # async seq -> send time
         self.closed = False
-        threading.Thread(target=self._rx, daemon=True).start()
+        # the receiver holds the Link weakly: a Link dropped without close() (a one-off
+        # status()) closes its socket and ends its thread within 0.5 s
+        threading.Thread(target=Link._rx, args=(weakref.ref(self), self.sock), daemon=True).start()
 
     def close(self):
         self.closed = True
         self.sock.close()
+
+    def __del__(self):
+        try:
+            self.sock.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
 
     def _pack(self, type_, seq, body):
         head = b"PU\x01" + bytes([type_]) + struct.pack("<II", self.session, seq)
@@ -512,32 +527,46 @@ class Link:
         return len(b) >= 20 and hmac.compare_digest(
             b[-8:], hmac.new(self.key, b[:-8], hashlib.sha256).digest()[:8])
 
-    def _rx(self):
-        while not self.closed:
+    @staticmethod
+    def _rx(ref, sock):
+        while True:
+            link = ref()
+            if link is None or link.closed:
+                sock.close()
+                return
+            del link
             try:
-                b = self.sock.recv(1024)
+                b = sock.recv(1024)
             except socket.timeout:
                 continue
             except OSError:
                 return
-            if not self._ok(b):
-                continue
-            type_, seq, body = b[3], struct.unpack_from("<I", b, 8)[0], b[12:-8]
-            if type_ == 0x81:
-                w = self.waiters.get(("hello", body[:8]))
-                if w:
-                    w[1] = struct.unpack_from("<I", b, 4)[0]
-                    w[0].set()
-                continue
-            if type_ == 0x82 and len(body) >= 2:
-                self.waiting, self.phone = body[1], body[0] != 2
-            sent = self.inflight.pop(seq, None)
-            if sent:
-                self.rtt = (self.rtt + [time.time() - sent])[-200:]
-            w = self.waiters.get(seq)
-            if w and not w[0].is_set():
-                w[1] = body
+            link = ref()
+            if link is None:
+                sock.close()
+                return
+            link._received(b)
+            del link
+
+    def _received(self, b):
+        if not self._ok(b):
+            return
+        type_, seq, body = b[3], struct.unpack_from("<I", b, 8)[0], b[12:-8]
+        if type_ == 0x81:
+            w = self.waiters.get(("hello", body[:8]))
+            if w:
+                w[1] = struct.unpack_from("<I", b, 4)[0]
                 w[0].set()
+            return
+        if type_ == 0x82 and len(body) >= 2:
+            self.waiting, self.phone = body[1], body[0] != 2
+        sent = self.inflight.pop(seq, None)
+        if sent:
+            self.rtt = (self.rtt + [time.time() - sent])[-200:]
+        w = self.waiters.get(seq)
+        if w and not w[0].is_set():
+            w[1] = body
+            w[0].set()
 
     def hello(self):
         nonce = os.urandom(8)
